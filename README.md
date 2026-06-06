@@ -22,10 +22,11 @@ format, ToC, images, footnotes, or paste/upload a full fbc YAML config.
 Images are published to GitHub Container Registry on every push to `main` and
 whenever a new [`fbc`](https://github.com/rupor-github/fb2cng) release appears.
 
-Tags follow `<app-version>-<fbc-version>`, e.g. `1-v1.4.5`, plus a moving `latest`:
+Tags follow `<app-version>-<fbc-version>` (the `fbc` tag's leading `v` is dropped),
+e.g. `1-1.4.5`, plus a moving `latest`:
 
     docker pull ghcr.io/<owner>/fb2cng-web:latest
-    docker pull ghcr.io/<owner>/fb2cng-web:1-v1.4.5
+    docker pull ghcr.io/<owner>/fb2cng-web:1-1.4.5
 
 - **`VERSION`** holds the integer app version. Bump it by hand when the app code changes.
 - **`FBC_VERSION`** holds the pinned `fbc` release. A daily GitHub Actions job
