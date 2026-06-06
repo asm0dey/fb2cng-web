@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0">
+<description><title-info>
+<genre>sf</genre>
+<author><first-name>Jane</first-name><last-name>Doe</last-name></author>
+<book-title>Hello Book</book-title>
+<lang>en</lang>
+</title-info></description>
+<body><section><title><p>Chapter 1</p></title><p>Hello world.</p></section></body>
+</FictionBook>
