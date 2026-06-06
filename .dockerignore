@@ -1,0 +1,7 @@
+.git
+.superpowers
+docs
+*.md
+testdata
+fb2cng-web
+*.log

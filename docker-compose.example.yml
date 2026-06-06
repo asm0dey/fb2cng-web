@@ -1,0 +1,29 @@
+# Optional turnkey deployment: fb2cng-web behind Caddy + Authelia forward-auth.
+# The app is NOT published directly — only Caddy is. fb2cng-web trusts Remote-*
+# headers; AUTH_FORWARD_AUTH gates access. Adjust domains/secrets before use.
+services:
+  fb2cng-web:
+    build: .
+    environment:
+      AUTH_FORWARD_AUTH: "true"
+      TRUSTED_PROXIES: ""   # optional: set to caddy's container IP for defense-in-depth
+    expose:
+      - "8080"
+    # No "ports:" — never expose the app directly when auth is on.
+
+  authelia:
+    image: authelia/authelia:4
+    volumes:
+      - ./authelia:/config
+    expose:
+      - "9091"
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+      - fb2cng-web
+      - authelia
