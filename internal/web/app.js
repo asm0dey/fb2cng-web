@@ -55,6 +55,12 @@ function optionalField(form, key, el, kind) {
   if (v !== '') form.append(key, v);
 }
 
+// booleanField always sends true/false so a pre-checked (default-on) box can be
+// turned off. Omitting it would let the server-side default re-apply.
+function booleanField(form, key, el) {
+  form.append(key, el.checked ? 'true' : 'false');
+}
+
 function buildForm(file) {
   const form = new FormData();
   form.append('file', file);
@@ -63,7 +69,9 @@ function buildForm(file) {
   optionalField(form, 'footnotes_mode', $('footnotes_mode'));
   optionalField(form, 'jpeg_quality', $('jpeg_quality'));
   optionalField(form, 'images_optimize', $('images_optimize'), 'check');
-  optionalField(form, 'insert_soft_hyphen', $('insert_soft_hyphen'), 'check');
+  booleanField(form, 'insert_soft_hyphen', $('insert_soft_hyphen'));
+  booleanField(form, 'cover_generate', $('cover_generate'));
+  booleanField(form, 'dropcaps_enable', $('dropcaps_enable'));
   const raw = $('raw_yaml').value.trim();
   if (raw) form.append('raw_yaml', raw);
   return form;
