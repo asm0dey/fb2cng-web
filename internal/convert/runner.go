@@ -32,7 +32,10 @@ func (f *FBC) DumpDefaults(ctx context.Context) ([]byte, error) {
 	cmd.Stdout = &out
 	cmd.Stderr = &errb
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("fbc dumpconfig: %w: %s", err, strings.TrimSpace(errb.String()))
+		if msg := strings.TrimSpace(errb.String()); msg != "" {
+			return nil, fmt.Errorf("fbc dumpconfig: %w: %s", err, msg)
+		}
+		return nil, fmt.Errorf("fbc dumpconfig: %w", err)
 	}
 	return out.Bytes(), nil
 }
@@ -53,10 +56,10 @@ func (f *FBC) Convert(ctx context.Context, inputPath, format, configPath, destDi
 	cmd.Stderr = &errb
 	if err := cmd.Run(); err != nil {
 		msg := strings.TrimSpace(errb.String())
-		if msg == "" {
-			msg = err.Error()
+		if msg != "" {
+			return nil, fmt.Errorf("conversion failed: %w: %s", err, msg)
 		}
-		return nil, fmt.Errorf("conversion failed: %s", msg)
+		return nil, fmt.Errorf("conversion failed: %w", err)
 	}
 	return collectOutputs(destDir)
 }
@@ -68,7 +71,13 @@ func collectOutputs(destDir string) ([]string, error) {
 		if err != nil {
 			return err
 		}
-		if d.IsDir() || strings.HasPrefix(d.Name(), ".") {
+		if d.IsDir() {
+			if path != destDir && strings.HasPrefix(d.Name(), ".") {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if strings.HasPrefix(d.Name(), ".") {
 			return nil
 		}
 		outs = append(outs, path)

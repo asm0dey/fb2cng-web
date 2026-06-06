@@ -26,6 +26,7 @@ if [ "$mode" = "convert" ]; then
     esac
   done
   # positionals = INPUT ... DEST  (last is dest, first is input)
+  # NOTE: positional parsing uses word-splitting; test paths must not contain spaces (t.TempDir paths don't).
   # shellcheck disable=SC2086
   set -- $positionals
   input=$1

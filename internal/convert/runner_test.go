@@ -50,7 +50,9 @@ func TestConvertSingleOutput(t *testing.T) {
 func TestConvertMultiOutput(t *testing.T) {
 	dir := t.TempDir()
 	in := filepath.Join(dir, "multi.fb2")
-	os.WriteFile(in, []byte("x"), 0o644)
+	if err := os.WriteFile(in, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	outs, err := New(fakeBin(t)).Convert(context.Background(), in, "epub3", "", filepath.Join(dir, "out"))
 	if err != nil {
 		t.Fatal(err)
@@ -63,7 +65,9 @@ func TestConvertMultiOutput(t *testing.T) {
 func TestConvertError(t *testing.T) {
 	dir := t.TempDir()
 	in := filepath.Join(dir, "corrupt.fb2")
-	os.WriteFile(in, []byte("x"), 0o644)
+	if err := os.WriteFile(in, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	_, err := New(fakeBin(t)).Convert(context.Background(), in, "epub3", "", filepath.Join(dir, "out"))
 	if err == nil || !strings.Contains(err.Error(), "cannot parse") {
 		t.Fatalf("expected fbc error with stderr, got %v", err)
