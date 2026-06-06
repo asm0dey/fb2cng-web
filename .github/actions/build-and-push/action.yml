@@ -23,6 +23,13 @@ runs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ inputs.token }}
+    # Strip a leading "v" from the fbc version for the image tag only.
+    # The build-arg keeps the full tag (e.g. v1.4.5) because the fbc download URL needs it.
+    - id: tag
+      shell: bash
+      env:
+        FBC: ${{ inputs.fbc_version }}
+      run: echo "fbc=${FBC#v}" >> "$GITHUB_OUTPUT"
     - uses: docker/build-push-action@v6
       with:
         context: .
@@ -31,5 +38,5 @@ runs:
         build-args: |
           FBC_VERSION=${{ inputs.fbc_version }}
         tags: |
-          ${{ inputs.image }}:${{ inputs.version }}-${{ inputs.fbc_version }}
+          ${{ inputs.image }}:${{ inputs.version }}-${{ steps.tag.outputs.fbc }}
           ${{ inputs.image }}:latest
