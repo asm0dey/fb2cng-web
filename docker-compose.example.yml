@@ -12,7 +12,7 @@ services:
     # No "ports:" — never expose the app directly when auth is on.
 
   authelia:
-    image: authelia/authelia:latest
+    image: authelia/authelia:4
     volumes:
       - ./authelia:/config
     expose:

@@ -21,6 +21,8 @@ format, ToC, images, footnotes, or paste/upload a full fbc YAML config.
 | `AUTH_FORWARD_AUTH` | `false` | trust reverse-proxy `Remote-*` headers |
 | `TRUSTED_PROXIES` | (empty) | comma-separated source IPs allowed to set `Remote-*` |
 
+> In the Docker image, `FBC_BIN` is preset to `/usr/local/bin/fbc`.
+
 ## Optional authentication (Authelia forward-auth)
 
 The app has no built-in login. To require auth, run it behind a reverse proxy that
@@ -74,6 +76,7 @@ http:
 
 ```nginx
 location /authelia {
+    # nginx uses Authelia's auth-request endpoint (not the forward-auth one used by Caddy/Traefik)
     internal;
     proxy_pass http://authelia:9091/api/authz/auth-request;
     proxy_pass_request_body off;
