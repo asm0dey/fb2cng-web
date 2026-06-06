@@ -22,8 +22,9 @@ raw YAML.
 | Batch I/O | **Multi-file in**; each result **auto-downloads** on completion. No persistent download links, no result storage. |
 | Output formats | Selector exposes **all fbc formats** (epub2, epub3, kepub, kfx, azw8, pdf). **Default epub3.** |
 | Layout | **Single column, settings collapsed** behind a toggle (defaults just work). |
-| Responsive | Mobile-friendly; drop area doubles as tap-to-pick file input. |
-| Theming | Light + dark, default follows system, manual toggle persisted to `localStorage`. |
+| Styling | **Pico CSS v2** (classless, via CDN) — semantic HTML styled with no classes, no build step. |
+| Responsive | Mobile-friendly (Pico is responsive by default); drop area doubles as tap-to-pick file input. |
+| Theming | Light + dark via Pico's `data-theme`; default follows system, manual toggle persisted to `localStorage`. |
 
 ## Architecture
 
@@ -44,8 +45,9 @@ Single Go service, packaged as **one Docker image** bundling the `fbc` binary.
   5. On success, stream the produced file back so the browser auto-downloads it.
   6. Always delete the temp workdir (success or failure).
 - **Config builder** — produces the effective YAML (see Config Handling).
-- **Frontend (vanilla JS)** — drop area, collapsible settings (common form + raw YAML textarea),
-  per-file progress/status list, theme toggle. No framework.
+- **Frontend (vanilla JS + Pico CSS)** — drop area, collapsible settings (common form + raw YAML
+  textarea), per-file progress/status list, theme toggle. No JS framework; Pico v2 (classless)
+  loaded from CDN provides styling and responsiveness.
 - **Concurrency guard** — a small worker pool (N = 2–4) so a large multi-file drop does not spawn
   unlimited `fbc` processes.
 
@@ -98,9 +100,13 @@ Everything else is reachable through the raw YAML editor.
 - **Mobile:** single-column layout reflows cleanly; drop area doubles as a tap target opening the
   native file picker (drag-drop is weak on touch); settings and YAML editor stack full-width with
   tap-sized controls.
-- **Themes:** light + dark via CSS custom properties. Default follows `prefers-color-scheme`; a
-  header toggle (light / dark / system) persists to `localStorage`. Theme is applied before first
-  paint to avoid flash.
+- **Styling:** Pico CSS v2, classless, loaded from CDN
+  (`https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css`). Semantic HTML is styled with no
+  classes; the layout uses Pico's responsive container. No build step.
+- **Themes:** Pico has built-in light/dark. Default follows `prefers-color-scheme` automatically; a
+  header toggle sets `data-theme="light|dark"` on `<html>` and persists the choice (light / dark /
+  system) to `localStorage`. Theme is applied before first paint to avoid flash. No custom theme CSS
+  needed beyond Pico's variables.
 
 ## Testing
 
