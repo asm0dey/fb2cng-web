@@ -77,3 +77,18 @@ func child(m map[string]any, key string) map[string]any {
 	m[key] = c
 	return c
 }
+
+// deepMerge recursively merges src into dst. When both sides hold a nested map,
+// it merges them key by key; otherwise src's value replaces dst's. dst is
+// mutated in place.
+func deepMerge(dst, src map[string]any) {
+	for k, sv := range src {
+		if sm, ok := sv.(map[string]any); ok {
+			if dm, ok := dst[k].(map[string]any); ok {
+				deepMerge(dm, sm)
+				continue
+			}
+		}
+		dst[k] = sv
+	}
+}

@@ -77,3 +77,32 @@ func TestBuildConfigInvalidYAML(t *testing.T) {
 		t.Fatal("expected error for invalid yaml")
 	}
 }
+
+func TestDeepMerge(t *testing.T) {
+	dst := map[string]any{
+		"version": 1,
+		"document": map[string]any{
+			"insert_soft_hyphen": true,
+			"footnotes":          map[string]any{"mode": "floatRenumbered"},
+		},
+	}
+	src := map[string]any{
+		"document": map[string]any{
+			"insert_soft_hyphen": false,  // scalar override
+			"toc_type":           "flat", // new key
+		},
+	}
+	deepMerge(dst, src)
+
+	doc := dst["document"].(map[string]any)
+	if doc["insert_soft_hyphen"] != false {
+		t.Errorf("src should override scalar, got %v", doc["insert_soft_hyphen"])
+	}
+	if doc["toc_type"] != "flat" {
+		t.Errorf("src key should be added, got %v", doc["toc_type"])
+	}
+	fn := doc["footnotes"].(map[string]any)
+	if fn["mode"] != "floatRenumbered" {
+		t.Errorf("untouched nested key should be preserved, got %v", fn["mode"])
+	}
+}
