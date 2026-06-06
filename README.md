@@ -39,6 +39,18 @@ automatically.
 > defaults to **private**. Make it public (or grant pull access) in the repo's
 > Packages settings if anonymous pulls are wanted.
 
+### Local development
+
+Version bumps are automated with [lefthook](https://github.com/evilmartians/lefthook).
+After cloning, run once:
+
+    lefthook install
+
+Then any commit that touches app or build code (`*.go`, `go.mod`/`go.sum`,
+`Dockerfile`, `internal/web/*`) auto-increments `VERSION`. Doc-, CI-, and
+`FBC_VERSION`-only commits leave it untouched. The hook is local-only — it does
+not run in CI, so install it after cloning.
+
 ## Configuration (env)
 
 | Var | Default | Meaning |

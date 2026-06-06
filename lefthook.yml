@@ -1,0 +1,7 @@
+# Local git hooks (managed by lefthook). Run `lefthook install` once after cloning.
+# Auto-bumps the integer VERSION on commits that touch app/build code.
+# Local-only: not enforced in CI or for contributors who skip `lefthook install`.
+pre-commit:
+  commands:
+    bump-version:
+      run: scripts/bump-version.sh
