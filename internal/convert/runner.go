@@ -27,9 +27,15 @@ type FBC struct{ Bin string }
 func New(bin string) *FBC { return &FBC{Bin: bin} }
 
 func (f *FBC) DumpDefaults(ctx context.Context) ([]byte, error) {
-	var out, errb bytes.Buffer
-	cmd := exec.CommandContext(ctx, f.Bin, "dumpconfig", "--default")
-	cmd.Stdout = &out
+	dir, err := os.MkdirTemp("", "fbc-defaults-*")
+	if err != nil {
+		return nil, fmt.Errorf("fbc dumpconfig: %w", err)
+	}
+	defer os.RemoveAll(dir)
+
+	out := filepath.Join(dir, "defaults.yaml")
+	var errb bytes.Buffer
+	cmd := exec.CommandContext(ctx, f.Bin, "dumpconfig", "--default", out)
 	cmd.Stderr = &errb
 	if err := cmd.Run(); err != nil {
 		if msg := strings.TrimSpace(errb.String()); msg != "" {
@@ -37,7 +43,7 @@ func (f *FBC) DumpDefaults(ctx context.Context) ([]byte, error) {
 		}
 		return nil, fmt.Errorf("fbc dumpconfig: %w", err)
 	}
-	return out.Bytes(), nil
+	return os.ReadFile(out)
 }
 
 func (f *FBC) Convert(ctx context.Context, inputPath, format, configPath, destDir string) ([]string, error) {

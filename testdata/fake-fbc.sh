@@ -10,7 +10,22 @@ for a in "$@"; do
 done
 
 if [ "$mode" = "dump" ]; then
-  printf 'version: 1\ndocument:\n    toc_type: normal\n'
+  # Find the destination file: last arg when more than just "dumpconfig --default"
+  dest_file=""
+  prev=""
+  for a in "$@"; do
+    case "$a" in
+      dumpconfig|--default) ;;
+      *) dest_file="$a" ;;
+    esac
+    prev="$a"
+  done
+  yaml='version: 1\ndocument:\n    toc_type: normal\n'
+  if [ -n "$dest_file" ]; then
+    printf "$yaml" > "$dest_file"
+  else
+    printf "$yaml"
+  fi
   exit 0
 fi
 
