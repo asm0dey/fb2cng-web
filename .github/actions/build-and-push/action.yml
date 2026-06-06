@@ -30,7 +30,7 @@ runs:
       env:
         FBC: ${{ inputs.fbc_version }}
       run: echo "fbc=${FBC#v}" >> "$GITHUB_OUTPUT"
-    - uses: docker/build-push-action@v6
+    - uses: docker/build-push-action@v7
       with:
         context: .
         platforms: linux/amd64,linux/arm64
