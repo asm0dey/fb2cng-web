@@ -18,6 +18,7 @@ raw YAML.
 |-------|----------|
 | Deployment | Self-hosted for a few users (home server / small VPS). Light concurrency. No public-internet abuse hardening. |
 | Architecture | Single **Go service** that shells out to the bundled `fbc` binary. fbc's CLI is the stable contract. |
+| Auth | **Optional forward-auth (Authelia).** Off by default. When enabled, the app trusts `Remote-*` headers set by a reverse proxy in front of Authelia, and shows the logged-in user. No built-in user management. |
 | Config UI | **Common-options form + raw YAML editor.** Upload of full YAML supported. Not a full per-field form. |
 | Batch I/O | **Multi-file in**; each result **auto-downloads** on completion. No persistent download links, no result storage. |
 | Output formats | Selector exposes **all fbc formats** (epub2, epub3, kepub, kfx, azw8, pdf). **Default epub3.** |
@@ -108,16 +109,66 @@ Everything else is reachable through the raw YAML editor.
   system) to `localStorage`. Theme is applied before first paint to avoid flash. No custom theme CSS
   needed beyond Pico's variables.
 
+## Authentication (optional)
+
+Authentication is **off by default** and is delegated to **Authelia** via reverse-proxy forward-auth.
+The app itself runs no login flow and stores no credentials; it only *trusts identity headers* that a
+reverse proxy (sitting in front of Authelia) injects after a successful auth.
+
+### App behavior
+
+- Controlled by env, e.g. `AUTH_FORWARD_AUTH=true` (default `false`).
+- When enabled, a middleware requires a non-empty **`Remote-User`** header on every request; missing →
+  `401`. The header set Authelia provides: `Remote-User`, `Remote-Groups`, `Remote-Name`,
+  `Remote-Email`.
+- The frontend shows the logged-in user (`Remote-Name` / `Remote-User`) in the header next to the
+  theme toggle. No per-user data is stored — conversions remain stateless.
+- When disabled, no auth checks; the app behaves exactly as the base design.
+
+### Security — trust boundary (critical)
+
+Forwarded headers are only trustworthy if they **cannot reach the app except through the proxy**.
+Otherwise a direct request could spoof `Remote-User`.
+
+- The app **must not be exposed directly** when auth is on: bind it to the internal Docker network
+  only; publish just the reverse proxy.
+- Optional defense-in-depth: a `TRUSTED_PROXIES` allowlist — the middleware ignores/strips `Remote-*`
+  headers from any source IP not in the list.
+- Document this prominently; an operator who port-forwards the app bypasses auth.
+
+### Deployment recipes (optional)
+
+Provide ready-to-copy snippets in the README. Authelia endpoint: `/api/authz/forward-auth`.
+
+- **Caddy** — `forward_auth authelia:9091` block that copies `Remote-User/Groups/Email/Name` to the
+  backend on a 2xx.
+- **Traefik** — a `forwardAuth` middleware with
+  `authResponseHeaders: [Remote-User, Remote-Groups, Remote-Email, Remote-Name]` applied to the app's
+  router.
+- **Nginx Proxy Manager (NPM)** — in the proxy host's **Advanced** tab, add the Authelia
+  `auth_request` snippet: an internal `location /authelia` that `proxy_pass`es to
+  `http://authelia:9091/api/authz/auth-request`, an `auth_request /authelia;` on the main location, and
+  `auth_request_set` + `proxy_set_header` lines to forward `Remote-User/Groups/Email/Name`, plus an
+  `error_page 401` redirect to the Authelia portal. (NPM has no native forward-auth UI; the custom
+  snippet is the supported path.)
+
+A docker-compose example wiring app + Authelia + one proxy goes in the README so the optional setup is
+turnkey.
+
 ## Testing
 
 - Go handler tests against sample `fb2` and `fb2.zip` fixtures: success, corrupt fb2, bad config,
   multi-file.
 - Config-merge unit tests: form overlay over raw YAML; untouched → no config sent.
+- Auth middleware tests: disabled → all pass; enabled → missing `Remote-User` → 401, present → pass;
+  `TRUSTED_PROXIES` strips headers from untrusted source IPs.
 - Smoke test: a produced epub opens / passes `epubcheck` when available.
 
 ## Non-Goals
 
 - No public-internet abuse hardening (rate limits, quotas, isolation beyond temp dirs).
-- No user accounts, history, or stored conversion results.
+- No built-in user management or login flow — authentication is optional and fully delegated to
+  Authelia via reverse-proxy forward-auth.
+- No history or stored conversion results.
 - No full per-field config form (raw YAML covers the long tail).
 - No in-browser WASM conversion (fbc runs as a subprocess on the server).
