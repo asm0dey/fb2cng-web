@@ -1,30 +1,29 @@
 # syntax=docker/dockerfile:1
 
 # --- Stage 1: fetch the fbc binary ---
-FROM alpine:3.20 AS fbc
+FROM bellsoft/alpaquita-linux-base:stream-musl AS fbc
 ARG FBC_VERSION=v1.4.5
 ARG FBC_ASSET=fbc-linux-amd64.zip
-RUN apk add --no-cache curl unzip \
+RUN apk add --no-cache curl unzip ca-certificates \
  && curl -fsSL -o /tmp/fbc.zip \
       "https://github.com/rupor-github/fb2cng/releases/download/${FBC_VERSION}/${FBC_ASSET}" \
  && unzip -o /tmp/fbc.zip -d /opt \
  && chmod +x /opt/fbc
 
 # --- Stage 2: build the Go server ---
-FROM golang:1.26 AS build
+FROM bellsoft/alpaquita-linux-go:1.26.3-musl AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 go build -o /out/fb2cng-web .
 
-# --- Stage 3: runtime ---
-FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+# --- Stage 3: hardened runtime ---
+FROM bellsoft/hardened-base:musl
+COPY --from=fbc /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=fbc /opt/fbc /usr/local/bin/fbc
 COPY --from=build /out/fb2cng-web /usr/local/bin/fb2cng-web
-ENV FBC_BIN=/usr/local/bin/fbc PORT=8080
+ENV FBC_BIN=/usr/local/bin/fbc PORT=8080 TMPDIR=/tmp
 EXPOSE 8080
-USER nobody
+USER 65532:65532
 ENTRYPOINT ["/usr/local/bin/fb2cng-web"]

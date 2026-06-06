@@ -8,6 +8,12 @@ files, get EPUB (or kepub/kfx/azw8/pdf) back automatically.
     docker build -t fb2cng-web .
     docker run --rm -p 8080:8080 fb2cng-web
 
+> The image is built on BellSoft Alpaquita Linux (musl); the production runtime stage uses
+> the hardened Alpaquita base (`bellsoft/hardened-base:musl`) — minimal, non-root (UID 65532),
+> no shell or package manager. The app writes conversion temp files to `/tmp`; the hardened
+> base ships a writable `/tmp`, so this works out of the box. If you run with a read-only root
+> filesystem, mount a writable `/tmp` (e.g. `--tmpfs /tmp:rw,mode=1777`, as the compose example shows).
+
 Open http://localhost:8080. Defaults work out of the box; expand **Settings** to change
 format, ToC, images, footnotes, or paste/upload a full fbc YAML config.
 
