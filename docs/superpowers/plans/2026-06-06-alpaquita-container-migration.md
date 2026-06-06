@@ -4,7 +4,7 @@
 
 **Goal:** Migrate every Dockerfile stage of `fb2cng-web` to BellSoft Alpaquita Linux (musl), with the production runtime stage on the **hardened** Alpaquita base.
 
-**Architecture:** The Dockerfile has three stages — (1) fetch the `fbc` binary, (2) build the Go server, (3) runtime. We rebase each: stage 1 → `bellsoft/alpaquita-linux-base:stream-musl` (apk available for curl/unzip), stage 2 → `bellsoft/alpaquita-linux-go:1.26-musl`, stage 3 → `bellsoft/hardened-base:musl` (minimal, distroless-style, non-root). The Go binary is built `CGO_ENABLED=0` (static), so it runs on any libc; the downloaded `fbc` binary is verified static via a real in-container conversion smoke test. The CA-cert bundle is copied explicitly from the fetch stage so behavior is preserved even though the hardened base has no package manager.
+**Architecture:** The Dockerfile has three stages — (1) fetch the `fbc` binary, (2) build the Go server, (3) runtime. We rebase each: stage 1 → `bellsoft/alpaquita-linux-base:stream-musl` (apk available for curl/unzip), stage 2 → `bellsoft/alpaquita-linux-go:1.26.3-musl`, stage 3 → `bellsoft/hardened-base:musl` (minimal, distroless-style, non-root). The Go binary is built `CGO_ENABLED=0` (static), so it runs on any libc; the downloaded `fbc` binary is verified static via a real in-container conversion smoke test. The CA-cert bundle is copied explicitly from the fetch stage so behavior is preserved even though the hardened base has no package manager.
 
 **Tech Stack:** Docker multi-stage build, Go 1.26, BellSoft Alpaquita Linux (musl + hardened-base), `apk`.
 
@@ -19,7 +19,7 @@ Out of scope (confirmed with user): the upstream `authelia/authelia:4` and `cadd
 ## Key facts established during research
 
 - Alpaquita is Alpine-compatible and uses `apk`. The musl variant is 100% stock-musl compatible.
-- Build image tag `bellsoft/alpaquita-linux-go:1.26-musl` exists (matches `go.mod` `go 1.26.4`).
+- Build image: `bellsoft/alpaquita-linux-go:1.26.3-musl` (latest published Alpaquita Go musl tag; no `1.26.4-musl` exists yet). Because it ships Go 1.26.3 with `GOTOOLCHAIN=local`, the `go.mod` directive is lowered `1.26.4` → `1.26.3` to keep the build hermetic (local dev on 1.26.4 still satisfies the 1.26.3 minimum).
 - Hardened images: `bellsoft/hardened-base:musl` (runtime) and `bellsoft/hardened-go:1.25-*` (build — NOT used here; we keep the regular `alpaquita-linux-go` builder because the build stage is discarded and we need Go 1.26).
 - The hardened base is distroless-style: **no shell, no package manager**. Therefore the runtime stage must not run `apk`/`apt`; everything it needs is `COPY`-ed in.
 - Distroless/hardened convention: default non-root user **UID 65532**. The original Dockerfile used `USER nobody`; we switch to numeric `USER 65532:65532` because a hardened image may lack an `/etc/passwd` `nobody` entry.
@@ -44,7 +44,7 @@ RUN apk add --no-cache curl unzip ca-certificates \
  && chmod +x /opt/fbc
 
 # --- Stage 2: build the Go server ---
-FROM bellsoft/alpaquita-linux-go:1.26-musl AS build
+FROM bellsoft/alpaquita-linux-go:1.26.3-musl AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
@@ -150,7 +150,7 @@ git commit -m "build: migrate fbc fetch stage to alpaquita-linux-base (musl)"
 
 ### Task 3: Migrate Stage 2 (Go build) to Alpaquita Go image
 
-Swap `golang:1.26` → `bellsoft/alpaquita-linux-go:1.26-musl`. The build command is unchanged (`CGO_ENABLED=0`).
+Swap `golang:1.26` → `bellsoft/alpaquita-linux-go:1.26.3-musl`. The build command is unchanged (`CGO_ENABLED=0`).
 
 **Files:**
 - Modify: `Dockerfile:14`
@@ -163,7 +163,7 @@ FROM golang:1.26 AS build
 ```
 with:
 ```dockerfile
-FROM bellsoft/alpaquita-linux-go:1.26-musl AS build
+FROM bellsoft/alpaquita-linux-go:1.26.3-musl AS build
 ```
 
 - [ ] **Step 2: Build only Stage 2 to verify the Go toolchain and compile**
@@ -180,7 +180,7 @@ Expected: Go 1.26.x reported; `file` shows `statically linked` (CGO disabled). A
 
 ```bash
 git add Dockerfile
-git commit -m "build: migrate go build stage to alpaquita-linux-go:1.26-musl"
+git commit -m "build: migrate go build stage to alpaquita-linux-go:1.26.3-musl"
 ```
 
 ---
@@ -379,4 +379,4 @@ Expected: `clean` (every base image is now `bellsoft/...`).
 
 **Placeholder scan:** No TBD/TODO/"add error handling" placeholders. Every code/Dockerfile change is shown in full.
 
-**Type/identifier consistency:** Image tags consistent throughout — fetch `bellsoft/alpaquita-linux-base:stream-musl`, build `bellsoft/alpaquita-linux-go:1.26-musl`, runtime `bellsoft/hardened-base:musl`. Runtime user `65532:65532` used identically in the Dockerfile, `docker inspect` check, and README. Smoke endpoints (`/defaults`, `/convert`, `/`) match `internal/server/server.go`. CA bundle path `/etc/ssl/certs/ca-certificates.crt` consistent between Stage 1 verify (Task 2) and Stage 3 COPY (Task 4).
+**Type/identifier consistency:** Image tags consistent throughout — fetch `bellsoft/alpaquita-linux-base:stream-musl`, build `bellsoft/alpaquita-linux-go:1.26.3-musl`, runtime `bellsoft/hardened-base:musl`. Runtime user `65532:65532` used identically in the Dockerfile, `docker inspect` check, and README. Smoke endpoints (`/defaults`, `/convert`, `/`) match `internal/server/server.go`. CA bundle path `/etc/ssl/certs/ca-certificates.crt` consistent between Stage 1 verify (Task 2) and Stage 3 COPY (Task 4).
