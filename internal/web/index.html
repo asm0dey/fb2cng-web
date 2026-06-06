@@ -71,13 +71,15 @@
           <option value="">(default)</option>
           <option value="default">default</option>
           <option value="float">float</option>
-          <option value="floatRenumbered">floatRenumbered</option>
+          <option value="floatRenumbered" selected>floatRenumbered</option>
         </select>
       </label>
 
       <label><input id="images_optimize" type="checkbox"> Optimize images</label>
       <label>JPEG quality <input id="jpeg_quality" type="number" min="1" max="100" placeholder="default"></label>
-      <label><input id="insert_soft_hyphen" type="checkbox"> Insert soft hyphens</label>
+      <label><input id="insert_soft_hyphen" type="checkbox" checked> Insert soft hyphens</label>
+      <label><input id="cover_generate" type="checkbox" checked> Generate cover</label>
+      <label><input id="dropcaps_enable" type="checkbox" checked> Drop caps</label>
 
       <hr>
       <label>Upload settings file (.yaml)
