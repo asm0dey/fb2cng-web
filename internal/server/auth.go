@@ -11,9 +11,10 @@ const remoteUserHeader = "Remote-User"
 // ForwardAuth enforces reverse-proxy forward authentication.
 //
 // When enabled is false, requests pass through unchanged. When enabled:
-//   - if trusted is non-empty, the request's source IP must be in it; otherwise
-//     the request is rejected (so Remote-* headers can never be spoofed by a
-//     client reaching the app directly).
+//   - if trusted is non-empty, the request's source IP must appear in it;
+//     requests from any other source IP are rejected immediately (before the
+//     header is even read), so Remote-* headers can never be spoofed by a
+//     client reaching the app directly.
 //   - a non-empty Remote-User header is required; missing -> 401.
 func ForwardAuth(enabled bool, trusted []string, next http.Handler) http.Handler {
 	trustSet := map[string]bool{}
@@ -31,7 +32,7 @@ func ForwardAuth(enabled bool, trusted []string, next http.Handler) http.Handler
 				host = r.RemoteAddr
 			}
 			if !trustSet[host] {
-				http.Error(w, "forbidden: untrusted source", http.StatusUnauthorized)
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
 				return
 			}
 		}

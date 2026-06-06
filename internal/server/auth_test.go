@@ -49,6 +49,16 @@ func TestAuthUntrustedProxyRejected(t *testing.T) {
 	}
 }
 
+func TestAuthTrustedProxyMissingHeader(t *testing.T) {
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/", nil)
+	req.RemoteAddr = "10.0.0.1:5555" // trusted IP, but no Remote-User header
+	ForwardAuth(true, []string{"10.0.0.1"}, okHandler()).ServeHTTP(rec, req)
+	if rec.Code != 401 {
+		t.Fatalf("trusted source without Remote-User header should be 401, got %d", rec.Code)
+	}
+}
+
 func TestAuthTrustedProxyAccepted(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/", nil)
