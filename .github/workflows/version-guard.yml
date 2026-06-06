@@ -1,0 +1,40 @@
+name: version-guard
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+permissions:
+  contents: read
+jobs:
+  # Require a VERSION bump on any PR that touches app/build code. This is the
+  # PR-time counterpart to build.yml's post-merge safety net: it surfaces the
+  # bump in the PR diff instead of letting the bot add it after merge.
+  #
+  # We reuse scripts/bump-version.sh as the detector so the "what counts as
+  # code" rule lives in exactly one place. Running it against the PR's changed
+  # files mutates the (ephemeral) VERSION file iff a bump was owed but missing;
+  # comparing before/after tells us whether the contributor already bumped.
+  version-bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Require VERSION bump when code changes
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$BASE"
+          changed="$(git diff --name-only "origin/${BASE}...HEAD")"
+          before="$(cat VERSION)"
+          CHANGED_FILES="$changed" NO_GIT_ADD=1 bash scripts/bump-version.sh
+          after="$(cat VERSION)"
+          if [ "$before" != "$after" ]; then
+            echo "::error::PR changes app/build code but does not bump VERSION (still $before)." \
+              "Install the hook once with 'lefthook install' and re-commit, or bump VERSION manually."
+            exit 1
+          fi
+          echo "VERSION check OK (bump present, or no code changed)."
