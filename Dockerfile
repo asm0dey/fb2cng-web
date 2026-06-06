@@ -11,7 +11,7 @@ RUN apk add --no-cache curl unzip ca-certificates \
  && chmod +x /opt/fbc
 
 # --- Stage 2: build the Go server ---
-FROM golang:1.26 AS build
+FROM bellsoft/alpaquita-linux-go:1.26.3-musl AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download

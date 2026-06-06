@@ -1,5 +1,5 @@
 module fb2cng-web
 
-go 1.26.4
+go 1.26.3
 
 require gopkg.in/yaml.v3 v3.0.1
