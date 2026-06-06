@@ -151,6 +151,14 @@ func formOptions(r *http.Request) convert.FormOptions {
 		b := v == "true"
 		o.InsertSoftHyphen = &b
 	}
+	if v := r.FormValue("cover_generate"); v != "" {
+		b := v == "true"
+		o.CoverGenerate = &b
+	}
+	if v := r.FormValue("dropcaps_enable"); v != "" {
+		b := v == "true"
+		o.DropcapsEnable = &b
+	}
 	if v := r.FormValue("jpeg_quality"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			o.JpegQuality = &n

@@ -147,6 +147,57 @@ func TestConvertRunnerError(t *testing.T) {
 	}
 }
 
+// capturingRunner records the config bytes that handleConvert writes and passes
+// via -c, so we can assert the effective config end-to-end.
+type capturingRunner struct {
+	cfgBytes []byte
+}
+
+func (c *capturingRunner) DumpDefaults(context.Context) ([]byte, error) { return nil, nil }
+func (c *capturingRunner) Convert(_ context.Context, _, _, cfgPath, dest string) ([]string, error) {
+	if cfgPath != "" {
+		c.cfgBytes, _ = os.ReadFile(cfgPath)
+	}
+	os.MkdirAll(dest, 0o755)
+	out := filepath.Join(dest, "x.epub")
+	os.WriteFile(out, []byte("x"), 0o644)
+	return []string{out}, nil
+}
+
+func TestConvertWritesDefaultConfig(t *testing.T) {
+	cr := &capturingRunner{}
+	h := newTestServer(t, config.Config{MaxConcurrent: 1}, cr)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, multipartConvert(t, "book.fb2", map[string]string{"format": "epub3"}))
+	if rec.Code != 200 {
+		t.Fatalf("code=%d body=%q", rec.Code, rec.Body.String())
+	}
+	s := string(cr.cfgBytes)
+	for _, want := range []string{"mode: floatRenumbered", "insert_soft_hyphen: true", "generate: true", "enable: true"} {
+		if !strings.Contains(s, want) {
+			t.Errorf("default config not written, missing %q in:\n%s", want, s)
+		}
+	}
+}
+
+func TestConvertCheckboxFalseDisablesDefault(t *testing.T) {
+	cr := &capturingRunner{}
+	h := newTestServer(t, config.Config{MaxConcurrent: 1}, cr)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, multipartConvert(t, "book.fb2", map[string]string{
+		"format":          "epub3",
+		"cover_generate":  "false",
+		"dropcaps_enable": "false",
+	}))
+	if rec.Code != 200 {
+		t.Fatalf("code=%d", rec.Code)
+	}
+	s := string(cr.cfgBytes)
+	if !strings.Contains(s, "generate: false") || !strings.Contains(s, "enable: false") {
+		t.Errorf("explicit false should disable, got:\n%s", s)
+	}
+}
+
 // blockingRunner blocks in Convert until released, recording peak concurrency.
 type blockingRunner struct {
 	mu      sync.Mutex
