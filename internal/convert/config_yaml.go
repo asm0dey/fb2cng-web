@@ -8,37 +8,46 @@ import (
 )
 
 // FormOptions are the common knobs the web form exposes. A nil pointer means
-// "not set by the user" and is left to fbc's default / the raw YAML value.
+// "not set by the user"; BuildConfig then falls back to the application default
+// (see applicationDefaults), then to the raw YAML, then to fbc's own default.
 type FormOptions struct {
 	TocType          *string // document.toc_type
 	ImagesOptimize   *bool   // document.images.optimize
 	JpegQuality      *int    // document.images.jpeg_quality_level
 	FootnotesMode    *string // document.footnotes.mode
 	InsertSoftHyphen *bool   // document.insert_soft_hyphen
+	CoverGenerate    *bool   // document.images.cover.generate
+	DropcapsEnable   *bool   // document.dropcaps.enable
 }
 
-func (o FormOptions) empty() bool {
-	return o.TocType == nil && o.ImagesOptimize == nil && o.JpegQuality == nil &&
-		o.FootnotesMode == nil && o.InsertSoftHyphen == nil
-}
-
-// BuildConfig merges form options on top of the user's raw YAML and returns the
-// effective config to pass to fbc via -c. Form values win on conflict. Returns
-// (nil, nil) when neither raw YAML nor any form option is provided, so the
-// caller sends no -c and fbc uses its embedded defaults.
-func BuildConfig(rawYAML string, o FormOptions) ([]byte, error) {
-	if strings.TrimSpace(rawYAML) == "" && o.empty() {
-		return nil, nil
+// applicationDefaults is the web app's baseline config. It sits above fbc's
+// embedded defaults and below the user's raw YAML and form fields, so any of
+// those can override it. These are the product defaults we always apply.
+func applicationDefaults() map[string]any {
+	return map[string]any{
+		"version": 1,
+		"document": map[string]any{
+			"footnotes":          map[string]any{"mode": "floatRenumbered"},
+			"insert_soft_hyphen": true,
+			"dropcaps":           map[string]any{"enable": true},
+			"images":             map[string]any{"cover": map[string]any{"generate": true}},
+		},
 	}
+}
 
-	root := map[string]any{}
-	if rawYAML != "" {
-		if err := yaml.Unmarshal([]byte(rawYAML), &root); err != nil {
+// BuildConfig returns the effective fbc config (for -c) by layering, lowest to
+// highest precedence: application defaults, the user's raw YAML, then the form
+// fields. It always returns a non-nil config so our defaults are applied even
+// when the user supplies nothing.
+func BuildConfig(rawYAML string, o FormOptions) ([]byte, error) {
+	root := applicationDefaults()
+
+	if strings.TrimSpace(rawYAML) != "" {
+		var raw map[string]any
+		if err := yaml.Unmarshal([]byte(rawYAML), &raw); err != nil {
 			return nil, fmt.Errorf("parse config YAML: %w", err)
 		}
-	}
-	if _, ok := root["version"]; !ok {
-		root["version"] = 1
+		deepMerge(root, raw)
 	}
 
 	doc := child(root, "document")
@@ -59,6 +68,12 @@ func BuildConfig(rawYAML string, o FormOptions) ([]byte, error) {
 	}
 	if o.FootnotesMode != nil {
 		child(doc, "footnotes")["mode"] = *o.FootnotesMode
+	}
+	if o.CoverGenerate != nil {
+		child(child(doc, "images"), "cover")["generate"] = *o.CoverGenerate
+	}
+	if o.DropcapsEnable != nil {
+		child(doc, "dropcaps")["enable"] = *o.DropcapsEnable
 	}
 
 	out, err := yaml.Marshal(root)

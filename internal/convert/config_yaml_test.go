@@ -7,13 +7,25 @@ import (
 
 func ptr[T any](v T) *T { return &v }
 
-func TestBuildConfigEmpty(t *testing.T) {
+func TestBuildConfigAppliesDefaults(t *testing.T) {
 	out, err := BuildConfig("", FormOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out != nil {
-		t.Fatalf("expected nil config when nothing set, got %q", out)
+	if out == nil {
+		t.Fatal("expected defaults config, got nil")
+	}
+	s := string(out)
+	for _, want := range []string{
+		"version: 1",
+		"mode: floatRenumbered",
+		"insert_soft_hyphen: true",
+		"generate: true", // document.images.cover.generate
+		"enable: true",   // document.dropcaps.enable
+	} {
+		if !strings.Contains(s, want) {
+			t.Errorf("missing %q in:\n%s", want, s)
+		}
 	}
 }
 
@@ -104,5 +116,38 @@ func TestDeepMerge(t *testing.T) {
 	fn := doc["footnotes"].(map[string]any)
 	if fn["mode"] != "floatRenumbered" {
 		t.Errorf("untouched nested key should be preserved, got %v", fn["mode"])
+	}
+}
+
+func TestBuildConfigCoverAndDropcapsFormOverride(t *testing.T) {
+	out, err := BuildConfig("", FormOptions{
+		CoverGenerate:  ptr(false),
+		DropcapsEnable: ptr(false),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(out)
+	for _, want := range []string{"generate: false", "enable: false"} {
+		if !strings.Contains(s, want) {
+			t.Errorf("form should override default, missing %q in:\n%s", want, s)
+		}
+	}
+}
+
+func TestBuildConfigRawOverridesDefault(t *testing.T) {
+	raw := "document:\n  footnotes:\n    mode: float\n"
+	out, err := BuildConfig(raw, FormOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(out)
+	// raw "float" must win over the "floatRenumbered" default; guard against the
+	// substring trap ("mode: float" is a prefix of "mode: floatRenumbered").
+	if !strings.Contains(s, "mode: float") || strings.Contains(s, "mode: floatRenumbered") {
+		t.Errorf("raw YAML should override the footnotes default, got:\n%s", s)
+	}
+	if !strings.Contains(s, "generate: true") {
+		t.Errorf("untouched cover default should remain, got:\n%s", s)
 	}
 }
