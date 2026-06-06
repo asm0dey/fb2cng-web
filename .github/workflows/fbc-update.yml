@@ -1,0 +1,46 @@
+name: fbc-update
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+  packages: write
+concurrency:
+  group: fbc-update
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: check
+        run: bash scripts/fbc-check.sh
+
+      - name: Commit bumped FBC_VERSION
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add FBC_VERSION
+          git commit -m "chore: bump fbc to ${{ steps.check.outputs.version }}"
+          git push
+
+      - id: ver
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          echo "version=$(cat VERSION)" >> "$GITHUB_OUTPUT"
+          echo "fbc=$(cat FBC_VERSION)" >> "$GITHUB_OUTPUT"
+
+      - id: img
+        if: steps.check.outputs.changed == 'true'
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/fb2cng-web" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/build-and-push
+        if: steps.check.outputs.changed == 'true'
+        with:
+          image: ${{ steps.img.outputs.image }}
+          version: ${{ steps.ver.outputs.version }}
+          fbc_version: ${{ steps.ver.outputs.fbc }}
+          token: ${{ secrets.GITHUB_TOKEN }}
