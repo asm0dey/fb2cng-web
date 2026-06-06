@@ -59,6 +59,19 @@ func TestBuildConfigRawOnlyEnsuresVersion(t *testing.T) {
 	}
 }
 
+func TestBuildConfigFootnotesMode(t *testing.T) {
+	out, err := BuildConfig("", FormOptions{FootnotesMode: ptr("float")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(out)
+	for _, want := range []string{"version: 1", "mode: float"} {
+		if !strings.Contains(s, want) {
+			t.Errorf("missing %q in:\n%s", want, s)
+		}
+	}
+}
+
 func TestBuildConfigInvalidYAML(t *testing.T) {
 	if _, err := BuildConfig("\tnot: [valid", FormOptions{}); err == nil {
 		t.Fatal("expected error for invalid yaml")

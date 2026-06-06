@@ -2,6 +2,7 @@ package convert
 
 import (
 	"fmt"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -26,7 +27,7 @@ func (o FormOptions) empty() bool {
 // (nil, nil) when neither raw YAML nor any form option is provided, so the
 // caller sends no -c and fbc uses its embedded defaults.
 func BuildConfig(rawYAML string, o FormOptions) ([]byte, error) {
-	if rawYAML == "" && o.empty() {
+	if strings.TrimSpace(rawYAML) == "" && o.empty() {
 		return nil, nil
 	}
 
