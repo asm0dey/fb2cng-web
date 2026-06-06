@@ -18,13 +18,12 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 go build -o /out/fb2cng-web .
 
-# --- Stage 3: runtime ---
-FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+# --- Stage 3: hardened runtime ---
+FROM bellsoft/hardened-base:musl
+COPY --from=fbc /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=fbc /opt/fbc /usr/local/bin/fbc
 COPY --from=build /out/fb2cng-web /usr/local/bin/fb2cng-web
-ENV FBC_BIN=/usr/local/bin/fbc PORT=8080
+ENV FBC_BIN=/usr/local/bin/fbc PORT=8080 TMPDIR=/tmp
 EXPOSE 8080
-USER nobody
+USER 65532:65532
 ENTRYPOINT ["/usr/local/bin/fb2cng-web"]
