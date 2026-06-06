@@ -7,6 +7,10 @@ services:
     environment:
       AUTH_FORWARD_AUTH: "true"
       TRUSTED_PROXIES: ""   # optional: set to caddy's container IP for defense-in-depth
+    # Optional: only needed if you run with a read-only root filesystem.
+    # The hardened base already ships a writable /tmp, so conversions work without this.
+    tmpfs:
+      - /tmp:rw,mode=1777
     expose:
       - "8080"
     # No "ports:" — never expose the app directly when auth is on.
