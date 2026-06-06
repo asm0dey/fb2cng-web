@@ -1,0 +1,35 @@
+name: build-and-push
+description: Build and push the multi-arch fb2cng-web image (amd64 + arm64) to GHCR.
+inputs:
+  image:
+    description: Full image name without tag (e.g. ghcr.io/owner/fb2cng-web).
+    required: true
+  version:
+    description: Integer app version (from the VERSION file).
+    required: true
+  fbc_version:
+    description: Pinned fbc version (from the FBC_VERSION file).
+    required: true
+  token:
+    description: Registry token (GITHUB_TOKEN with packages:write).
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: docker/setup-qemu-action@v3
+    - uses: docker/setup-buildx-action@v3
+    - uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ inputs.token }}
+    - uses: docker/build-push-action@v6
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: true
+        build-args: |
+          FBC_VERSION=${{ inputs.fbc_version }}
+        tags: |
+          ${{ inputs.image }}:${{ inputs.version }}-${{ inputs.fbc_version }}
+          ${{ inputs.image }}:latest

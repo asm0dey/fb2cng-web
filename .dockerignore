@@ -5,3 +5,6 @@ docs
 testdata
 fb2cng-web
 *.log
+.github
+scripts
+lefthook.yml

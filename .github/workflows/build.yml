@@ -1,0 +1,28 @@
+name: build
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: ver
+        run: |
+          echo "version=$(cat VERSION)" >> "$GITHUB_OUTPUT"
+          echo "fbc=$(cat FBC_VERSION)" >> "$GITHUB_OUTPUT"
+      - id: img
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/fb2cng-web" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/build-and-push
+        with:
+          image: ${{ steps.img.outputs.image }}
+          version: ${{ steps.ver.outputs.version }}
+          fbc_version: ${{ steps.ver.outputs.fbc }}
+          token: ${{ secrets.GITHUB_TOKEN }}

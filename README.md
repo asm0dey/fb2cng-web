@@ -17,6 +17,40 @@ files, get EPUB (or kepub/kfx/azw8/pdf) back automatically.
 Open http://localhost:8080. Defaults work out of the box; expand **Settings** to change
 format, ToC, images, footnotes, or paste/upload a full fbc YAML config.
 
+## Versioning & images
+
+Images are published to GitHub Container Registry on every push to `main` and
+whenever a new [`fbc`](https://github.com/rupor-github/fb2cng) release appears.
+
+Tags follow `<app-version>-<fbc-version>`, e.g. `1-v1.4.5`, plus a moving `latest`:
+
+    docker pull ghcr.io/<owner>/fb2cng-web:latest
+    docker pull ghcr.io/<owner>/fb2cng-web:1-v1.4.5
+
+- **`VERSION`** holds the integer app version. Bump it by hand when the app code changes.
+- **`FBC_VERSION`** holds the pinned `fbc` release. A daily GitHub Actions job
+  (`fbc-update`) checks upstream; on a new release it rewrites `FBC_VERSION`,
+  commits the bump, and publishes a fresh `<VERSION>-<new-fbc>` image (and `latest`).
+
+Images are multi-arch (`linux/amd64`, `linux/arm64`); Docker pulls the right one
+automatically.
+
+> First-time setup: the GHCR package is created on the first successful push and
+> defaults to **private**. Make it public (or grant pull access) in the repo's
+> Packages settings if anonymous pulls are wanted.
+
+### Local development
+
+Version bumps are automated with [lefthook](https://github.com/evilmartians/lefthook).
+After cloning, run once:
+
+    lefthook install
+
+Then any commit that touches app or build code (`*.go`, `go.mod`/`go.sum`,
+`Dockerfile`, `internal/web/*`) auto-increments `VERSION`. Doc-, CI-, and
+`FBC_VERSION`-only commits leave it untouched. The hook is local-only — it does
+not run in CI, so install it after cloning.
+
 ## Configuration (env)
 
 | Var | Default | Meaning |
