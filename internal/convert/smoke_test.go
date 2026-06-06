@@ -30,14 +30,18 @@ func TestSmokeRealConversion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	os.WriteFile(in, data, 0o644)
+	if err := os.WriteFile(in, data, 0o644); err != nil {
+		t.Fatal(err)
+	}
 
 	cfg, err := BuildConfig("", FormOptions{TocType: strptr("flat")})
 	if err != nil {
 		t.Fatal(err)
 	}
 	cfgPath := filepath.Join(dir, "config.yaml")
-	os.WriteFile(cfgPath, cfg, 0o644)
+	if err := os.WriteFile(cfgPath, cfg, 0o644); err != nil {
+		t.Fatal(err)
+	}
 
 	outs, err := New(bin).Convert(context.Background(), in, "epub3", cfgPath, filepath.Join(dir, "out"))
 	if err != nil {
@@ -55,9 +59,12 @@ func TestSmokeRealConversion(t *testing.T) {
 	if len(zr.File) == 0 || zr.File[0].Name != "mimetype" {
 		t.Fatalf("epub missing mimetype entry")
 	}
-	rc, _ := zr.File[0].Open()
+	rc, err := zr.File[0].Open()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rc.Close()
 	mt, _ := io.ReadAll(rc)
-	rc.Close()
 	if !bytes.Equal(mt, []byte("application/epub+zip")) {
 		t.Fatalf("unexpected mimetype: %q", mt)
 	}
