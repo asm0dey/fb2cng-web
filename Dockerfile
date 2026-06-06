@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
 
 # --- Stage 1: fetch the fbc binary ---
-FROM alpine:3.20 AS fbc
+FROM bellsoft/alpaquita-linux-base:stream-musl AS fbc
 ARG FBC_VERSION=v1.4.5
 ARG FBC_ASSET=fbc-linux-amd64.zip
-RUN apk add --no-cache curl unzip \
+RUN apk add --no-cache curl unzip ca-certificates \
  && curl -fsSL -o /tmp/fbc.zip \
       "https://github.com/rupor-github/fb2cng/releases/download/${FBC_VERSION}/${FBC_ASSET}" \
  && unzip -o /tmp/fbc.zip -d /opt \
