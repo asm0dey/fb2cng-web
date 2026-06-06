@@ -7,13 +7,43 @@ on:
       - "docs/**"
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
   packages: write
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Safety net: a push to main may carry code that never went through the local
+      # lefthook bump (GitHub merge/squash button, or a contributor without the hook).
+      # Diff the push range and bump VERSION here if it wasn't already bumped. The
+      # bump-version.sh guard skips when VERSION is already in the diff (local path),
+      # so this only fires when the local hook didn't. The token-authored push does
+      # not retrigger workflows, so there is no loop.
+      - name: Auto-bump VERSION for un-bumped code on main
+        if: github.event_name == 'push'
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          if [ -z "$BEFORE" ] || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            range="HEAD~1..HEAD"
+          else
+            range="${BEFORE}..${AFTER}"
+          fi
+          changed="$(git diff --name-only "$range")"
+          CHANGED_FILES="$changed" NO_GIT_ADD=1 bash scripts/bump-version.sh
+          if ! git diff --quiet HEAD -- VERSION; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add VERSION
+            git commit -m "chore: bump VERSION to $(cat VERSION) [skip ci]"
+            git push origin HEAD:main
+          fi
+
       - id: ver
         run: |
           echo "version=$(cat VERSION)" >> "$GITHUB_OUTPUT"
