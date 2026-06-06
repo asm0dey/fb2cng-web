@@ -20,12 +20,14 @@ jobs:
 
       - name: Commit bumped FBC_VERSION
         if: steps.check.outputs.changed == 'true'
+        env:
+          FBC_VER: ${{ steps.check.outputs.version }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add FBC_VERSION
-          git commit -m "chore: bump fbc to ${{ steps.check.outputs.version }}"
-          git push
+          git commit -m "chore: bump fbc to ${FBC_VER}"
+          git push origin HEAD:main
 
       - id: ver
         if: steps.check.outputs.changed == 'true'
