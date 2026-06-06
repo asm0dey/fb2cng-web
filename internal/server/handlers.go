@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -121,6 +122,7 @@ func (s *Server) handleConvert(w http.ResponseWriter, r *http.Request) {
 
 	outs, err := s.runner.Convert(r.Context(), inPath, format, cfgPath, destDir)
 	if err != nil {
+		log.Printf("convert %q: %v", inName, err)
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
@@ -167,7 +169,9 @@ func streamFile(w http.ResponseWriter, path string) {
 	name := filepath.Base(path)
 	w.Header().Set("Content-Type", contentTypeFor(name))
 	w.Header().Set("Content-Disposition", contentDisposition(name))
-	io.Copy(w, f)
+	if _, err := io.Copy(w, f); err != nil {
+		log.Printf("stream %s: %v", path, err)
+	}
 }
 
 func streamZip(w http.ResponseWriter, zipName string, paths []string) {
@@ -185,7 +189,9 @@ func streamZip(w http.ResponseWriter, zipName string, paths []string) {
 			f.Close()
 			return
 		}
-		io.Copy(hw, f)
+		if _, err := io.Copy(hw, f); err != nil {
+			log.Printf("stream zip entry %s: %v", p, err)
+		}
 		f.Close()
 	}
 }

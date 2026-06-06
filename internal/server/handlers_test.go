@@ -14,7 +14,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"fb2cng-web/internal/config"
 	"fb2cng-web/internal/convert"
@@ -154,6 +153,7 @@ type blockingRunner struct {
 	cur     int
 	peak    int
 	release chan struct{}
+	entered chan struct{}
 }
 
 func (b *blockingRunner) DumpDefaults(context.Context) ([]byte, error) { return nil, nil }
@@ -164,6 +164,7 @@ func (b *blockingRunner) Convert(ctx context.Context, _, _, _, dest string) ([]s
 		b.peak = b.cur
 	}
 	b.mu.Unlock()
+	b.entered <- struct{}{}
 	<-b.release
 	b.mu.Lock()
 	b.cur--
@@ -175,10 +176,13 @@ func (b *blockingRunner) Convert(ctx context.Context, _, _, _, dest string) ([]s
 }
 
 func TestConvertConcurrencyCap(t *testing.T) {
-	br := &blockingRunner{release: make(chan struct{})}
+	const n = 5
+	br := &blockingRunner{
+		release: make(chan struct{}),
+		entered: make(chan struct{}, n),
+	}
 	h := newTestServer(t, config.Config{MaxConcurrent: 2}, br)
 
-	const n = 5
 	var wg sync.WaitGroup
 	for i := 0; i < n; i++ {
 		wg.Add(1)
@@ -188,7 +192,11 @@ func TestConvertConcurrencyCap(t *testing.T) {
 			h.ServeHTTP(rec, multipartConvert(t, "book.fb2", map[string]string{"format": "epub3"}))
 		}()
 	}
-	time.Sleep(100 * time.Millisecond) // let goroutines reach the semaphore
+	// Wait until exactly MaxConcurrent (2) goroutines have entered Convert,
+	// confirming the semaphore cap is saturated — deterministic, no sleep.
+	for i := 0; i < 2; i++ {
+		<-br.entered
+	}
 	close(br.release)
 	wg.Wait()
 
