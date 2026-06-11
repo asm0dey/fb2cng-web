@@ -41,7 +41,9 @@ jobs:
           git checkout -b "$BR"
           git add FBC_VERSION
           git commit -m "chore: bump fbc to ${FBC_VER}"
-          git push --force-with-lease origin "$BR"
+          # The bot solely owns fbc-bump-* branches; force past any leftover from
+          # a prior failed run (a fresh runner has no tracking ref for --lease).
+          git push --force origin "$BR"
           gh pr create --base main --head "$BR" \
             --title "chore: bump fbc to ${FBC_VER}" \
             --body "Automated fbc bump to ${FBC_VER}. FBC_VERSION-only change; no VERSION bump owed."
