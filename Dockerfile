@@ -11,7 +11,7 @@ RUN apk add --no-cache ca-certificates curl unzip \
  && chmod +x /opt/fbc
 
 # --- Stage 2: cross-compile the Go server (runs on the build host) ---
-FROM --platform=$BUILDPLATFORM bellsoft/alpaquita-linux-go:1.26.3-musl AS build
+FROM --platform=$BUILDPLATFORM bellsoft/alpaquita-linux-go:1.26.5-musl AS build
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /src
