@@ -202,3 +202,47 @@ func (s *Store) writeMeta(m meta) error {
 	}
 	return os.Rename(tmp, s.metaPath())
 }
+
+// Delete removes a preset, rejecting the Builtin and the current default.
+func (s *Store) Delete(id string) error {
+	if id == "" || id == BuiltinID {
+		return fmt.Errorf("cannot delete built-in preset")
+	}
+	if !validID(id) {
+		return fmt.Errorf("invalid preset id %q", id)
+	}
+	if s.DefaultID() == id {
+		return fmt.Errorf("cannot delete the default preset")
+	}
+	return os.Remove(s.path(id))
+}
+
+// Duplicate copies id's overrides into a new preset named newName.
+func (s *Store) Duplicate(id, newName string) (*Preset, error) {
+	src, err := s.Get(id)
+	if err != nil {
+		return nil, err
+	}
+	dup, err := s.Create(newName)
+	if err != nil {
+		return nil, err
+	}
+	dup.Overrides = deepCopy(src.Overrides)
+	if err := s.write(dup); err != nil {
+		return nil, err
+	}
+	return dup, nil
+}
+
+// deepCopy clones a nested override map so callers cannot mutate the source.
+func deepCopy(m map[string]any) map[string]any {
+	out := make(map[string]any, len(m))
+	for k, v := range m {
+		if sub, ok := v.(map[string]any); ok {
+			out[k] = deepCopy(sub)
+			continue
+		}
+		out[k] = v
+	}
+	return out
+}
