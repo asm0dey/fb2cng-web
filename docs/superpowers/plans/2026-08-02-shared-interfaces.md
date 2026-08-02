@@ -161,9 +161,32 @@ Prints a drift report vs the existing options.json (added/removed/retyped keys).
 - htmx (CDN) drives two swap regions only: the convert-card (`#convert-card`,
   polls `GET /jobs/{id}`) and the effective-config pane (`#effective`).
 - Routes are added to `Server.Handler()` in `internal/server/server.go`.
-- `Server` gains fields: `jobs *jobs.Store`, `presets *presets.Store`,
-  `schema *schema.Schema`, `tpl *template.Template`. Constructor `New(...)`
-  signature is extended; `main.go` wires the new stores from new env vars.
+- **Server fields grow PER-PLAN — do NOT front-load all of them in Plan 1.**
+  A package can't be imported before it exists, so each plan adds its own field
+  and widens `New(...)` when its package lands:
+  - Plan 1: `Server{ cfg, runner, static, tpl *template.Template, jobs *jobs.Store }`;
+    `New(cfg config.Config, runner convert.Runner, static fs.FS, tpl *template.Template, jobs *jobs.Store) *Server`.
+    **No `presets`/`schema` fields, no `interface{}` placeholders.**
+  - Plan 2: append field `presets *presets.Store`; new signature
+    `New(cfg, runner, static, tpl, jobs, presets)`. Update `main.go` + any Plan 1
+    test helper that calls `New`.
+  - Plan 3: append field `schema *schema.Schema`; new signature
+    `New(cfg, runner, static, tpl, jobs, presets, schema)`. Update `main.go`.
+  Real wiring in `main.go` is actual code, never a `// pass … here` comment.
+- **One layout, canonical field names (Plan 1 owns; Plans 2 & 3 conform):**
+  - `base.gohtml`: `{{define "base"}}` renders the shared chrome (Google-Fonts
+    links, pre-paint theme script, header with `fb2→epub` + Convert/Settings nav
+    whose active tab is chosen from **`.Tab`** ∈ {`"convert"`,`"settings"`}, theme
+    toggle), then `{{template .ContentName .}}` for the page body.
+  - Each page file defines exactly one uniquely-named content template:
+    `{{define "convert"}}` (Plan 1), `{{define "settings"}}` (Plan 2 presets list),
+    `{{define "editor"}}` (Plan 3 preset editor). No second `content` block, no
+    `head`/`foot` partials, no `.Active` field, no standalone full-`<html>` editor.
+  - Every page VM embeds a common header struct
+    `type layout struct { Tab, ContentName string; User string }` and is rendered
+    via a Plan 1 helper `func (s *Server) render(w http.ResponseWriter, data any)`
+    that executes the `"base"` template. htmx partials (`_convert_card`,
+    `_effective`, …) render directly, not through `base`.
 - New env (in `internal/config`): `PRESETS_DIR`, `JOBS_DIR`, `JOBS_TTL` (duration).
 - CSS: single `internal/web/static/app.css`, 8 tokens on `:root` + one
   `@media (prefers-color-scheme: dark)`; `data-theme` attribute overrides. Served
