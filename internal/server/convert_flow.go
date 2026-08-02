@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -91,6 +92,7 @@ func (s *Server) handleConvert(w http.ResponseWriter, r *http.Request) {
 
 	// Persist inputs synchronously (the request body will not survive the goroutine).
 	var names []string
+	used := map[string]bool{}
 	for _, fh := range files {
 		name := filepath.Base(fh.Filename)
 		lower := strings.ToLower(name)
@@ -98,6 +100,13 @@ func (s *Server) handleConvert(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "only .fb2 and .zip files are accepted", http.StatusUnprocessableEntity)
 			return
 		}
+		// De-dupe colliding basenames within this batch (e.g. two uploads both
+		// named "book.fb2"): each persisted input and FileResult.Input must be
+		// unique, or the second os.Create below overwrites the first upload
+		// and the two StatePending rows sharing one Input hang the job (only
+		// the first ever goes terminal — see updateFile).
+		name = uniqueInputName(name, used)
+		used[name] = true
 		src, err := fh.Open()
 		if err != nil {
 			http.Error(w, "server error", http.StatusInternalServerError)
@@ -146,6 +155,32 @@ func (s *Server) handleConvert(w http.ResponseWriter, r *http.Request) {
 
 	st, _ = s.jobs.Load(id)
 	s.renderPartial(w, "convert_card", cardFor(st))
+}
+
+// uniqueInputName returns name, suffixed (book.fb2 -> book-1.fb2 ->
+// book-2.fb2, ...) against the set of basenames already used in this batch,
+// until it is unique. filepath.Base collisions between distinct uploads
+// would otherwise overwrite each other's persisted input file and share one
+// FileResult row.
+func uniqueInputName(name string, used map[string]bool) string {
+	if !used[name] {
+		return name
+	}
+	ext := filepath.Ext(name)
+	stem := strings.TrimSuffix(name, ext)
+	// Strip any pre-existing "-N" suffix so repeated collisions increment
+	// cleanly (book-1.fb2 colliding again yields book-2.fb2, not book-1-1.fb2).
+	if i := strings.LastIndex(stem, "-"); i >= 0 {
+		if _, err := strconv.Atoi(stem[i+1:]); err == nil {
+			stem = stem[:i]
+		}
+	}
+	for n := 1; ; n++ {
+		candidate := stem + "-" + strconv.Itoa(n) + ext
+		if !used[candidate] {
+			return candidate
+		}
+	}
 }
 
 // copyAndClose copies src into dst and closes both, returning the first error.
