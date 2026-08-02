@@ -192,3 +192,37 @@ func TestMeEnabled(t *testing.T) {
 		t.Fatalf("unexpected /me body: %v", body)
 	}
 }
+
+func TestJobStatusRendersCard(t *testing.T) {
+	h := newTestServer(t, config.Config{MaxConcurrent: 2}, fakeFbcRunner(t))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, multipartConvert(t, "book.fb2", map[string]string{"format": "epub3", "preset": "defaults"}))
+	id := extractJobID(t, rec.Body.String())
+	waitDone(t, h, id)
+
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/jobs/"+id, nil))
+	if rec.Code != 200 {
+		t.Fatalf("job status code=%d", rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, `id="convert-card"`) {
+		t.Fatalf("missing convert-card:\n%s", body)
+	}
+	if !strings.Contains(body, "/jobs/"+id+"/download/book.epub") {
+		t.Fatalf("missing download link:\n%s", body)
+	}
+	// Done card must not carry the polling trigger.
+	if strings.Contains(body, `hx-trigger="load`) {
+		t.Fatalf("done card should not keep polling:\n%s", body)
+	}
+}
+
+func TestJobStatusUnknownID(t *testing.T) {
+	h := newTestServer(t, config.Config{MaxConcurrent: 1}, fakeFbcRunner(t))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/jobs/deadbeefdeadbeef", nil))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("unknown job should 404, got %d", rec.Code)
+	}
+}
