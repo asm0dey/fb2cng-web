@@ -23,6 +23,8 @@ type Runner interface {
 	// into logPath (created/truncated). Returns outputs even on fbc failure when
 	// partial output exists; err is non-nil on non-zero exit.
 	ConvertLogged(ctx context.Context, inputPath, format, configPath, destDir, logPath string) ([]string, error)
+	// Validate probes whether fbc can parse configPath. Returns nil when valid.
+	Validate(ctx context.Context, configPath string) error
 }
 
 // FBC shells out to the fbc binary.
@@ -105,6 +107,29 @@ func (f *FBC) ConvertLogged(ctx context.Context, inputPath, format, configPath, 
 		return nil, collectErr
 	}
 	return outs, nil
+}
+
+// Validate probes whether fbc can parse configPath by running a dumpconfig with
+// -c pointed at it. A non-zero exit (parse error) is surfaced as an error whose
+// message includes fbc's stderr. -c is a GLOBAL flag and precedes the subcommand.
+func (f *FBC) Validate(ctx context.Context, configPath string) error {
+	dir, err := os.MkdirTemp("", "fbc-validate-*")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+
+	out := filepath.Join(dir, "merged.yaml")
+	var errb bytes.Buffer
+	cmd := exec.CommandContext(ctx, f.Bin, "-c", configPath, "dumpconfig", out)
+	cmd.Stderr = &errb
+	if err := cmd.Run(); err != nil {
+		if msg := strings.TrimSpace(errb.String()); msg != "" {
+			return fmt.Errorf("invalid config: %s", msg)
+		}
+		return fmt.Errorf("invalid config: %w", err)
+	}
+	return nil
 }
 
 // collectOutputs returns regular, non-hidden files under destDir.

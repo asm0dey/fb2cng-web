@@ -12,13 +12,21 @@ for a in "$@"; do
 done
 
 if [ "$mode" = "dump" ]; then
+  # Handle both `dumpconfig --default <out>` and `-c <cfg> dumpconfig <out>`.
+  cfg=""
   dest_file=""
-  for a in "$@"; do
-    case "$a" in
-      dumpconfig|--default) ;;
-      *) dest_file="$a" ;;
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -c) cfg="$2"; shift 2; continue ;;
+      dumpconfig|--default) shift; continue ;;
+      *) dest_file="$1"; shift ;;
     esac
   done
+  # Validation probe: reject a config carrying the __invalid marker.
+  if [ -n "$cfg" ] && grep -q '__invalid' "$cfg" 2>/dev/null; then
+    echo "fake-fbc: invalid config: $cfg" >&2
+    exit 1
+  fi
   yaml='version: 1\ndocument:\n    toc_type: normal\n'
   if [ -n "$dest_file" ]; then
     printf "$yaml" > "$dest_file"

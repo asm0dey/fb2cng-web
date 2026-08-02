@@ -41,6 +41,7 @@ func (s stubRunner) Convert(context.Context, string, string, string, string) ([]
 func (s stubRunner) ConvertLogged(context.Context, string, string, string, string, string) ([]string, error) {
 	return s.outputs, s.err
 }
+func (s stubRunner) Validate(context.Context, string) error { return nil }
 
 func newTestServer(t *testing.T, cfg config.Config, r convert.Runner) http.Handler {
 	t.Helper()
@@ -121,6 +122,8 @@ func (c *countingRunner) ConvertLogged(ctx context.Context, inputPath, format, c
 	_ = os.WriteFile(logPath, []byte(logLines), 0o644)
 	return outs, err
 }
+
+func (c *countingRunner) Validate(ctx context.Context, configPath string) error { return nil }
 
 func (c *countingRunner) run(inputPath, format, configPath, destDir string) ([]string, string, error) {
 	base := filepath.Base(inputPath)
