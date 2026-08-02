@@ -20,7 +20,7 @@ type settingsData struct {
 func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 	list, err := s.presets.List()
 	if err != nil {
-		http.Error(w, "server error", http.StatusInternalServerError)
+		http.Error(w, msgServerError, http.StatusInternalServerError)
 		return
 	}
 	def := s.presets.DefaultID()

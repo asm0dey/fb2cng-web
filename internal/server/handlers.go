@@ -15,15 +15,21 @@ var allowedFormats = map[string]bool{
 	"epub2": true, "epub3": true, "kepub": true, "kfx": true, "azw8": true, "pdf": true,
 }
 
+const (
+	hdrContentType = "Content-Type"
+	ctHTML         = "text/html; charset=utf-8"
+	msgServerError = "server error"
+)
+
 func streamFile(w http.ResponseWriter, path string) {
 	f, err := os.Open(path)
 	if err != nil {
-		http.Error(w, "server error", http.StatusInternalServerError)
+		http.Error(w, msgServerError, http.StatusInternalServerError)
 		return
 	}
 	defer f.Close()
 	name := filepath.Base(path)
-	w.Header().Set("Content-Type", contentTypeFor(name))
+	w.Header().Set(hdrContentType, contentTypeFor(name))
 	w.Header().Set("Content-Disposition", contentDisposition(name))
 	if _, err := io.Copy(w, f); err != nil {
 		log.Printf("stream %s: %v", path, err)

@@ -9,8 +9,8 @@ if (themeSel) {
   themeSel.addEventListener('change', () => {
     const v = themeSel.value;
     localStorage.setItem('theme', v);
-    if (v === 'system') document.documentElement.removeAttribute('data-theme');
-    else document.documentElement.setAttribute('data-theme', v);
+    if (v === 'system') delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = v;
   });
 }
 

@@ -9,7 +9,7 @@ set -euo pipefail
 VERSION_FILE="${VERSION_FILE:-VERSION}"
 vf_base="$(basename "$VERSION_FILE")"
 
-if [ -n "${CHANGED_FILES+x}" ]; then
+if [[ -n "${CHANGED_FILES+x}" ]]; then
   changed="$CHANGED_FILES"
 else
   changed="$(git diff --cached --name-only)"
@@ -37,6 +37,6 @@ next=$((current + 1))
 printf '%s\n' "$next" > "$VERSION_FILE"
 echo "bump-version: $current -> $next"
 
-if [ "${NO_GIT_ADD:-}" != "1" ]; then
+if [[ "${NO_GIT_ADD:-}" != "1" ]]; then
   git add "$VERSION_FILE"
 fi

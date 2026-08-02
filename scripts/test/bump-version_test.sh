@@ -8,7 +8,11 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 vf="$tmp/VERSION"
 fail=0
-assert_eq() { if [ "$1" != "$2" ]; then echo "FAIL: $3 (got '$1' want '$2')"; fail=1; else echo "ok: $3"; fi; }
+assert_eq() {
+  local actual=$1 expected=$2 msg=$3
+  if [[ "$actual" != "$expected" ]]; then echo "FAIL: $msg (got '$actual' want '$expected')" >&2; fail=1; else echo "ok: $msg"; fi
+  return 0
+}
 
 # Code staged -> bump 1 -> 2
 echo 1 > "$vf"
@@ -43,7 +47,7 @@ assert_eq "$(cat "$vf")" "4" "FBC_VERSION-only does not bump"
 # non-integer VERSION -> error exit 1
 echo "v1.2" > "$vf"
 if CHANGED_FILES="main.go" VERSION_FILE="$vf" NO_GIT_ADD=1 bash "$script" >/dev/null 2>&1; then
-  echo "FAIL: non-integer VERSION should error"; fail=1
+  echo "FAIL: non-integer VERSION should error" >&2; fail=1
 else
   echo "ok: non-integer VERSION errors"
 fi

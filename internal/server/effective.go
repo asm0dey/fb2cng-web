@@ -62,7 +62,7 @@ func (s *Server) handlePresetEffective(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) renderEffective(w http.ResponseWriter, vm effectiveVM) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set(hdrContentType, ctHTML)
 	if err := s.tpl.ExecuteTemplate(w, "_effective", vm); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

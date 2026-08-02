@@ -107,13 +107,13 @@ func (s *Server) handleConvert(w http.ResponseWriter, r *http.Request) {
 
 	id, err := s.jobs.Create(preset, format)
 	if err != nil {
-		http.Error(w, "server error", http.StatusInternalServerError)
+		http.Error(w, msgServerError, http.StatusInternalServerError)
 		return
 	}
 
 	cfgPath := filepath.Join(s.jobs.Dir, id, "config.yaml")
 	if err := os.WriteFile(cfgPath, cfgBytes, 0o644); err != nil {
-		http.Error(w, "server error", http.StatusInternalServerError)
+		http.Error(w, msgServerError, http.StatusInternalServerError)
 		return
 	}
 
@@ -132,17 +132,17 @@ func (s *Server) handleConvert(w http.ResponseWriter, r *http.Request) {
 		used[name] = true
 		src, err := fh.Open()
 		if err != nil {
-			http.Error(w, "server error", http.StatusInternalServerError)
+			http.Error(w, msgServerError, http.StatusInternalServerError)
 			return
 		}
 		dst, err := os.Create(s.jobs.InputPath(id, name))
 		if err != nil {
 			src.Close()
-			http.Error(w, "server error", http.StatusInternalServerError)
+			http.Error(w, msgServerError, http.StatusInternalServerError)
 			return
 		}
 		if _, err := copyAndClose(dst, src); err != nil {
-			http.Error(w, "server error", http.StatusInternalServerError)
+			http.Error(w, msgServerError, http.StatusInternalServerError)
 			return
 		}
 		names = append(names, name)
@@ -151,14 +151,14 @@ func (s *Server) handleConvert(w http.ResponseWriter, r *http.Request) {
 	// Seed pending file rows.
 	st, err := s.jobs.Load(id)
 	if err != nil {
-		http.Error(w, "server error", http.StatusInternalServerError)
+		http.Error(w, msgServerError, http.StatusInternalServerError)
 		return
 	}
 	for _, n := range names {
 		st.Files = append(st.Files, jobs.FileResult{Input: n, State: jobs.StatePending})
 	}
 	if err := s.jobs.Save(id, st); err != nil {
-		http.Error(w, "server error", http.StatusInternalServerError)
+		http.Error(w, msgServerError, http.StatusInternalServerError)
 		return
 	}
 
@@ -373,7 +373,7 @@ func (s *Server) handleZip(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set(hdrContentType, "application/zip")
 	w.Header().Set("Content-Disposition", contentDisposition(id+".zip"))
 	if err := s.jobs.WriteZip(id, w); err != nil {
 		// Header already sent; log-only. (self-hosted, low-hardening)
@@ -398,7 +398,7 @@ func (s *Server) handleLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer f.Close()
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set(hdrContentType, "text/plain; charset=utf-8")
 	_, _ = ioCopyWriter(w, f)
 }
 
@@ -438,7 +438,7 @@ func (s *Server) handleRetry(w http.ResponseWriter, r *http.Request) {
 	}
 	cfgPath := filepath.Join(s.jobs.Dir, id, "retry-config.yaml")
 	if err := os.WriteFile(cfgPath, cfgBytes, 0o644); err != nil {
-		http.Error(w, "server error", http.StatusInternalServerError)
+		http.Error(w, msgServerError, http.StatusInternalServerError)
 		return
 	}
 
@@ -474,7 +474,7 @@ func (s *Server) handleRetry(w http.ResponseWriter, r *http.Request) {
 	saveErr := s.jobs.Save(id, st)
 	s.mu.Unlock()
 	if saveErr != nil {
-		http.Error(w, "server error", http.StatusInternalServerError)
+		http.Error(w, msgServerError, http.StatusInternalServerError)
 		return
 	}
 
