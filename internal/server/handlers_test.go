@@ -20,6 +20,7 @@ import (
 	"fb2cng-web/internal/config"
 	"fb2cng-web/internal/convert"
 	"fb2cng-web/internal/jobs"
+	"fb2cng-web/internal/presets"
 	"fb2cng-web/internal/web"
 )
 
@@ -52,7 +53,8 @@ func newTestServer(t *testing.T, cfg config.Config, r convert.Runner) http.Handl
 	}
 	testJobsDir = cfg.JobsDir
 	store := jobs.NewStore(cfg.JobsDir, time.Hour)
-	return New(cfg, r, web.FS, tpl, store).Handler()
+	presetStore := presets.NewStore(t.TempDir())
+	return New(cfg, r, web.FS, tpl, store, presetStore).Handler()
 }
 
 // multipartConvert builds a POST /convert request with one uploaded file and

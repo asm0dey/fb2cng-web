@@ -9,35 +9,38 @@ import (
 	"fb2cng-web/internal/config"
 	"fb2cng-web/internal/convert"
 	"fb2cng-web/internal/jobs"
+	"fb2cng-web/internal/presets"
 )
 
 // Server wires configuration, the fbc runner, the job store, and the templated frontend.
-// Plan 2 appends `presets *presets.Store`; Plan 3 appends `schema *schema.Schema`.
+// Plan 3 appends `schema *schema.Schema`.
 type Server struct {
-	cfg    config.Config
-	runner convert.Runner
-	static fs.FS
-	sem    chan struct{}
-	tpl    *template.Template
-	jobs   *jobs.Store
-	mu     sync.Mutex // guards status.json read-modify-write (self-hosted, low-hardening)
+	cfg     config.Config
+	runner  convert.Runner
+	static  fs.FS
+	sem     chan struct{}
+	tpl     *template.Template
+	jobs    *jobs.Store
+	presets *presets.Store
+	mu      sync.Mutex // guards status.json read-modify-write (self-hosted, low-hardening)
 }
 
-// New constructs a Server. Plans 2 and 3 widen this signature (adding presets, then
-// schema) when those packages land; Plan 1 takes exactly five parameters.
+// New constructs a Server. Plan 3 widens this signature (adding schema) when that
+// package lands; Plan 1 took five parameters, Plan 2 appends presets as the sixth.
 func New(cfg config.Config, runner convert.Runner, static fs.FS,
-	tpl *template.Template, jobStore *jobs.Store) *Server {
+	tpl *template.Template, jobStore *jobs.Store, presetStore *presets.Store) *Server {
 	n := cfg.MaxConcurrent
 	if n < 1 {
 		n = 1
 	}
 	return &Server{
-		cfg:    cfg,
-		runner: runner,
-		static: static,
-		sem:    make(chan struct{}, n),
-		tpl:    tpl,
-		jobs:   jobStore,
+		cfg:     cfg,
+		runner:  runner,
+		static:  static,
+		sem:     make(chan struct{}, n),
+		tpl:     tpl,
+		jobs:    jobStore,
+		presets: presetStore,
 	}
 }
 
@@ -53,6 +56,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /jobs/{id}/zip", s.handleZip)
 	mux.HandleFunc("GET /jobs/{id}/log/{file}", s.handleLog)
 	mux.HandleFunc("POST /jobs/{id}/retry", s.handleRetry)
+	mux.HandleFunc("GET /settings", s.handleSettings)
 	mux.Handle("GET /static/", http.FileServer(http.FS(s.static)))
 	return ForwardAuth(s.cfg.ForwardAuth, s.cfg.TrustedProxies, mux)
 }

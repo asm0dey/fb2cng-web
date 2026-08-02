@@ -193,3 +193,33 @@ details.logs > summary::-webkit-details-marker { display: none; }
   .page { padding: 16px; }
   .file-row { flex-wrap: wrap; }
 }
+
+/* ===== Presets list (Plan 2) ===== */
+.presets-page { max-width: 900px; margin: 0 auto; padding: 32px 16px 56px; display: flex; flex-direction: column; gap: 14px; }
+.presets-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.presets-head h1 { margin: 0; font-size: 17px; font-weight: 600; }
+.new-preset { display: flex; gap: 8px; }
+.new-preset input { height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); font: inherit; }
+.new-preset button { height: 34px; padding: 0 14px; border: 0; border-radius: 6px; background: var(--accent); color: var(--bg); font: inherit; font-weight: 600; cursor: pointer; }
+.presets-table { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.presets-row { display: grid; grid-template-columns: 88px 1fr 190px 150px 210px; gap: 16px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.presets-row:last-child { border-bottom: 0; }
+.presets-row--head { background: var(--bg-sunk); font: 500 11px/1 'IBM Plex Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-muted); }
+.presets-row--builtin { background: var(--bg-sunk); }
+.preset-name { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.preset-overrides, .preset-edited { font-size: 14px; color: var(--fg-muted); }
+.preset-actions { display: flex; gap: 14px; justify-content: flex-end; font-size: 14px; }
+.preset-actions a, .preset-actions button { background: none; border: 0; padding: 0; font: inherit; color: var(--accent); text-decoration: none; cursor: pointer; }
+.preset-actions .danger { color: oklch(0.5 0.17 27); }
+.badge { font: 500 10px/1 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; padding: 4px 6px; border-radius: 3px; border: 1px solid var(--line); color: var(--fg-muted); }
+.presets-help { border: 1px solid var(--line); border-radius: 8px; background: var(--bg-sunk); }
+.presets-help summary { padding: 11px 16px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.presets-help-body { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; padding: 4px 16px 16px; font-size: 13.5px; line-height: 1.55; color: var(--fg-muted); }
+.presets-help-body p { margin: 0; }
+@media (max-width: 640px) {
+  .presets-row--head { display: none; }
+  .presets-row { grid-template-columns: auto 1fr; gap: 6px 10px; }
+  .preset-name, .preset-overrides, .preset-edited { grid-column: 2; }
+  .preset-actions { grid-column: 1 / -1; justify-content: flex-start; }
+  .presets-help-body { grid-template-columns: 1fr; }
+}

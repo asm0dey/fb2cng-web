@@ -1,0 +1,54 @@
+{{define "settings"}}
+<main class="presets-page">
+  <div class="presets-head">
+    <h1>Presets</h1>
+    <form method="post" action="/settings/preset" class="new-preset">
+      <input type="text" name="name" placeholder="New preset name" aria-label="New preset name">
+      <button type="submit">+ New preset</button>
+    </form>
+  </div>
+
+  <form id="default-form" method="post" class="presets-table">
+    <div class="presets-row presets-row--head">
+      <span>Default</span><span>Name</span><span>Overrides</span><span>Edited</span><span></span>
+    </div>
+    {{range .Presets}}
+    <div class="presets-row{{if .Builtin}} presets-row--builtin{{end}}">
+      <span class="preset-default">
+        {{if not .Builtin}}
+        <input type="radio" name="default" value="{{.ID}}"
+          {{if eq .ID $.DefaultID}}checked{{end}}
+          onchange="this.form.action='/settings/preset/'+this.value+'/default';this.form.submit()">
+        {{end}}
+      </span>
+      <span class="preset-name">{{.Name}}{{if .Builtin}} <span class="badge">Built-in</span>{{end}}</span>
+      <span class="preset-overrides">{{.ChangedCount}} options changed{{if .Builtin}} · read-only{{end}}</span>
+      <span class="preset-edited">{{if .Builtin}}&mdash;{{else}}{{.UpdatedAt.Format "2 Jan 2006"}}{{end}}</span>
+      <span class="preset-actions">
+        {{if .Builtin}}<a href="/settings/preset/{{.ID}}">View</a>
+        {{else}}<a href="/settings/preset/{{.ID}}">Edit</a>{{end}}
+        <button type="submit" form="dup-{{.ID}}">Duplicate</button>
+        {{if not .Builtin}}<button type="submit" form="del-{{.ID}}" class="danger">Delete</button>{{end}}
+      </span>
+    </div>
+    {{end}}
+  </form>
+
+  {{range .Presets}}
+  <form id="dup-{{.ID}}" method="post" action="/settings/preset/{{.ID}}/duplicate" hidden></form>
+  {{if not .Builtin}}
+  <form id="del-{{.ID}}" method="post" action="/settings/preset/{{.ID}}/delete"
+    onsubmit="return confirm('Delete this preset?')" hidden></form>
+  {{end}}
+  {{end}}
+
+  <details class="presets-help">
+    <summary>How presets work</summary>
+    <div class="presets-help-body">
+      <p>A preset stores only the options you changed; everything else comes from fb2cng's built-in defaults at conversion time, so upgrading the binary picks up new defaults for free.</p>
+      <p>The default preset is preselected on the Convert screen — that is the only thing the marker does.</p>
+      <p>Presets live in <code>PRESETS_DIR/&lt;id&gt;.yaml</code>. Editing them by hand is equivalent to using this screen; the app re-reads on each request.</p>
+    </div>
+  </details>
+</main>
+{{end}}
