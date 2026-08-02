@@ -11,42 +11,53 @@
     "group": "document",
     "label": "fix_zip",
     "kind": "bool",
-    "default": false
+    "default": false,
+    "description": "Some programs (CoolReader and some versions of FBReader) expect \"old\" zip format which does not have data descriptor. If you ever encounter unreadable epub/kepub files - turn this on"
   },
   {
     "key": "document.open_from_cover",
     "group": "document",
     "label": "open_from_cover",
     "kind": "bool",
-    "default": false
+    "default": false,
+    "description": "open book from cover page, rather than from beginning of the text"
   },
   {
     "key": "document.toc_type",
     "group": "document",
     "label": "toc_type",
-    "kind": "string",
-    "default": "normal"
+    "kind": "enum",
+    "default": "normal",
+    "enum": [
+      "normal",
+      "old_kindle",
+      "flat"
+    ],
+    "description": "Navigation hierarchy type for device TOCs/nav maps."
   },
   {
     "key": "document.output_name_template",
     "group": "document",
     "label": "output_name_template",
     "kind": "string",
-    "default": "{{- $all := \"\" -}}\n{{- if gt (len .Authors) 0 -}}\n{{-   with first .Authors -}}\n{{-     $all = .LastName -}}\n{{-     if .FirstName }}{{ $all = (cat $all .FirstName) }}{{- end -}}\n{{-     if .MiddleName }}{{ $all = (cat $all .MiddleName) }}{{- end -}}\n{{-     if and (not $all) .Nickname }}{{ $all = .Nickname }}{{- end -}}\n{{-   end -}}\n{{-   if gt (len .Authors) 1 -}}\n{{-     if eq .Language \"ru\" }}{{ $all = (cat $all \"и др\") }}{{- else -}}{{ $all = (printf \"%s%s\" $all \", et al\") }}{{- end -}}\n{{-   end -}}\n{{-   $all = cat $all \"-\" -}}\n{{- end -}}\n{{- if $all -}}\n{{-   cat $all .Title -}}\n{{- else -}}\n{{-   .Title -}}\n{{- end -}}\n"
+    "default": "{{- $all := \"\" -}}\n{{- if gt (len .Authors) 0 -}}\n{{-   with first .Authors -}}\n{{-     $all = .LastName -}}\n{{-     if .FirstName }}{{ $all = (cat $all .FirstName) }}{{- end -}}\n{{-     if .MiddleName }}{{ $all = (cat $all .MiddleName) }}{{- end -}}\n{{-     if and (not $all) .Nickname }}{{ $all = .Nickname }}{{- end -}}\n{{-   end -}}\n{{-   if gt (len .Authors) 1 -}}\n{{-     if eq .Language \"ru\" }}{{ $all = (cat $all \"и др\") }}{{- else -}}{{ $all = (printf \"%s%s\" $all \", et al\") }}{{- end -}}\n{{-   end -}}\n{{-   $all = cat $all \"-\" -}}\n{{- end -}}\n{{- if $all -}}\n{{-   cat $all .Title -}}\n{{- else -}}\n{{-   .Title -}}\n{{- end -}}\n",
+    "description": "When output_name_template is set output file name will be created using FB2 metainformation"
   },
   {
     "key": "document.file_name_transliterate",
     "group": "document",
     "label": "file_name_transliterate",
     "kind": "bool",
-    "default": false
+    "default": false,
+    "description": "Slugify/transliterate output file name - after all other processing on file name is completed"
   },
   {
     "key": "document.insert_soft_hyphen",
     "group": "document",
     "label": "insert_soft_hyphen",
     "kind": "bool",
-    "default": false
+    "default": false,
+    "description": "Insert soft hyphen symbols '\\u00AD' inside words - for devices which do not support proper hyphenation"
   },
   {
     "key": "document.metainformation.title_template",
@@ -60,84 +71,101 @@
     "group": "document",
     "label": "creator_name_template",
     "kind": "string",
-    "default": "{{- .LastName -}}\n{{- if .FirstName }} {{.FirstName}}{{ end -}}\n{{- if .MiddleName }} {{.MiddleName }}{{ end -}}\n{{- if and (not .LastName) (not .FirstName) (not .MiddleName) .Nickname }}{{ .Nickname }}{{ end -}}\n"
+    "default": "{{- .LastName -}}\n{{- if .FirstName }} {{.FirstName}}{{ end -}}\n{{- if .MiddleName }} {{.MiddleName }}{{ end -}}\n{{- if and (not .LastName) (not .FirstName) (not .MiddleName) .Nickname }}{{ .Nickname }}{{ end -}}\n",
+    "description": "When creator_name_template is set author(s) name in output book metainformation will be formatted using it. Template is applied to each available author individually. Device often uses particular format for sorting books by author names. Following fields are available: - .Context (string) - template field name (\"creator_name_template\") - .Format (string) - requested output format: epub2, epub3, kepub, kfx, azw8, pdf, txt, or md - .Index (int) - 0-based author index - .FirstName (string) - .MiddleName (string) - .LastName (string) - .Nickname (string)"
   },
   {
     "key": "document.metainformation.transliterate",
     "group": "document",
     "label": "transliterate",
     "kind": "bool",
-    "default": false
+    "default": false,
+    "description": "Slugify/transliterate book title and author(s) names - after all other processing is completed"
   },
   {
     "key": "document.page_map.enable",
     "group": "document",
     "label": "enable",
     "kind": "bool",
-    "default": true
+    "default": true,
+    "description": "Generate page map if possible"
   },
   {
     "key": "document.page_map.size",
     "group": "document",
     "label": "size",
     "kind": "int",
-    "default": 2300
+    "default": 2300,
+    "description": "approximate page size in Unicode code points, min size = 500"
   },
   {
     "key": "document.page_map.adobe_de",
     "group": "document",
     "label": "adobe_de",
     "kind": "bool",
-    "default": false
+    "default": false,
+    "description": "Adobe RMSDK/ADE does not have support for NCX pageList. It uses its own proprietary way - if you want it set adobe_de to true. It will cause EpubCheck to complain with ERROR(RSC-005): OEBPS/content.opf: Error while parsing file: attribute \"page-map\" not allowed here; expected attribute \"id\"."
   },
   {
     "key": "document.images.use_broken",
     "group": "document",
     "label": "use_broken",
     "kind": "bool",
-    "default": false
+    "default": false,
+    "description": "Do not skip images which cannot be decoded by program. Use them without any processing, allowing reader to decide what to do"
   },
   {
     "key": "document.images.remove_transparency",
     "group": "document",
     "label": "remove_transparency",
     "kind": "bool",
-    "default": false
+    "default": false,
+    "description": "Kindle eInk devices do not handle transparent images well. This option removes transparency from PNG and GIF images by flattening to white background."
   },
   {
     "key": "document.images.scale_factor",
     "group": "document",
     "label": "scale_factor",
     "kind": "string",
-    "default": 1
+    "default": 1,
+    "description": "Resize all images (but cover) with specified ratio"
   },
   {
     "key": "document.images.optimize",
     "group": "document",
     "label": "optimize",
     "kind": "bool",
-    "default": true
+    "default": true,
+    "description": "Recompress all supported images (presently JPEG, PNG). For JPEG quality respects \"jpeg_quality_level\": if detected level for an image is higher than requested image will be re-encoded. For PNG best compression_level is always specified. Additionally will trigger grayscale detection for JPEG images. NOTE: for Kindle output some conversion still happens even with this disabled, because raster images are normalized to JPEG and SVG images are rasterized."
   },
   {
     "key": "document.images.jpeg_quality_level",
     "group": "document",
     "label": "jpeg_quality_level",
     "kind": "int",
-    "default": 95
+    "default": 95,
+    "description": "JPEG quality level to use, percentage points (40% - 100%). For Kindle output this also affects PNG/GIF-to-JPEG conversion and SVG rasterization."
   },
   {
     "key": "document.images.markdown",
     "group": "document",
     "label": "markdown",
-    "kind": "string",
-    "default": "placeholder"
+    "kind": "enum",
+    "default": "placeholder",
+    "enum": [
+      "placeholder",
+      "external",
+      "embedded"
+    ],
+    "description": "How Markdown output should render images:"
   },
   {
     "key": "document.images.screen.width",
     "group": "document",
     "label": "width",
     "kind": "int",
-    "default": 1264
+    "default": 1264,
+    "description": "Reader screen size so images could be adjusted properly. Width and height are device pixels; PDF uses them with dpi to derive fixed page size in PDF points. This is used to prepare cover and some other operations, like SVG rasterization for kindle devices."
   },
   {
     "key": "document.images.screen.height",
@@ -158,21 +186,34 @@
     "group": "document",
     "label": "generate",
     "kind": "bool",
-    "default": false
+    "default": false,
+    "description": "When book does not have cover image supply one. For Amazon formats this is always enabled automatically."
   },
   {
     "key": "document.images.cover.resize",
     "group": "document",
     "label": "resize",
-    "kind": "string",
-    "default": "stretch"
+    "kind": "enum",
+    "default": "stretch",
+    "enum": [
+      "none",
+      "keepAR",
+      "stretch"
+    ],
+    "description": "How to process cover image"
   },
   {
     "key": "document.footnotes.mode",
     "group": "document",
     "label": "mode",
-    "kind": "string",
-    "default": "default"
+    "kind": "enum",
+    "default": "default",
+    "enum": [
+      "default",
+      "float",
+      "floatRenumbered"
+    ],
+    "description": "How to render footnotes in the book"
   },
   {
     "key": "document.footnotes.bodies",
@@ -184,84 +225,101 @@
       "comments",
       "примечания",
       "комментарии"
-    ]
+    ],
+    "description": "Names of the bodies in fb2 document to consider for footnotes processing if required by mode specified"
   },
   {
     "key": "document.footnotes.backlink_template",
     "group": "document",
     "label": "backlink_template",
     "kind": "string",
-    "default": "{{- if eq .Format \"pdf\" -}}\n{{-   if .PageNumber -}}\n{{-     printf \"[page\\u00A0%d]\" .PageNumber -}}\n{{-   else -}}\n{{-     \"[\u003c]\" -}}\n{{-   end -}}\n{{- else if or (eq .Format \"kfx\") (eq .Format \"azw8\") -}}\n{{-   if .LocationNumber -}}\n{{-     printf \"[loc\\u00A0%d]\" .LocationNumber -}}\n{{-   else if .PageNumber -}}\n{{-     printf \"[page\\u00A0%d]\" .PageNumber -}}\n{{-   else if .SectionTitle -}}\n{{-     printf \"[%s]\" .SectionTitle -}}\n{{-   else -}}\n{{-     \"[\u003c]\" -}}\n{{-   end -}}\n{{- else -}}\n{{-   if .PageNumber -}}\n{{-     printf \"[page\\u00A0%d]\" .PageNumber -}}\n{{-   else if .SectionTitle -}}\n{{-     printf \"[%s]\" .SectionTitle -}}\n{{-   else -}}\n{{-     \"[\u003c]\" -}}\n{{-   end -}}\n{{- end -}}\n"
+    "default": "{{- if eq .Format \"pdf\" -}}\n{{-   if .PageNumber -}}\n{{-     printf \"[page\\u00A0%d]\" .PageNumber -}}\n{{-   else -}}\n{{-     \"[\u003c]\" -}}\n{{-   end -}}\n{{- else if or (eq .Format \"kfx\") (eq .Format \"azw8\") -}}\n{{-   if .LocationNumber -}}\n{{-     printf \"[loc\\u00A0%d]\" .LocationNumber -}}\n{{-   else if .PageNumber -}}\n{{-     printf \"[page\\u00A0%d]\" .PageNumber -}}\n{{-   else if .SectionTitle -}}\n{{-     printf \"[%s]\" .SectionTitle -}}\n{{-   else -}}\n{{-     \"[\u003c]\" -}}\n{{-   end -}}\n{{- else -}}\n{{-   if .PageNumber -}}\n{{-     printf \"[page\\u00A0%d]\" .PageNumber -}}\n{{-   else if .SectionTitle -}}\n{{-     printf \"[%s]\" .SectionTitle -}}\n{{-   else -}}\n{{-     \"[\u003c]\" -}}\n{{-   end -}}\n{{- end -}}\n",
+    "description": "Template used to render backlinks from footnote bodies to original content. Available fields include: - .Context (string) - template field name (\"backlink_template\") - .Format (string) - requested output format: epub2, epub3, kepub, kfx, azw8, pdf, txt, or md - .RefID (string) - unique ID for this reference occurrence - .TargetID (string) - ID of the footnote being referenced - .RefNumber (int) - 1-based reference occurrence number for this footnote - .Filename (string) - output filename containing the reference - .Href (string) - href back to the reference - .PageNumber (int) - exact for PDF, approximate for EPUB/KFX/AZW8 page maps - .LocationNumber (int) - generated KFX/AZW8 location number - .SectionTitle (string) - nearest titled section/body when known - .ChapterTitle (string) - spine/chapter title when known"
   },
   {
     "key": "document.footnotes.more_paragraphs",
     "group": "document",
     "label": "more_paragraphs",
     "kind": "string",
-    "default": "(~) "
+    "default": "(~) ",
+    "description": "If floating note body has more than one paragraph this string could be shown at the beginning of the first paragraph (.css footnote-more controls visibility)"
   },
   {
     "key": "document.footnotes.label_template",
     "group": "document",
     "label": "label_template",
     "kind": "string",
-    "default": "{{- if eq .Format \"pdf\" -}}\n{{-   $bodyTitle := default \"Notes\" .BodyTitle -}}\n{{-   $noteTitle := trim .NoteTitle -}}\n{{-   $noteNumber := printf \"%d\" .NoteNumber -}}\n{{-   $label := \"\" -}}\n{{-   if gt .BodyNumber 0 -}}\n{{-     $label = printf \"%d.%s\" .BodyNumber $noteNumber -}}\n{{-   else -}}\n{{-     $label = $noteNumber -}}\n{{-   end -}}\n{{-   if and $noteTitle (regexMatch \"[^0-9[:space:]]\" $noteTitle) -}}\n{{-     printf \"%s: %s\" $bodyTitle $noteTitle -}}\n{{-   else -}}\n{{-     printf \"%s: %s\" $bodyTitle $label -}}\n{{-   end -}}\n{{- else -}}\n{{-   if gt .BodyNumber 0 -}}\n{{-     printf \"%d\" .BodyNumber -}}.\n{{-   end -}}\n{{-   printf \"%d\" .NoteNumber -}}\n{{- end -}}\n"
+    "default": "{{- if eq .Format \"pdf\" -}}\n{{-   $bodyTitle := default \"Notes\" .BodyTitle -}}\n{{-   $noteTitle := trim .NoteTitle -}}\n{{-   $noteNumber := printf \"%d\" .NoteNumber -}}\n{{-   $label := \"\" -}}\n{{-   if gt .BodyNumber 0 -}}\n{{-     $label = printf \"%d.%s\" .BodyNumber $noteNumber -}}\n{{-   else -}}\n{{-     $label = $noteNumber -}}\n{{-   end -}}\n{{-   if and $noteTitle (regexMatch \"[^0-9[:space:]]\" $noteTitle) -}}\n{{-     printf \"%s: %s\" $bodyTitle $noteTitle -}}\n{{-   else -}}\n{{-     printf \"%s: %s\" $bodyTitle $label -}}\n{{-   end -}}\n{{- else -}}\n{{-   if gt .BodyNumber 0 -}}\n{{-     printf \"%d\" .BodyNumber -}}.\n{{-   end -}}\n{{-   printf \"%d\" .NoteNumber -}}\n{{- end -}}\n",
+    "description": "Template used to format footnote labels. For EPUB/KFX/AZW8 floatRenumbered, this template formats footnote reference text and footnote titles during content normalization. For PDF float/floatRenumbered, printed page footnote references are page-local (original visible labels in float, sequential labels in floatRenumbered); this template formats the text appended after the visible page-local label in printed footnote titles. The label/title separator is a NBSP and is emitted only when this template renders non-empty text. To intentionally render no appended title text while still satisfying validation, use: {{- \"\" -}} Following fields are available: - .Context (string) - template field name (\"label_template\") - .Format (string) - requested output format: epub2, epub3, kepub, kfx, azw8, pdf, txt, or md - .BodyTitle (string) - can be empty - .BodyNumber (int) - 1-based body index - .NoteTitle (string) - can be empty - .NoteNumber (int) - 1-based note index within the body"
   },
   {
     "key": "document.annotation.enable",
     "group": "document",
     "label": "enable",
     "kind": "bool",
-    "default": false
+    "default": false,
+    "description": "Create separate \"chapter\" with book annotation if available"
   },
   {
     "key": "document.annotation.title",
     "group": "document",
     "label": "title",
     "kind": "string",
-    "default": "Annotation"
+    "default": "Annotation",
+    "description": "Use provided annotation title"
   },
   {
     "key": "document.annotation.in_toc",
     "group": "document",
     "label": "in_toc",
     "kind": "bool",
-    "default": true
+    "default": true,
+    "description": "Show annotation in TOC (generated page, ncx, nav, ...)"
   },
   {
     "key": "document.toc_page.placement",
     "group": "document",
     "label": "placement",
-    "kind": "string",
-    "default": "none"
+    "kind": "enum",
+    "default": "none",
+    "enum": [
+      "none",
+      "before",
+      "after"
+    ],
+    "description": "Generate additional page with TOC (some devices may not support epub TOC at all)"
   },
   {
     "key": "document.toc_page.authors_template",
     "group": "document",
     "label": "authors_template",
     "kind": "string",
-    "default": "{{- $names := list -}}\n{{- range .Authors -}}\n{{-   $name := list -}}\n{{-   if .FirstName -}}{{ $name = append $name .FirstName -}}{{- end -}}\n{{-   if .MiddleName -}}{{ $name = append $name .MiddleName -}}{{- end -}}\n{{-   if .LastName -}}{{ $name = append $name .LastName }}{{- end -}}\n{{-   if and (not $name) .Nickname -}}{{ $name = append $name .Nickname }}{{- end -}}\n{{-   $names = append $names (join \" \" $name) -}}\n{{- end -}}\n{{- join \", \" $names -}}\n"
+    "default": "{{- $names := list -}}\n{{- range .Authors -}}\n{{-   $name := list -}}\n{{-   if .FirstName -}}{{ $name = append $name .FirstName -}}{{- end -}}\n{{-   if .MiddleName -}}{{ $name = append $name .MiddleName -}}{{- end -}}\n{{-   if .LastName -}}{{ $name = append $name .LastName }}{{- end -}}\n{{-   if and (not $name) .Nickname -}}{{ $name = append $name .Nickname }}{{- end -}}\n{{-   $names = append $names (join \" \" $name) -}}\n{{- end -}}\n{{- join \", \" $names -}}\n",
+    "description": "when toc page generation requested and authors_template is set - page will have title (header) with authors formatted using it"
   },
   {
     "key": "document.toc_page.include_chapters_without_title",
     "group": "document",
     "label": "include_chapters_without_title",
     "kind": "bool",
-    "default": false
+    "default": false,
+    "description": "Include chapter without title to TOC - this prevents empty TOC on \"bad\" books adding chapters without titles to the TOC"
   },
   {
     "key": "document.dropcaps.enable",
     "group": "document",
     "label": "enable",
     "kind": "bool",
-    "default": false
+    "default": false,
+    "description": "Allow automatic dropcap styling"
   },
   {
     "key": "document.dropcaps.ignore_symbols",
     "group": "document",
     "label": "ignore_symbols",
     "kind": "string",
-    "default": "'\"-.…0123456789‒–—«»“”\u003c\u003e"
+    "default": "'\"-.…0123456789‒–—«»“”\u003c\u003e",
+    "description": "Characters to ignore when styling dropcaps"
   },
   {
     "key": "document.text_transformations.speech.enable",
@@ -330,42 +388,62 @@
     "key": "logging.console.level",
     "group": "logging",
     "label": "level",
-    "kind": "string",
-    "default": "normal"
+    "kind": "enum",
+    "default": "normal",
+    "enum": [
+      "none",
+      "normal",
+      "debug"
+    ],
+    "description": "logging level"
   },
   {
     "key": "logging.file.destination_template",
     "group": "logging",
     "label": "destination_template",
     "kind": "string",
-    "default": "{{ .AppName }}.log"
+    "default": "{{ .AppName }}.log",
+    "description": "path template for the log file, could be relative to current working directory"
   },
   {
     "key": "logging.file.panic_destination_template",
     "group": "logging",
     "label": "panic_destination_template",
     "kind": "string",
-    "default": "{{ .AppName }}-panic.log"
+    "default": "{{ .AppName }}-panic.log",
+    "description": "path template for the panic log file, could be relative to current working directory"
   },
   {
     "key": "logging.file.level",
     "group": "logging",
     "label": "level",
-    "kind": "string",
-    "default": "debug"
+    "kind": "enum",
+    "default": "debug",
+    "enum": [
+      "none",
+      "normal",
+      "debug"
+    ],
+    "description": "logging level"
   },
   {
     "key": "logging.file.mode",
     "group": "logging",
     "label": "mode",
-    "kind": "string",
-    "default": "overwrite"
+    "kind": "enum",
+    "default": "overwrite",
+    "enum": [
+      "append",
+      "overwrite"
+    ],
+    "description": "how to handle output file during consecutive program runs"
   },
   {
     "key": "reporting.destination_template",
     "group": "reporting",
     "label": "destination_template",
     "kind": "string",
-    "default": "{{ .AppName }}-report.zip"
+    "default": "{{ .AppName }}-report.zip",
+    "description": "could be relative to current working directory."
   }
 ]

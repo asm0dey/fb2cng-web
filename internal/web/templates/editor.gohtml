@@ -10,7 +10,7 @@
     <label class="tb-check"><input type="checkbox" name="is_default" value="true" {{if .IsDefaultPreset}}checked{{end}}> Default</label>
     <input class="option-search" type="search" id="option-search" placeholder="Search options…" aria-label="Search options">
     <label class="tb-check"><input type="checkbox" id="changed-only"> Changed only</label>
-    <button type="button" class="tb-link" id="collapse-all">Collapse all</button>
+    <button type="button" class="tb-link" id="collapse-all">Expand all</button>
     <span class="tb-spacer"></span>
     {{if .Preset.Builtin}}
     <button class="save-btn" type="submit" disabled title="The built-in Defaults preset is read-only">Save preset</button>
@@ -22,7 +22,7 @@
   <div class="editor-grid">
     <div class="option-list">
       {{range .Groups}}
-      <details class="opt-group" open data-group="{{.Name}}">
+      <details class="opt-group{{if gt .Changed 0}} has-changes{{end}}" data-group="{{.Name}}">
         <summary class="opt-group-sum">
           <span class="caret">▸</span>
           <span class="opt-group-name">{{.Name}}</span>
@@ -31,7 +31,7 @@
         {{range .Rows}}
         {{$row := .}}
         <div class="option-row{{if .Changed}} is-changed{{end}}{{if .IsTemplate}} is-wide{{end}}" data-path="{{.Key}}">
-          <span class="option-key">{{.Label}}{{if .Changed}} <span class="changed-dot">•</span>{{end}}</span>
+          <span class="option-key">{{.Label}}{{if .Description}}<button type="button" class="help" aria-label="{{.Label}} — help"><span class="help-tip" role="tooltip">{{.Description}}</span>?</button>{{end}}<span class="changed-dot"> •</span></span>
           <div class="option-control">
             {{if eq .Kind "bool"}}
               <input type="hidden" name="{{.Key}}" value="false">
@@ -51,7 +51,7 @@
               <input type="text" id="opt-{{.Key}}" name="{{.Key}}" value="{{.StrValue}}" data-default="{{.DefaultStr}}">
             {{end}}
           </div>
-          <span class="option-meta">{{if .Description}}{{.Description}}{{if and .Known (not .IsTemplate)}} · {{end}}{{end}}{{if and .Known (not .IsTemplate)}}<span class="option-default">default {{.DefaultStr}}</span>{{end}}{{if .Changed}} · <a class="reset" href="#" data-target="opt-{{.Key}}">reset</a>{{end}}</span>
+          <span class="option-meta">{{if and .Known (not .IsTemplate)}}<span class="option-default">default {{.DefaultStr}}</span>{{end}}<a class="reset" href="#" data-target="opt-{{.Key}}">reset</a></span>
         </div>
         {{end}}
       </details>
@@ -101,6 +101,35 @@
     });
   }
 
+  // Live changed-state: a control differs from its data-default => amber row.
+  function ctrlChanged(el) {
+    var d = el.getAttribute('data-default') || '';
+    if (el.type === 'checkbox') return String(el.checked) !== (d === 'true' ? 'true' : 'false');
+    return el.value !== d;
+  }
+  function markRow(el) {
+    var row = el.closest('.option-row');
+    if (row) row.classList.toggle('is-changed', ctrlChanged(el));
+  }
+  var summary = form.querySelector('.changed-summary b');
+  function recount() {
+    var total = 0;
+    groups.forEach(function (g) {
+      var c = g.querySelectorAll('.option-row.is-changed').length;
+      total += c;
+      var badge = g.querySelector('.grp-changed');
+      if (badge) badge.textContent = c;
+      g.classList.toggle('has-changes', c > 0);
+    });
+    if (summary) summary.textContent = total;
+    if (changedOnly && changedOnly.checked) apply();
+  }
+  form.querySelectorAll('[data-default]').forEach(function (el) {
+    var handler = function () { markRow(el); recount(); };
+    el.addEventListener('input', handler);
+    el.addEventListener('change', handler);
+  });
+
   form.addEventListener('click', function (e) {
     var t = e.target;
     if (!t.classList.contains('reset')) return;
@@ -110,6 +139,8 @@
     var d = el.getAttribute('data-default') || '';
     if (el.type === 'checkbox') el.checked = (d === 'true');
     else el.value = d;
+    markRow(el);
+    recount();
     el.dispatchEvent(new Event('change', { bubbles: true }));
   });
 
