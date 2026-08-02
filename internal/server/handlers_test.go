@@ -223,6 +223,38 @@ func TestConvertCreatesJobAndSucceeds(t *testing.T) {
 	}
 }
 
+// TestConvertHangingFileTimesOutAndFails is the regression test for bean ckkk:
+// the background convert worker used to run fbc under context.Background(),
+// so a pathological input that made fbc hang forever permanently held a
+// Server.sem slot. fake-fbc.sh's __hang marker sleeps 3s; with FBCTimeout set
+// far below that, the worker must kill the hung fbc process, mark the file
+// StateFailed, and let the batch reach Done in roughly FBCTimeout — not the
+// full 3s hang.
+func TestConvertHangingFileTimesOutAndFails(t *testing.T) {
+	h := newTestServer(t, config.Config{MaxConcurrent: 1, FBCTimeout: 200 * time.Millisecond}, fakeFbcRunner(t))
+	rec := httptest.NewRecorder()
+	start := time.Now()
+	h.ServeHTTP(rec, multipartConvert(t, "book__hang.fb2", map[string]string{"format": "epub3", "preset": "defaults"}))
+	if rec.Code != 200 {
+		t.Fatalf("convert POST code=%d body=%q", rec.Code, rec.Body.String())
+	}
+	id := extractJobID(t, rec.Body.String())
+
+	st := waitDone(t, h, id)
+	elapsed := time.Since(start)
+
+	// fake-fbc.sh sleeps 3s under __hang; the timeout is 200ms. Give generous
+	// scheduling slack but stay well short of the full hang so a regression
+	// (context.Background() ignoring FBCTimeout) fails this bound instead of
+	// merely being slow.
+	if elapsed > 1500*time.Millisecond {
+		t.Fatalf("hanging file was not killed by FBCTimeout: took %v (fake-fbc hangs 3s, timeout was 200ms)", elapsed)
+	}
+	if len(st.Files) != 1 || st.Files[0].State != jobs.StateFailed {
+		t.Fatalf("expected hanging file to end failed, got %+v", st.Files)
+	}
+}
+
 func TestConvertPerFileFailureCapturesFirstError(t *testing.T) {
 	h := newTestServer(t, config.Config{MaxConcurrent: 2}, fakeFbcRunner(t))
 	rec := httptest.NewRecorder()
@@ -314,15 +346,6 @@ func TestConvertBadExtensionOrphansNoJobDir(t *testing.T) {
 	}
 	if len(entries) != 0 {
 		t.Fatalf("bad extension must not leave an orphaned job dir, found %d entries: %v", len(entries), entries)
-	}
-}
-
-func TestDefaultsEndpoint(t *testing.T) {
-	h := newTestServer(t, config.Config{MaxConcurrent: 1}, stubRunner{defaults: []byte("version: 1\n")})
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest("GET", "/defaults", nil))
-	if rec.Code != 200 || rec.Body.String() != "version: 1\n" {
-		t.Fatalf("defaults: code=%d body=%q", rec.Code, rec.Body.String())
 	}
 }
 

@@ -14,6 +14,12 @@ import (
 // convert.BuildConfig (overrides as rawYAML, form options nil), then asks fbc to
 // parse the result to decide validity.
 func (s *Server) computeEffective(ctx context.Context, flat map[string]any) effectiveVM {
+	// A hung Validate (fbc parsing a pathological config) must not hang the
+	// request forever — layer the same per-invocation timeout used by the
+	// convert worker over the caller's ctx (bean ckkk).
+	ctx, cancel := context.WithTimeout(ctx, s.cfg.FBCTimeout)
+	defer cancel()
+
 	vm := effectiveVM{OverrideCount: len(flat)}
 
 	rawYAML, err := yaml.Marshal(unflatten(flat))

@@ -34,6 +34,9 @@ func New(cfg config.Config, runner convert.Runner, static fs.FS,
 	if n < 1 {
 		n = 1
 	}
+	if cfg.FBCTimeout <= 0 {
+		cfg.FBCTimeout = config.DefaultFBCTimeout
+	}
 	return &Server{
 		cfg:     cfg,
 		runner:  runner,
@@ -50,7 +53,6 @@ func New(cfg config.Config, runner convert.Runner, static fs.FS,
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", s.handleIndex)
-	mux.HandleFunc("GET /defaults", s.handleDefaults)
 	mux.HandleFunc("GET /me", s.handleMe)
 	mux.HandleFunc("POST /convert", s.handleConvert)
 	mux.HandleFunc("GET /jobs/{id}", s.handleJobStatus)

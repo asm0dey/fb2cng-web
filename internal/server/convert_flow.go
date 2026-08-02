@@ -233,9 +233,16 @@ func (s *Server) processFiles(id, cfgPath, format string, inputs []string) {
 	for _, in := range inputs {
 		s.sem <- struct{}{}
 		start := time.Now()
+		// Bound each fbc invocation: an unbounded context.Background() here
+		// would let a pathological input that hangs fbc forever permanently
+		// hold this sem slot (bean ckkk). cancel() is called explicitly right
+		// after the call returns, not deferred, so it fires per-file instead
+		// of accumulating across the whole batch loop.
+		ctx, cancel := context.WithTimeout(context.Background(), s.cfg.FBCTimeout)
 		outs, cerr := s.runner.ConvertLogged(
-			context.Background(), s.jobs.InputPath(id, in), format, cfgPath,
+			ctx, s.jobs.InputPath(id, in), format, cfgPath,
 			s.jobs.OutDir(id, in), s.jobs.LogPath(id, in))
+		cancel()
 		<-s.sem
 
 		lines, firstErr := scanLog(s.jobs.LogPath(id, in))

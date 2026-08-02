@@ -11,16 +11,6 @@ import (
 	"strings"
 )
 
-func (s *Server) handleDefaults(w http.ResponseWriter, r *http.Request) {
-	out, err := s.runner.DumpDefaults(r.Context())
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/yaml; charset=utf-8")
-	w.Write(out)
-}
-
 func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	resp := map[string]any{"enabled": s.cfg.ForwardAuth}
 	if s.cfg.ForwardAuth {
