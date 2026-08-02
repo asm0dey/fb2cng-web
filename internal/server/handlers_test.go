@@ -31,6 +31,9 @@ func (s stubRunner) DumpDefaults(context.Context) ([]byte, error) { return s.def
 func (s stubRunner) Convert(context.Context, string, string, string, string) ([]string, error) {
 	return s.outputs, s.err
 }
+func (s stubRunner) ConvertLogged(context.Context, string, string, string, string, string) ([]string, error) {
+	return s.outputs, s.err
+}
 
 func newTestServer(t *testing.T, cfg config.Config, r convert.Runner) http.Handler {
 	t.Helper()
@@ -164,6 +167,10 @@ func (c *capturingRunner) Convert(_ context.Context, _, _, cfgPath, dest string)
 	return []string{out}, nil
 }
 
+func (c *capturingRunner) ConvertLogged(_ context.Context, in, format, cfgPath, dest, _ string) ([]string, error) {
+	return c.Convert(context.Background(), in, format, cfgPath, dest)
+}
+
 func TestConvertWritesDefaultConfig(t *testing.T) {
 	cr := &capturingRunner{}
 	h := newTestServer(t, config.Config{MaxConcurrent: 1}, cr)
@@ -224,6 +231,10 @@ func (b *blockingRunner) Convert(ctx context.Context, _, _, _, dest string) ([]s
 	os.MkdirAll(dest, 0o755)
 	os.WriteFile(out, []byte("x"), 0o644)
 	return []string{out}, nil
+}
+
+func (b *blockingRunner) ConvertLogged(ctx context.Context, in, format, cfgPath, dest, _ string) ([]string, error) {
+	return b.Convert(ctx, in, format, cfgPath, dest)
 }
 
 func TestConvertConcurrencyCap(t *testing.T) {
