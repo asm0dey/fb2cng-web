@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -87,5 +88,40 @@ func TestOutputFileRejectsTraversal(t *testing.T) {
 	}
 	if !strings.HasSuffix(got, filepath.Join("job", "out", "book.fb2", "book.epub")) {
 		t.Fatalf("unexpected safe path: %s", got)
+	}
+}
+
+// TestBadJobIDsRejectedEverywhere is the trust-boundary regression test: the
+// job id flows unchecked into Store.root() = filepath.Join(s.Dir, id), so it
+// must be validated exactly like a filename (see safeName) everywhere it is
+// accepted as untrusted input.
+func TestBadJobIDsRejectedEverywhere(t *testing.T) {
+	s := NewStore(t.TempDir(), time.Hour)
+	// Seed one legitimate job so a traversal id could plausibly reach real
+	// sibling content if the checks were missing.
+	id, err := s.Create("defaults", "epub3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = id
+
+	bad := []string{"", "../x", "a/b", `a\b`, ".."}
+	for _, badID := range bad {
+		if ValidID(badID) {
+			t.Errorf("ValidID(%q) = true, want false", badID)
+		}
+		if _, err := s.Load(badID); err == nil {
+			t.Errorf("Load(%q) should error", badID)
+		}
+		if _, err := s.OutputFile(badID, "book.fb2", "book.epub"); err == nil {
+			t.Errorf("OutputFile(id=%q, ...) should error", badID)
+		}
+		if err := s.WriteZip(badID, io.Discard); err == nil {
+			t.Errorf("WriteZip(%q) should error", badID)
+		}
+	}
+
+	if !ValidID(id) {
+		t.Errorf("ValidID(%q) = false, want true for a real job id", id)
 	}
 }

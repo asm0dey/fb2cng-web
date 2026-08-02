@@ -93,8 +93,16 @@ func (s *Store) LogPath(id, input string) string {
 	return filepath.Join(s.root(id), filepath.Base(input)+".log")
 }
 
+// ValidID reports whether id is safe to use as a job directory name: the same
+// rule applied to filenames via safeName (non-empty, no path separators, no
+// "..") since id is joined onto s.Dir exactly like a filename.
+func ValidID(id string) bool { return safeName(id) == nil }
+
 // Load reads and decodes status.json.
 func (s *Store) Load(id string) (*Status, error) {
+	if !ValidID(id) {
+		return nil, fmt.Errorf("invalid id %q", id)
+	}
 	b, err := os.ReadFile(s.statusPath(id))
 	if err != nil {
 		return nil, err
@@ -123,6 +131,9 @@ func (s *Store) Save(id string, st *Status) error {
 // OutputFile returns the safe-joined path to one output, rejecting names that
 // contain a path separator or "..".
 func (s *Store) OutputFile(id, input, base string) (string, error) {
+	if !ValidID(id) {
+		return "", fmt.Errorf("invalid id %q", id)
+	}
 	if err := safeName(input); err != nil {
 		return "", err
 	}

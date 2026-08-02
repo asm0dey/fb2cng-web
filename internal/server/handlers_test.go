@@ -295,6 +295,40 @@ func TestDownloadTraversalRejected(t *testing.T) {
 	}
 }
 
+// TestJobIDTraversalRejected is the trust-boundary regression test for the
+// job {id} path segment itself (as opposed to the {file} segment, already
+// covered above). net/http's ServeMux only canonicalizes literal dot-segments
+// before matching; an encoded slash (%2f) inside the {id} segment still
+// matches the single-segment {id} pattern, and r.PathValue("id") returns it
+// *unescaped* — so "..%2f..%2fetc" arrives at the handler as the literal id
+// "../../etc". Every route keyed on {id} must reject that id, not just the
+// {file} segment.
+func TestJobIDTraversalRejected(t *testing.T) {
+	h := newTestServer(t, config.Config{MaxConcurrent: 2}, fakeFbcRunner(t))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, multipartConvert(t, "multi.fb2", map[string]string{"format": "epub3", "preset": "defaults"}))
+	id := extractJobID(t, rec.Body.String())
+	waitDone(t, h, id)
+
+	badID := "..%2f..%2fetc%2fpasswd"
+	targets := []string{
+		"/jobs/" + badID,
+		"/jobs/" + badID + "/download/multi.epub",
+		"/jobs/" + badID + "/zip",
+		"/jobs/" + badID + "/log/multi.fb2",
+	}
+	for _, target := range targets {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest("GET", target, nil))
+		if rec.Code != http.StatusNotFound {
+			t.Errorf("target %q: expected 404, got %d body=%q", target, rec.Code, rec.Body.String())
+		}
+		if strings.Contains(rec.Body.String(), "FAKE-") || strings.Contains(rec.Body.String(), "INFO:") {
+			t.Errorf("target %q: leaked job content: %q", target, rec.Body.String())
+		}
+	}
+}
+
 // TestDownloadLiteralDotSegmentNeverServesFile covers the "../../x" form.
 // net/http's ServeMux canonicalizes literal dot-segments before any pattern
 // match, 307-redirecting to the resolved path — which lands outside every
