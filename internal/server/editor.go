@@ -162,7 +162,7 @@ func (s *Server) rowFor(opt schema.Option, val any, present bool) rowVM {
 		DefaultStr:  normalizeStr(opt.Default),
 		Description: opt.Description,
 		Known:       true,
-		IsTemplate:  strings.Contains(opt.Key, "output_name_template"),
+		IsTemplate:  strings.HasSuffix(opt.Key, "_template"),
 	}
 	if opt.Kind == schema.KindBool {
 		r.Checked = r.StrValue == "true"

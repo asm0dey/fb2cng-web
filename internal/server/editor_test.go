@@ -91,13 +91,13 @@ func TestPresetEditorRendersGrid(t *testing.T) {
 	if !strings.Contains(body, `data-group="document"`) {
 		t.Fatal("missing document group header")
 	}
-	if !strings.Contains(body, "3 options · 1 changed") {
+	if !strings.Contains(body, `3 options · <span class="grp-changed">1</span> changed`) {
 		t.Fatalf("document group count wrong: %s", body)
 	}
-	if !strings.Contains(body, "2 of 3 options changed") {
+	if !strings.Contains(body, `<b>2</b> of 3 changed`) {
 		t.Fatalf("toolbar changed-summary wrong: %s", body)
 	}
-	if !strings.Contains(body, `option-row changed" data-path="document.images.jpeg_quality_level"`) {
+	if !strings.Contains(body, `option-row is-changed" data-path="document.images.jpeg_quality_level"`) {
 		t.Fatal("jpeg row not marked changed")
 	}
 	if !strings.Contains(body, `name="document.images.jpeg_quality_level" value="40"`) {
