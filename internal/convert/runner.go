@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,6 +19,10 @@ type Runner interface {
 	// Convert runs fbc on inputPath into destDir and returns the produced
 	// output file paths. configPath is optional ("" = use fbc defaults).
 	Convert(ctx context.Context, inputPath, format, configPath, destDir string) ([]string, error)
+	// ConvertLogged behaves like Convert but also captures combined stdout+stderr
+	// into logPath (created/truncated). Returns outputs even on fbc failure when
+	// partial output exists; err is non-nil on non-zero exit.
+	ConvertLogged(ctx context.Context, inputPath, format, configPath, destDir, logPath string) ([]string, error)
 }
 
 // FBC shells out to the fbc binary.
@@ -68,6 +73,38 @@ func (f *FBC) Convert(ctx context.Context, inputPath, format, configPath, destDi
 		return nil, fmt.Errorf("conversion failed: %w", err)
 	}
 	return collectOutputs(destDir)
+}
+
+func (f *FBC) ConvertLogged(ctx context.Context, inputPath, format, configPath, destDir, logPath string) ([]string, error) {
+	if err := os.MkdirAll(destDir, 0o755); err != nil {
+		return nil, err
+	}
+	logf, err := os.Create(logPath)
+	if err != nil {
+		return nil, err
+	}
+	defer logf.Close()
+
+	// -c is a GLOBAL flag and must come before the subcommand.
+	args := []string{}
+	if configPath != "" {
+		args = append(args, "-c", configPath)
+	}
+	args = append(args, "convert", "--to", format, "--overwrite", "--nd", inputPath, destDir)
+
+	cmd := exec.CommandContext(ctx, f.Bin, args...)
+	cmd.Stdout = io.MultiWriter(logf)
+	cmd.Stderr = io.MultiWriter(logf)
+	runErr := cmd.Run()
+
+	outs, collectErr := collectOutputs(destDir)
+	if runErr != nil {
+		return outs, fmt.Errorf("conversion failed: %w", runErr)
+	}
+	if collectErr != nil {
+		return nil, collectErr
+	}
+	return outs, nil
 }
 
 // collectOutputs returns regular, non-hidden files under destDir.
