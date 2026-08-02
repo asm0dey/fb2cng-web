@@ -521,6 +521,59 @@ func TestRetryConcurrentDedupesAndSurvivesInFlightWorker(t *testing.T) {
 	}
 }
 
+// TestRetryConfigWriteFailureLeavesFilesFailed is the regression test for
+// bean wx5d: handleRetry must build and write the retry config BEFORE
+// flipping failed files to StatePending. Pre-fix, the flip+Save happens
+// first; if writing retry-config.yaml then fails, the files are stranded
+// StatePending with no worker launched, and a later retry finds no
+// StateFailed rows to re-catch them.
+//
+// To force a genuine, isolated config-write failure, a directory is
+// pre-created at the exact path handleRetry writes retry-config.yaml to, so
+// os.WriteFile fails with EISDIR — without touching status.json's own write
+// path (a different filename in the same dir), so the test can tell the two
+// apart. Assert status.json is byte-for-byte unchanged and the file stays
+// StateFailed.
+func TestRetryConfigWriteFailureLeavesFilesFailed(t *testing.T) {
+	h := newTestServer(t, config.Config{MaxConcurrent: 2}, fakeFbcRunner(t))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, multipartConvert(t, "corrupt.fb2", map[string]string{"format": "epub3", "preset": "defaults"}))
+	id := extractJobID(t, rec.Body.String())
+	st := waitDone(t, h, id)
+	if st.Files[0].State != jobs.StateFailed {
+		t.Fatalf("precondition: expected failed, got %s", st.Files[0].State)
+	}
+
+	jobDir := filepath.Join(testJobsDir, id)
+	before, err := os.ReadFile(filepath.Join(jobDir, "status.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.Mkdir(filepath.Join(jobDir, "retry-config.yaml"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("POST", "/jobs/"+id+"/retry", nil))
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500 on retry config write failure, got %d body=%q", rec.Code, rec.Body.String())
+	}
+
+	after, err := os.ReadFile(filepath.Join(jobDir, "status.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(before, after) {
+		t.Fatalf("status.json changed on config write failure:\nbefore=%s\nafter=%s", before, after)
+	}
+
+	st = loadStatus(t, h, id)
+	if st.Files[0].State != jobs.StateFailed {
+		t.Fatalf("config write failure must leave file StateFailed (not orphaned Pending), got %s", st.Files[0].State)
+	}
+}
+
 // TestRetryBadIDNotFound is the traversal regression test for POST
 // /jobs/{id}/retry: the existing traversal suite only covers the GET routes.
 // net/http's ServeMux matches an encoded slash inside {id} as a literal

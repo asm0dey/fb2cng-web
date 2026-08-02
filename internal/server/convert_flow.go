@@ -403,6 +403,27 @@ func ioCopyWriter(w http.ResponseWriter, f *os.File) (int64, error) {
 func (s *Server) handleRetry(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
+	if _, err := s.jobs.Load(id); err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Build + write the retry config BEFORE touching any file state. If this
+	// fails, status.json must be left completely unchanged — files stay
+	// StateFailed so a later retry can still catch them, instead of being
+	// flipped to StatePending with no worker launched to ever finish them
+	// (bean wx5d: a config-build/write failure must not orphan files).
+	cfgBytes, err := convert.BuildConfig("use_broken_images: true", convert.FormOptions{})
+	if err != nil {
+		http.Error(w, "invalid retry config: "+err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+	cfgPath := filepath.Join(s.jobs.Dir, id, "retry-config.yaml")
+	if err := os.WriteFile(cfgPath, cfgBytes, 0o644); err != nil {
+		http.Error(w, "server error", http.StatusInternalServerError)
+		return
+	}
+
 	// The failed->pending reset must be atomic with respect to updateFile's
 	// read-modify-write of status.json (guarded by the same s.mu), or a
 	// concurrent in-flight worker write can be lost. Holding the lock across
@@ -435,18 +456,6 @@ func (s *Server) handleRetry(w http.ResponseWriter, r *http.Request) {
 	saveErr := s.jobs.Save(id, st)
 	s.mu.Unlock()
 	if saveErr != nil {
-		http.Error(w, "server error", http.StatusInternalServerError)
-		return
-	}
-
-	// Retry config = batch defaults + the broken-image tolerance flip.
-	cfgBytes, err := convert.BuildConfig("use_broken_images: true", convert.FormOptions{})
-	if err != nil {
-		http.Error(w, "invalid retry config: "+err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-	cfgPath := filepath.Join(s.jobs.Dir, id, "retry-config.yaml")
-	if err := os.WriteFile(cfgPath, cfgBytes, 0o644); err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
