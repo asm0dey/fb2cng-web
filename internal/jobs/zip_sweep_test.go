@@ -3,6 +3,7 @@ package jobs
 import (
 	"archive/zip"
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -43,6 +44,48 @@ func TestWriteZipFlatWithCollisionSuffix(t *testing.T) {
 	if !names["book.epub"] || (!names["book-1.epub"]) {
 		t.Fatalf("expected book.epub + book-1.epub, got %v", names)
 	}
+}
+
+// TestWriteZipPropagatesCloseError is the regression test for bean q2t8:
+// zip.Writer.Close() flushes the central directory to w, and its error must
+// not be silently dropped by an unnamed defer. eocdFailWriter buffers every
+// write except the one carrying the end-of-central-directory signature (the
+// last bytes zip.Writer's internal bufio.Writer physically flushes to w,
+// inside Close()), which it fails — simulating a write failure during the
+// final flush.
+func TestWriteZipPropagatesCloseError(t *testing.T) {
+	s := NewStore(t.TempDir(), time.Hour)
+	id, _ := s.Create("defaults", "epub3")
+	dir := s.OutDir(id, "a.fb2")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "book.epub"), []byte("DATA"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	fw := &eocdFailWriter{}
+	if err := s.WriteZip(id, fw); err == nil {
+		t.Fatal("expected WriteZip to propagate zip.Writer.Close()'s error, got nil")
+	}
+}
+
+// eocdFailWriter fails the one Write call whose payload contains the zip
+// end-of-central-directory record signature (PK\x05\x06), and buffers
+// everything else. Because archive/zip wraps a bufio.Writer around the
+// destination and only calls Flush() at the very end of Close(), all of a
+// small test archive's bytes (local headers, file data, central directory,
+// EOCD) land in that single final Write call — so failing on the EOCD
+// signature deterministically simulates a failure during Close()'s flush.
+type eocdFailWriter struct {
+	buf bytes.Buffer
+}
+
+func (w *eocdFailWriter) Write(p []byte) (int, error) {
+	if bytes.Contains(p, []byte{0x50, 0x4B, 0x05, 0x06}) {
+		return 0, fmt.Errorf("simulated failure writing end-of-central-directory")
+	}
+	return w.buf.Write(p)
 }
 
 func TestSweepRemovesOldJobs(t *testing.T) {
