@@ -92,21 +92,36 @@ func flattenOverrides(prefix string, m map[string]any, out map[string]any) {
 // buildEditorVM builds the grid: every schema option in schema order (grouped by
 // Group), plus any override keys not covered by the schema as synthetic rows.
 func (s *Server) buildEditorVM(p *presets.Preset, flat map[string]any) editorVM {
-	order := []string{}
-	byName := map[string]*groupVM{}
-	ensure := func(name string) *groupVM {
-		g, ok := byName[name]
-		if !ok {
-			g = &groupVM{Name: name}
-			byName[name] = g
-			order = append(order, name)
-		}
-		return g
-	}
+	gs := newGroupSet()
+	used := s.appendSchemaRows(gs, flat)
+	appendSyntheticRows(gs, flat, used)
+	return gs.finalize(p, len(s.schema.Options))
+}
 
+// groupSet accumulates editor rows into named groups, preserving first-seen order.
+type groupSet struct {
+	order  []string
+	byName map[string]*groupVM
+}
+
+func newGroupSet() *groupSet { return &groupSet{byName: map[string]*groupVM{}} }
+
+func (gs *groupSet) ensure(name string) *groupVM {
+	g, ok := gs.byName[name]
+	if !ok {
+		g = &groupVM{Name: name}
+		gs.byName[name] = g
+		gs.order = append(gs.order, name)
+	}
+	return g
+}
+
+// appendSchemaRows adds one row per schema option (in schema/group order) and
+// returns the set of keys the schema covered.
+func (s *Server) appendSchemaRows(gs *groupSet, flat map[string]any) map[string]bool {
 	used := map[string]bool{}
 	for _, gname := range s.schema.Groups() {
-		g := ensure(gname)
+		g := gs.ensure(gname)
 		for _, opt := range s.schema.InGroup(gname) {
 			val, present := flat[opt.Key]
 			if !present {
@@ -116,8 +131,11 @@ func (s *Server) buildEditorVM(p *presets.Preset, flat map[string]any) editorVM 
 			g.Rows = append(g.Rows, s.rowFor(opt, val, present))
 		}
 	}
+	return used
+}
 
-	// Synthetic rows for override keys the schema does not describe.
+// appendSyntheticRows adds rows for override keys the schema does not describe.
+func appendSyntheticRows(gs *groupSet, flat map[string]any, used map[string]bool) {
 	var extra []string
 	for k := range flat {
 		if !used[k] {
@@ -126,7 +144,7 @@ func (s *Server) buildEditorVM(p *presets.Preset, flat map[string]any) editorVM 
 	}
 	sort.Strings(extra)
 	for _, k := range extra {
-		g := ensure(strings.Split(k, ".")[0])
+		g := gs.ensure(strings.Split(k, ".")[0])
 		g.Rows = append(g.Rows, rowVM{
 			Key:      k,
 			Label:    k,
@@ -136,10 +154,13 @@ func (s *Server) buildEditorVM(p *presets.Preset, flat map[string]any) editorVM 
 			Known:    false,
 		})
 	}
+}
 
-	vm := editorVM{Preset: p, TotalOptions: len(s.schema.Options)}
-	for _, name := range order {
-		g := byName[name]
+// finalize computes per-group and total change counts and returns the VM.
+func (gs *groupSet) finalize(p *presets.Preset, totalOptions int) editorVM {
+	vm := editorVM{Preset: p, TotalOptions: totalOptions}
+	for _, name := range gs.order {
+		g := gs.byName[name]
 		g.Total = len(g.Rows)
 		for _, row := range g.Rows {
 			if row.Changed {

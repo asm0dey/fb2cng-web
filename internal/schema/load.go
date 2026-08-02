@@ -1,7 +1,7 @@
 package schema
 
 import (
-	_ "embed"
+	_ "embed" // enables the //go:embed directive for options.json below
 	"encoding/json"
 	"fmt"
 )
