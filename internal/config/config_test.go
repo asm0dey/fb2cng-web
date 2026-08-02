@@ -26,7 +26,7 @@ func TestFromEnvDefaults(t *testing.T) {
 		MaxConcurrent:  3,
 		ForwardAuth:    false,
 		TrustedProxies: nil,
-		PresetsDir:     "/data/presets",
+		PresetsDir:     defaultPresetsDir(),
 		JobsDir:        filepath.Join(os.TempDir(), "fb2cng-jobs"),
 		JobsTTL:        time.Hour,
 		FBCTimeout:     DefaultFBCTimeout,
