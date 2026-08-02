@@ -1,13 +1,13 @@
 ---
 # fb2cng-web-wlv5
 title: Settings/Presets list page (GET /settings)
-status: todo
+status: completed
 type: task
 priority: high
 tags:
     - plan2
 created_at: 2026-08-02T09:59:00Z
-updated_at: 2026-08-02T09:59:00Z
+updated_at: 2026-08-02T13:05:31Z
 parent: fb2cng-web-ajic
 ---
 

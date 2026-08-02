@@ -1,13 +1,13 @@
 ---
 # fb2cng-web-3clo
 title: Store.Create and Store.Save (sparse round-trip)
-status: todo
+status: completed
 type: task
 priority: high
 tags:
     - plan2
 created_at: 2026-08-02T09:59:00Z
-updated_at: 2026-08-02T09:59:00Z
+updated_at: 2026-08-02T12:47:09Z
 parent: fb2cng-web-ajic
 ---
 

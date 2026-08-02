@@ -1,11 +1,11 @@
 ---
 # fb2cng-web-47t7
 title: 'Plan 3: Option editor + Schema'
-status: todo
+status: completed
 type: epic
 priority: high
 created_at: 2026-08-02T09:24:56Z
-updated_at: 2026-08-02T09:24:57Z
+updated_at: 2026-08-02T14:50:22Z
 parent: fb2cng-web-s726
 blocked_by:
     - fb2cng-web-ajic

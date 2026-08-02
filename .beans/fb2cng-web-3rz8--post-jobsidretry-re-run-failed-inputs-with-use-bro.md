@@ -1,13 +1,13 @@
 ---
 # fb2cng-web-3rz8
 title: POST /jobs/{id}/retry — re-run failed inputs with use_broken_images
-status: todo
+status: completed
 type: task
 priority: high
 tags:
     - plan1
 created_at: 2026-08-02T09:59:00Z
-updated_at: 2026-08-02T09:59:00Z
+updated_at: 2026-08-02T11:34:10Z
 parent: fb2cng-web-odgc
 ---
 

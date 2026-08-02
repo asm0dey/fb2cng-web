@@ -1,13 +1,13 @@
 ---
 # fb2cng-web-intt
 title: main.go — wire store, parse templates, start TTL sweeper
-status: todo
+status: completed
 type: task
 priority: high
 tags:
     - plan1
 created_at: 2026-08-02T09:59:00Z
-updated_at: 2026-08-02T09:59:00Z
+updated_at: 2026-08-02T11:37:52Z
 parent: fb2cng-web-odgc
 ---
 

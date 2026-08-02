@@ -1,13 +1,13 @@
 ---
 # fb2cng-web-yaiz
 title: Integration — routes, config env, go:generate, remove Plan2 editor, Dockerfile/compose
-status: todo
+status: completed
 type: task
 priority: high
 tags:
     - plan3
 created_at: 2026-08-02T09:59:00Z
-updated_at: 2026-08-02T09:59:00Z
+updated_at: 2026-08-02T14:40:31Z
 parent: fb2cng-web-47t7
 ---
 
