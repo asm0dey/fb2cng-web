@@ -7,10 +7,14 @@ services:
     environment:
       AUTH_FORWARD_AUTH: "true"
       TRUSTED_PROXIES: ""   # optional: set to caddy's container IP for defense-in-depth
+      PRESETS_DIR: /data/presets
+      JOBS_DIR: /tmp/fb2cng-jobs
+    volumes:
+      - presets:/data/presets      # persistent named preset store
     # Optional: only needed if you run with a read-only root filesystem.
     # The hardened base already ships a writable /tmp, so conversions work without this.
     tmpfs:
-      - /tmp:rw,mode=1777
+      - /tmp:rw,mode=1777          # jobs scratch (swept on TTL)
     expose:
       - "8080"
     # No "ports:" — never expose the app directly when auth is on.
@@ -31,3 +35,6 @@ services:
     depends_on:
       - fb2cng-web
       - authelia
+
+volumes:
+  presets:

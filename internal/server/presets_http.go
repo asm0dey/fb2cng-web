@@ -81,42 +81,6 @@ func (s *Server) handlePresetDefault(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/settings", http.StatusSeeOther)
 }
 
-// presetEditData is the minimal preset editor VM: a name field plus a raw-YAML overrides
-// textarea. Plan 3 replaces this whole editor with the full option-grid VM.
-type presetEditData struct {
-	layout
-	Preset *presets.Preset
-	YAML   string
-	Error  string
-}
-
-func (s *Server) handlePresetEdit(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	p, err := s.presets.Get(id)
-	if err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
-		return
-	}
-	if p.Builtin {
-		http.Redirect(w, r, "/settings", http.StatusSeeOther)
-		return
-	}
-	yamlText := ""
-	if len(p.Overrides) > 0 {
-		b, err := yaml.Marshal(p.Overrides)
-		if err != nil {
-			http.Error(w, "server error", http.StatusInternalServerError)
-			return
-		}
-		yamlText = string(b)
-	}
-	s.render(w, presetEditData{
-		layout: layout{Tab: "settings", ContentName: "preset_edit"},
-		Preset: p,
-		YAML:   yamlText,
-	})
-}
-
 // buildConfigForPreset marshals a preset's sparse overrides to YAML and feeds them to
 // convert.BuildConfig as the raw-YAML layer (no form options). The Builtin "defaults" preset
 // has empty overrides, so this yields just the application defaults.

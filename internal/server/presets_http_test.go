@@ -14,17 +14,20 @@ import (
 	"fb2cng-web/internal/config"
 	"fb2cng-web/internal/jobs"
 	"fb2cng-web/internal/presets"
+	"fb2cng-web/internal/schema"
 	"fb2cng-web/internal/web"
 )
 
 // newPresetServer builds a Server whose presets store is rooted at dir.
 //
-// Server.New's signature is owned by Plan 1: New(cfg, runner, static, tpl, jobs). Plan 2 widens
+// Server.New's signature is owned by Plan 1: New(cfg, runner, static, tpl, jobs). Plan 2 widened
 // it to New(cfg, runner, static, tpl, jobs, presets) by appending the presets field (concretely
-// typed *presets.Store). tpl MUST be a REAL parsed template set (base.gohtml + settings.gohtml +
-// preset_edit.gohtml) — handleSettings/handlePresetEdit call s.tpl via s.render, so a nil tpl
+// typed *presets.Store), and Plan 3 appends schema (concretely typed *schema.Schema) as the
+// seventh and final argument. tpl MUST be a REAL parsed template set (base.gohtml + settings.gohtml
+// + editor.gohtml) — handleSettings/handlePresetEditor call s.tpl via s.render, so a nil tpl
 // panics. web.Templates() is Plan 1's parse helper over the embedded templates; if Plan 1 names
-// it differently, use that helper — never pass nil.
+// it differently, use that helper — never pass nil. schema.Load() parses the real embedded
+// options.json, so presets_http_test.go exercises the editor grid against the production schema.
 func newPresetServer(t *testing.T, dir string) (*Server, http.Handler) {
 	t.Helper()
 	tpl, err := web.Templates()
@@ -33,8 +36,69 @@ func newPresetServer(t *testing.T, dir string) (*Server, http.Handler) {
 	}
 	jobStore := jobs.NewStore(t.TempDir(), time.Hour)
 	ps := presets.NewStore(dir)
-	srv := New(config.Config{MaxConcurrent: 1}, stubRunner{}, web.FS, tpl, jobStore, ps)
+	sch, err := schema.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := New(config.Config{MaxConcurrent: 1}, stubRunner{}, web.FS, tpl, jobStore, ps, sch)
 	return srv, srv.Handler()
+}
+
+// TestRoutedEditorSaveEffective is the Task 9 integration proof: it drives the
+// GET editor, POST save, and POST .../effective routes through the REAL New(...)-
+// constructed Server (real routing table via Handler(), real embedded schema via
+// schema.Load(), real parsed templates via web.Templates()) rather than the
+// hand-built &Server{} used by editor_test.go's unit tests. Before Task 9 wired
+// schema into New, s.schema was nil on every server built by New, so
+// handlePresetEditor's s.schema.Groups() call would nil-pointer-panic the moment
+// this test's GET request reached it.
+func TestRoutedEditorSaveEffective(t *testing.T) {
+	dir := t.TempDir()
+	srv, h := newPresetServer(t, dir)
+	p, err := srv.presets.Create("Kindle")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// GET the full option grid through the routed handler.
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/settings/preset/"+p.ID, nil))
+	if rec.Code != 200 {
+		t.Fatalf("GET editor code=%d body=%s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, `name="document.toc_type"`) {
+		t.Fatalf("editor grid missing a real schema option row:\n%s", body)
+	}
+
+	// POST a sparse override through the routed handler.
+	form := url.Values{}
+	form.Set("name", "Kindle")
+	form.Set("document.images.jpeg_quality_level", "40")
+	rec = postForm(h, "/settings/preset/"+p.ID, form)
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("POST save code=%d body=%s", rec.Code, rec.Body.String())
+	}
+	saved, err := srv.presets.Get(p.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc, _ := saved.Overrides["document"].(map[string]any)
+	img, _ := doc["images"].(map[string]any)
+	if img == nil || img["jpeg_quality_level"] != 40 {
+		t.Fatalf("save did not persist override via routed handler: %+v", saved.Overrides)
+	}
+
+	// POST the effective-pane fragment through the routed handler.
+	form = url.Values{}
+	form.Set("document.images.jpeg_quality_level", "40")
+	rec = postForm(h, "/settings/preset/"+p.ID+"/effective", form)
+	if rec.Code != 200 {
+		t.Fatalf("POST effective code=%d body=%s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "jpeg_quality_level: 40") {
+		t.Fatalf("effective pane missing merged override:\n%s", rec.Body.String())
+	}
 }
 
 func TestSettingsListsPresets(t *testing.T) {
@@ -149,33 +213,6 @@ func TestDeleteDefaultBlocked(t *testing.T) {
 	rec := postForm(h, "/settings/preset/"+p.ID+"/delete", url.Values{})
 	if rec.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("deleting default should be 422, got %d", rec.Code)
-	}
-}
-
-func TestEditorSeedsYAML(t *testing.T) {
-	dir := t.TempDir()
-	srv, h := newPresetServer(t, dir)
-	p, _ := srv.presets.Create("Kindle")
-	p.Overrides = map[string]any{"document": map[string]any{"toc_type": "inline"}}
-	srv.presets.Save(p)
-
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest("GET", "/settings/preset/"+p.ID, nil))
-	if rec.Code != 200 {
-		t.Fatalf("code=%d", rec.Code)
-	}
-	body := rec.Body.String()
-	if !strings.Contains(body, "toc_type") || !strings.Contains(body, "Kindle") {
-		t.Fatalf("editor did not seed name/overrides:\n%s", body)
-	}
-}
-
-func TestEditBuiltinRedirects(t *testing.T) {
-	_, h := newPresetServer(t, t.TempDir())
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest("GET", "/settings/preset/defaults", nil))
-	if rec.Code != http.StatusSeeOther {
-		t.Fatalf("editing builtin should redirect, got %d", rec.Code)
 	}
 }
 

@@ -25,7 +25,8 @@ FROM bellsoft/hardened-base:musl
 COPY --from=fbc /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=fbc /opt/fbc /usr/local/bin/fbc
 COPY --from=build /out/fb2cng-web /usr/local/bin/fb2cng-web
-ENV FBC_BIN=/usr/local/bin/fbc PORT=8080 TMPDIR=/tmp
+ENV FBC_BIN=/usr/local/bin/fbc PORT=8080 TMPDIR=/tmp \
+    PRESETS_DIR=/data/presets JOBS_DIR=/tmp/fb2cng-jobs
 EXPOSE 8080
 USER 65532:65532
 ENTRYPOINT ["/usr/local/bin/fb2cng-web"]
