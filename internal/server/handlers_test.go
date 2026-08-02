@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +13,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -79,6 +81,80 @@ func fakeFbcRunner(t *testing.T) convert.Runner {
 		t.Fatal(err)
 	}
 	return convert.New(abs)
+}
+
+// countingRunner is a convert.Runner used to exercise the retry concurrency
+// fix: it counts ConvertLogged calls per input (so tests can assert an input
+// was converted exactly once per intended attempt, catching duplicate
+// conversions from an unguarded double retry), and mimics fake-fbc.sh's rule
+// that any input whose basename contains "corrupt" fails unless the config
+// passed via -c contains "use_broken_images: true".
+type countingRunner struct {
+	mu     sync.Mutex
+	counts map[string]int
+	delay  time.Duration // artificial per-call delay to widen concurrency windows
+}
+
+func newCountingRunner(delay time.Duration) *countingRunner {
+	return &countingRunner{counts: map[string]int{}, delay: delay}
+}
+
+func (c *countingRunner) callCount(input string) int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.counts[input]
+}
+
+func (c *countingRunner) DumpDefaults(context.Context) ([]byte, error) {
+	return []byte("version: 1\n"), nil
+}
+
+func (c *countingRunner) Convert(ctx context.Context, inputPath, format, configPath, destDir string) ([]string, error) {
+	outs, _, err := c.run(inputPath, format, configPath, destDir)
+	return outs, err
+}
+
+func (c *countingRunner) ConvertLogged(ctx context.Context, inputPath, format, configPath, destDir, logPath string) ([]string, error) {
+	outs, logLines, err := c.run(inputPath, format, configPath, destDir)
+	_ = os.WriteFile(logPath, []byte(logLines), 0o644)
+	return outs, err
+}
+
+func (c *countingRunner) run(inputPath, format, configPath, destDir string) ([]string, string, error) {
+	base := filepath.Base(inputPath)
+	c.mu.Lock()
+	c.counts[base]++
+	n := c.counts[base]
+	c.mu.Unlock()
+
+	if c.delay > 0 {
+		time.Sleep(c.delay)
+	}
+
+	broken := false
+	if configPath != "" {
+		b, _ := os.ReadFile(configPath)
+		if strings.Contains(string(b), "use_broken_images: true") {
+			broken = true
+		}
+	}
+
+	log := fmt.Sprintf("INFO: opening %s\n", inputPath)
+	if strings.Contains(base, "corrupt") && !broken {
+		log += fmt.Sprintf("ERR: cannot parse %s: broken image\n", inputPath)
+		return nil, log, fmt.Errorf("fake failure #%d for %s", n, base)
+	}
+
+	if err := os.MkdirAll(destDir, 0o755); err != nil {
+		return nil, log, err
+	}
+	stem := strings.TrimSuffix(base, filepath.Ext(base))
+	outPath := filepath.Join(destDir, stem+"."+format)
+	if err := os.WriteFile(outPath, []byte("FAKE-"+format), 0o644); err != nil {
+		return nil, log, err
+	}
+	log += fmt.Sprintf("INFO: wrote %s\n", filepath.Base(outPath))
+	return []string{outPath}, log, nil
 }
 
 // waitDone polls the job's status.json until the batch is terminal or the deadline hits.
@@ -290,6 +366,132 @@ func TestRetryReRunsFailedWithOverride(t *testing.T) {
 	}
 	if len(st.Files[0].Outputs) != 1 {
 		t.Fatalf("expected an output after retry, got %+v", st.Files[0])
+	}
+}
+
+// TestRetryConcurrentDedupesAndSurvivesInFlightWorker is the regression test
+// for the lost-update / double-conversion race in handleRetry: the failed->
+// pending reset must happen under s.mu (like updateFile) so that (a) a
+// concurrent in-flight background worker writing status.json for other files
+// never gets its update clobbered, and (b) firing retry multiple times
+// concurrently converts each failed input exactly once, not once per request.
+//
+// The runner's artificial delay keeps the original job's background worker
+// busy (still writing status.json for later files) while a burst of
+// concurrent retry requests race in for the already-failed inputs. Run with
+// `-race -count=10`: pre-fix, handleRetry's unlocked Load/Save of status.json
+// races with updateFile's s.mu-guarded Load/Save on the same file.
+func TestRetryConcurrentDedupesAndSurvivesInFlightWorker(t *testing.T) {
+	runner := newCountingRunner(15 * time.Millisecond)
+	h := newTestServer(t, config.Config{MaxConcurrent: 4}, runner)
+
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	for _, name := range []string{"corrupt1.fb2", "corrupt2.fb2", "ok1.fb2", "ok2.fb2", "ok3.fb2"} {
+		fw, _ := mw.CreateFormFile("file", name)
+		fw.Write([]byte("<FictionBook/>"))
+	}
+	mw.WriteField("format", "epub3")
+	mw.WriteField("preset", "defaults")
+	mw.Close()
+	req := httptest.NewRequest("POST", "/convert", &buf)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != 200 {
+		t.Fatalf("convert POST code=%d body=%q", rec.Code, rec.Body.String())
+	}
+	id := extractJobID(t, rec.Body.String())
+
+	// Wait until BOTH corrupt inputs are marked failed (every input this test
+	// expects retry to catch), but don't wait for the whole batch: the ok*
+	// inputs' background worker is still running (thanks to the artificial
+	// delay), so this is the in-flight window the fix must protect. Waiting
+	// for only one corrupt file would let the retry burst miss whichever
+	// corrupt file hadn't failed yet, permanently stranding it (a test bug,
+	// not a fix bug) since nothing retries it again afterward.
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		if time.Now().After(deadline) {
+			t.Fatal("timed out waiting for both corrupt files to fail")
+		}
+		st := loadStatus(t, h, id)
+		if st != nil {
+			failedCorrupt := 0
+			for _, f := range st.Files {
+				if strings.HasPrefix(f.Input, "corrupt") && f.State == jobs.StateFailed {
+					failedCorrupt++
+				}
+			}
+			if failedCorrupt == 2 {
+				break
+			}
+		}
+		time.Sleep(2 * time.Millisecond)
+	}
+
+	// Fire a burst of concurrent retry requests while the original worker may
+	// still be converting the remaining inputs.
+	const concurrentRetries = 6
+	var wg sync.WaitGroup
+	for i := 0; i < concurrentRetries; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, httptest.NewRequest("POST", "/jobs/"+id+"/retry", nil))
+			if rec.Code != 200 {
+				t.Errorf("retry POST code=%d body=%q", rec.Code, rec.Body.String())
+			}
+		}()
+	}
+	wg.Wait()
+
+	st := waitDone(t, h, id)
+	if len(st.Files) != 5 {
+		t.Fatalf("lost update: expected 5 files in final status, got %d: %+v", len(st.Files), st.Files)
+	}
+	for _, f := range st.Files {
+		if f.State != jobs.StateDone {
+			t.Errorf("file %q: expected done (no lost update), got state=%s err=%q", f.Input, f.State, f.Err)
+		}
+	}
+
+	// Each corrupt input must have been converted exactly twice: once by the
+	// original (failing) attempt, once by whichever single retry request won
+	// the race. An unguarded/undeduped retry would convert it 1 + N times.
+	for _, name := range []string{"corrupt1.fb2", "corrupt2.fb2"} {
+		if got := runner.callCount(name); got != 2 {
+			t.Errorf("%s: expected exactly 2 conversion attempts (1 fail + 1 retry), got %d — duplicate conversion from unguarded/undeduped retry", name, got)
+		}
+	}
+	for _, name := range []string{"ok1.fb2", "ok2.fb2", "ok3.fb2"} {
+		if got := runner.callCount(name); got != 1 {
+			t.Errorf("%s: expected exactly 1 conversion attempt, got %d", name, got)
+		}
+	}
+}
+
+// TestRetryBadIDNotFound is the traversal regression test for POST
+// /jobs/{id}/retry: the existing traversal suite only covers the GET routes.
+// net/http's ServeMux matches an encoded slash inside {id} as a literal
+// single path segment and r.PathValue("id") returns it unescaped, so retry
+// must reject it the same way every other {id}-keyed route does.
+func TestRetryBadIDNotFound(t *testing.T) {
+	h := newTestServer(t, config.Config{MaxConcurrent: 1}, fakeFbcRunner(t))
+
+	badID := "..%2f..%2fetc%2fpasswd"
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("POST", "/jobs/"+badID+"/retry", nil))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("retry on bad id: expected 404, got %d body=%q", rec.Code, rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("POST", "/jobs/deadbeefdeadbeef/retry", nil))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("retry on unknown id: expected 404, got %d body=%q", rec.Code, rec.Body.String())
 	}
 }
 
