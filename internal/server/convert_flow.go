@@ -282,7 +282,13 @@ func cardFor(st *jobs.Status) *convertCardVM {
 }
 
 func (s *Server) handleJobStatus(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "not yet", http.StatusNotImplemented)
+	id := r.PathValue("id")
+	st, err := s.jobs.Load(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	s.renderPartial(w, "convert_card", cardFor(st))
 }
 func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "not yet", http.StatusNotImplemented)
