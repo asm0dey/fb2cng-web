@@ -10,6 +10,7 @@ for a in "$@"; do
   case "$a" in
     dumpconfig) mode=dump ;;
     convert) mode=convert ;;
+    *) ;;
   esac
 done
 

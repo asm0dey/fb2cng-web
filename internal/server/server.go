@@ -87,7 +87,7 @@ func (s *Server) userLabel(r *http.Request) string {
 // render executes the shared "base" layout, which dispatches to the page body named by
 // the embedded layout.ContentName. Use it for full-page GETs.
 func (s *Server) render(w http.ResponseWriter, data any) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set(hdrContentType, ctHTML)
 	if err := s.tpl.ExecuteTemplate(w, "base", data); err != nil {
 		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
 	}
@@ -96,7 +96,7 @@ func (s *Server) render(w http.ResponseWriter, data any) {
 // renderPartial executes a single named template (an htmx fragment) directly, bypassing
 // the base layout. Use it for the convert-card and other swap regions.
 func (s *Server) renderPartial(w http.ResponseWriter, name string, data any) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set(hdrContentType, ctHTML)
 	if err := s.tpl.ExecuteTemplate(w, name, data); err != nil {
 		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
 	}

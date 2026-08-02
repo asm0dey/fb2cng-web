@@ -4,7 +4,7 @@
 FROM --platform=$BUILDPLATFORM bellsoft/alpaquita-linux-base:stream-musl AS fbc
 ARG FBC_VERSION=v1.4.5
 ARG TARGETARCH
-RUN apk add --no-cache curl unzip ca-certificates \
+RUN apk add --no-cache ca-certificates curl unzip \
  && curl -fsSL -o /tmp/fbc.zip \
       "https://github.com/rupor-github/fb2cng/releases/download/${FBC_VERSION}/fbc-linux-${TARGETARCH}.zip" \
  && unzip -o /tmp/fbc.zip -d /opt \
@@ -18,7 +18,7 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /out/fb2cng-web .
+RUN CGO_ENABLED=0 GOOS="${TARGETOS}" GOARCH="${TARGETARCH}" go build -o /out/fb2cng-web .
 
 # --- Stage 3: hardened runtime (per-arch image, COPY only) ---
 FROM bellsoft/hardened-base:musl

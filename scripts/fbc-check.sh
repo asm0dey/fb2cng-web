@@ -10,17 +10,17 @@ FBC_REPO="${FBC_REPO:-rupor-github/fb2cng}"
 FILE="${FBC_VERSION_FILE:-FBC_VERSION}"
 
 latest="${LATEST_FBC:-}"
-if [ -z "$latest" ]; then
+if [[ -z "$latest" ]]; then
   latest="$(curl -fsSL "https://api.github.com/repos/${FBC_REPO}/releases/latest" | jq -r '.tag_name')"
 fi
-if [ -z "$latest" ] || [ "$latest" = "null" ]; then
+if [[ -z "$latest" || "$latest" == "null" ]]; then
   echo "fbc-check: failed to determine latest fbc version" >&2
   exit 1
 fi
 
 current="$(cat "$FILE")"
 
-if [ "$latest" = "$current" ]; then
+if [[ "$latest" == "$current" ]]; then
   changed=false
 else
   changed=true
@@ -29,7 +29,7 @@ fi
 
 echo "changed=$changed"
 echo "version=$latest"
-if [ -n "${GITHUB_OUTPUT:-}" ]; then
+if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
     echo "changed=$changed"
     echo "version=$latest"

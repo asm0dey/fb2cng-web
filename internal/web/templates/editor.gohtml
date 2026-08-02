@@ -35,20 +35,20 @@
           <div class="option-control">
             {{if eq .Kind "bool"}}
               <input type="hidden" name="{{.Key}}" value="false">
-              <input type="checkbox" id="opt-{{.Key}}" name="{{.Key}}" value="true" data-default="{{.DefaultStr}}" {{if .Checked}}checked{{end}}>
+              <input type="checkbox" id="opt-{{.Key}}" name="{{.Key}}" value="true" data-default="{{.DefaultStr}}" aria-label="{{.Label}}" {{if .Checked}}checked{{end}}>
             {{else if eq .Kind "int"}}
-              <input type="number" id="opt-{{.Key}}" name="{{.Key}}" value="{{.StrValue}}" data-default="{{.DefaultStr}}">
+              <input type="number" id="opt-{{.Key}}" name="{{.Key}}" value="{{.StrValue}}" data-default="{{.DefaultStr}}" aria-label="{{.Label}}">
             {{else if eq .Kind "enum"}}
-              <select id="opt-{{.Key}}" name="{{.Key}}" data-default="{{.DefaultStr}}">
+              <select id="opt-{{.Key}}" name="{{.Key}}" data-default="{{.DefaultStr}}" aria-label="{{.Label}}">
                 {{range .Enum}}<option value="{{.}}"{{if eq $row.StrValue .}} selected{{end}}>{{.}}</option>{{end}}
               </select>
             {{else if .IsTemplate}}
               <div class="template-wrap">
-                <textarea id="opt-{{.Key}}" name="{{.Key}}" rows="3" class="template-input" data-default="{{.DefaultStr}}">{{.StrValue}}</textarea>
+                <textarea id="opt-{{.Key}}" name="{{.Key}}" rows="3" class="template-input" data-default="{{.DefaultStr}}" aria-label="{{.Label}}">{{.StrValue}}</textarea>
                 {{if eq .Label "output_name_template"}}<div class="filename-preview" data-for="opt-{{.Key}}"></div>{{end}}
               </div>
             {{else}}
-              <input type="text" id="opt-{{.Key}}" name="{{.Key}}" value="{{.StrValue}}" data-default="{{.DefaultStr}}">
+              <input type="text" id="opt-{{.Key}}" name="{{.Key}}" value="{{.StrValue}}" data-default="{{.DefaultStr}}" aria-label="{{.Label}}">
             {{end}}
           </div>
           <span class="option-meta">{{if and .Known (not .IsTemplate)}}<span class="option-default">default {{.DefaultStr}}</span>{{end}}<a class="reset" href="#" data-target="opt-{{.Key}}">reset</a></span>
