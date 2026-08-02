@@ -189,3 +189,91 @@ func (s *Server) handlePresetEditor(w http.ResponseWriter, r *http.Request) {
 	// Render the "editor" content template through Plan 1's base layout.
 	s.render(w, vm)
 }
+
+// collectOverrides reads posted field values and returns only the sparse set
+// that differs from the schema default (dropping equal-to-default keys). Bool
+// controls post a hidden "false" plus (when checked) "true"; the last value wins.
+// Unknown keys containing a dot are kept as raw strings (synthetic overrides).
+func (s *Server) collectOverrides(r *http.Request) map[string]any {
+	flat := map[string]any{}
+	for key, vals := range r.PostForm {
+		if key == "name" || key == "is_default" || key == "" || len(vals) == 0 {
+			continue
+		}
+		v := vals[len(vals)-1]
+		if opt, ok := s.schema.Get(key); ok {
+			typed := parseValue(opt.Kind, v)
+			if opt.IsDefault(typed) {
+				continue
+			}
+			flat[key] = typed
+			continue
+		}
+		if !strings.Contains(key, ".") || strings.TrimSpace(v) == "" {
+			continue
+		}
+		flat[key] = v
+	}
+	return flat
+}
+
+func parseValue(k schema.Kind, v string) any {
+	switch k {
+	case schema.KindBool:
+		return v == "true"
+	case schema.KindInt:
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+		return v
+	default:
+		return v
+	}
+}
+
+// unflatten turns dotted keys back into a nested map (the shape presets store).
+func unflatten(flat map[string]any) map[string]any {
+	root := map[string]any{}
+	for key, v := range flat {
+		segs := strings.Split(key, ".")
+		m := root
+		for _, seg := range segs[:len(segs)-1] {
+			next, ok := m[seg].(map[string]any)
+			if !ok {
+				next = map[string]any{}
+				m[seg] = next
+			}
+			m = next
+		}
+		m[segs[len(segs)-1]] = v
+	}
+	return root
+}
+
+func (s *Server) handlePresetSave(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad form", http.StatusBadRequest)
+		return
+	}
+	id := r.PathValue("id")
+	p, err := s.presets.Get(id)
+	if err != nil {
+		http.Error(w, "preset not found", http.StatusNotFound)
+		return
+	}
+	if name := strings.TrimSpace(r.PostFormValue("name")); name != "" {
+		p.Name = name
+	}
+	p.Overrides = unflatten(s.collectOverrides(r))
+	if err := s.presets.Save(p); err != nil {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+	if r.PostFormValue("is_default") == "true" {
+		if err := s.presets.SetDefault(id); err != nil {
+			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+			return
+		}
+	}
+	http.Redirect(w, r, "/settings/preset/"+id, http.StatusSeeOther)
+}

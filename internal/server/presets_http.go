@@ -117,38 +117,6 @@ func (s *Server) handlePresetEdit(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) handlePresetSave(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "bad form", http.StatusBadRequest)
-		return
-	}
-	name := strings.TrimSpace(r.FormValue("name"))
-	if name == "" {
-		name = id
-	}
-	yamlText := r.FormValue("overrides_yaml")
-	overrides := map[string]any{}
-	if strings.TrimSpace(yamlText) != "" {
-		if err := yaml.Unmarshal([]byte(yamlText), &overrides); err != nil {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			s.render(w, presetEditData{
-				layout: layout{Tab: "settings", ContentName: "preset_edit"},
-				Preset: &presets.Preset{ID: id, Name: name},
-				YAML:   yamlText,
-				Error:  "invalid YAML: " + err.Error(),
-			})
-			return
-		}
-	}
-	p := &presets.Preset{ID: id, Name: name, Overrides: overrides}
-	if err := s.presets.Save(p); err != nil {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-	http.Redirect(w, r, "/settings", http.StatusSeeOther)
-}
-
 // buildConfigForPreset marshals a preset's sparse overrides to YAML and feeds them to
 // convert.BuildConfig as the raw-YAML layer (no form options). The Builtin "defaults" preset
 // has empty overrides, so this yields just the application defaults.

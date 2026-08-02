@@ -1,9 +1,11 @@
 package server
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -104,5 +106,55 @@ func TestPresetEditorRendersGrid(t *testing.T) {
 	}
 	if !strings.Contains(body, `name="document.images.optimize"`) {
 		t.Fatal("unchanged bool control missing")
+	}
+}
+
+func TestPresetSaveSparse(t *testing.T) {
+	store := presets.NewStore(t.TempDir())
+	p, err := store.Create("P")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := &Server{schema: testSchema(t), presets: store}
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /settings/preset/{id}", s.handlePresetSave)
+
+	form := url.Values{}
+	form.Set("name", "Renamed")
+	form.Set("document.toc_type", "normal")              // == default -> dropped
+	form.Set("document.images.jpeg_quality_level", "40") // != default 75 -> kept
+	form["document.images.optimize"] = []string{"false"} // unchecked bool -> false, != default true -> kept
+
+	req := httptest.NewRequest("POST", "/settings/preset/"+p.ID, strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("code=%d body=%s", rec.Code, rec.Body.String())
+	}
+
+	got, err := store.Get(p.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Name != "Renamed" {
+		t.Fatalf("name not saved: %q", got.Name)
+	}
+	doc, _ := got.Overrides["document"].(map[string]any)
+	if doc == nil {
+		t.Fatalf("overrides missing document: %+v", got.Overrides)
+	}
+	if _, ok := doc["toc_type"]; ok {
+		t.Fatal("default toc_type should be dropped (sparse)")
+	}
+	img, _ := doc["images"].(map[string]any)
+	if img == nil {
+		t.Fatalf("overrides missing document.images: %+v", doc)
+	}
+	if fmt.Sprint(img["jpeg_quality_level"]) != "40" {
+		t.Fatalf("jpeg override not saved: %v", img["jpeg_quality_level"])
+	}
+	if img["optimize"] != false {
+		t.Fatalf("optimize should be saved as false: %v", img["optimize"])
 	}
 }
