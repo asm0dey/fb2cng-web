@@ -26,10 +26,10 @@ type Server struct {
 	schema  *schema.Schema
 }
 
-// New constructs a Server. Plan 3 widens this signature (adding schema) when that
-// package lands; Plan 1 took five parameters, Plan 2 appends presets as the sixth.
+// New constructs a Server. Plan 1 took five parameters, Plan 2 appended presets as
+// the sixth, and Plan 3 appends schema as the seventh (and final) parameter.
 func New(cfg config.Config, runner convert.Runner, static fs.FS,
-	tpl *template.Template, jobStore *jobs.Store, presetStore *presets.Store) *Server {
+	tpl *template.Template, jobStore *jobs.Store, presetStore *presets.Store, sch *schema.Schema) *Server {
 	n := cfg.MaxConcurrent
 	if n < 1 {
 		n = 1
@@ -42,6 +42,7 @@ func New(cfg config.Config, runner convert.Runner, static fs.FS,
 		tpl:     tpl,
 		jobs:    jobStore,
 		presets: presetStore,
+		schema:  sch,
 	}
 }
 
@@ -59,8 +60,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /jobs/{id}/retry", s.handleRetry)
 	mux.HandleFunc("GET /settings", s.handleSettings)
 	mux.HandleFunc("POST /settings/preset", s.handlePresetCreate)
-	mux.HandleFunc("GET /settings/preset/{id}", s.handlePresetEdit)
+	mux.HandleFunc("GET /settings/preset/{id}", s.handlePresetEditor)
 	mux.HandleFunc("POST /settings/preset/{id}", s.handlePresetSave)
+	mux.HandleFunc("POST /settings/preset/{id}/effective", s.handlePresetEffective)
 	mux.HandleFunc("POST /settings/preset/{id}/duplicate", s.handlePresetDuplicate)
 	mux.HandleFunc("POST /settings/preset/{id}/delete", s.handlePresetDelete)
 	mux.HandleFunc("POST /settings/preset/{id}/default", s.handlePresetDefault)

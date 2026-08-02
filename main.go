@@ -10,12 +10,18 @@ import (
 	"fb2cng-web/internal/convert"
 	"fb2cng-web/internal/jobs"
 	"fb2cng-web/internal/presets"
+	"fb2cng-web/internal/schema"
 	"fb2cng-web/internal/server"
 	"fb2cng-web/internal/web"
 )
 
 func main() {
 	cfg := config.FromEnv()
+
+	sch, err := schema.Load()
+	if err != nil {
+		log.Fatalf("load embedded schema: %v", err)
+	}
 
 	if err := os.MkdirAll(cfg.JobsDir, 0o755); err != nil {
 		log.Fatalf("jobs dir %s: %v", cfg.JobsDir, err)
@@ -38,7 +44,7 @@ func main() {
 		}
 	}()
 
-	srv := server.New(cfg, convert.New(cfg.FBCBin), web.FS, tpl, jobStore, presetStore)
+	srv := server.New(cfg, convert.New(cfg.FBCBin), web.FS, tpl, jobStore, presetStore, sch)
 	log.Printf("fb2cng-web listening on %s (fbc=%s, auth=%v, jobs=%s, ttl=%s)",
 		cfg.Addr, cfg.FBCBin, cfg.ForwardAuth, cfg.JobsDir, cfg.JobsTTL)
 	if err := http.ListenAndServe(cfg.Addr, srv.Handler()); err != nil {
