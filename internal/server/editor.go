@@ -182,7 +182,7 @@ func (s *Server) handlePresetEditor(w http.ResponseWriter, r *http.Request) {
 	flattenOverrides("", p.Overrides, flat)
 
 	vm := s.buildEditorVM(p, flat)
-	vm.layout = layout{Tab: "settings", ContentName: "editor", User: r.Header.Get("Remote-User")}
+	vm.layout = layout{Tab: "settings", ContentName: "editor", User: s.userLabel(r)}
 	vm.IsDefaultPreset = s.presets.DefaultID() == id ||
 		(s.presets.DefaultID() == "" && id == "defaults")
 	vm.Effective = s.computeEffective(r.Context(), flat)

@@ -14,15 +14,6 @@ if (themeSel) {
   });
 }
 
-// ---- Identity badge ----
-fetch('/me')
-  .then((r) => r.json())
-  .then((m) => {
-    const el = $('user');
-    if (el && m.enabled && (m.name || m.user)) el.textContent = '👤 ' + (m.name || m.user);
-  })
-  .catch(() => {});
-
 // ---- Drag-drop assigns files to the real file input inside the form. ----
 const drop = $('drop');
 const fileInput = $('file');

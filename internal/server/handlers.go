@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -10,21 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 )
-
-func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
-	resp := map[string]any{"enabled": s.cfg.ForwardAuth}
-	if s.cfg.ForwardAuth {
-		resp["user"] = r.Header.Get("Remote-User")
-		resp["name"] = r.Header.Get("Remote-Name")
-	}
-	writeJSON(w, http.StatusOK, resp)
-}
-
-func writeJSON(w http.ResponseWriter, code int, v any) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(v)
-}
 
 // allowedFormats are the output types fbc supports.
 var allowedFormats = map[string]bool{

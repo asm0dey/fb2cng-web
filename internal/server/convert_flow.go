@@ -49,7 +49,7 @@ var uiFormats = []string{"epub3", "epub2", "kepub", "kfx", "azw8", "pdf"}
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	s.render(w, pageVM{
-		layout:  layout{Tab: "convert", ContentName: "convert", User: r.Header.Get("Remote-Name")},
+		layout:  layout{Tab: "convert", ContentName: "convert", User: s.userLabel(r)},
 		Presets: s.presetOptions(),
 		Formats: uiFormats,
 		Format:  "epub3",
