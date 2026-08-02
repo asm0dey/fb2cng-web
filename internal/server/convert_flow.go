@@ -24,8 +24,9 @@ type layout struct {
 
 // Page/card view models rendered by the Convert templates.
 type presetOption struct {
-	ID   string
-	Name string
+	ID       string
+	Name     string
+	Selected bool
 }
 
 type convertCardVM struct {
@@ -46,14 +47,10 @@ type pageVM struct {
 
 var uiFormats = []string{"epub3", "epub2", "kepub", "kfx", "azw8", "pdf"}
 
-func defaultPresetOptions() []presetOption {
-	return []presetOption{{ID: "defaults", Name: "Defaults"}}
-}
-
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	s.render(w, pageVM{
 		layout:  layout{Tab: "convert", ContentName: "convert", User: r.Header.Get("Remote-Name")},
-		Presets: defaultPresetOptions(),
+		Presets: s.presetOptions(),
 		Formats: uiFormats,
 		Format:  "epub3",
 		Card:    &convertCardVM{},
@@ -141,9 +138,9 @@ func (s *Server) handleConvert(w http.ResponseWriter, r *http.Request) {
 
 	// Write the effective config once for the whole batch (Defaults => app defaults).
 	cfgPath := filepath.Join(s.jobs.Dir, id, "config.yaml")
-	cfgBytes, err := convert.BuildConfig("", convert.FormOptions{})
+	cfgBytes, err := s.buildConfigForPreset(preset)
 	if err != nil {
-		http.Error(w, "invalid config: "+err.Error(), http.StatusUnprocessableEntity)
+		http.Error(w, "invalid preset: "+err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 	if err := os.WriteFile(cfgPath, cfgBytes, 0o644); err != nil {

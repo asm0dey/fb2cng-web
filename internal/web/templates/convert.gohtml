@@ -10,7 +10,7 @@
   <div class="field">
     <label for="preset">Preset</label>
     <select class="select" id="preset" name="preset">
-      {{range .Presets}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
+      {{range .Presets}}<option value="{{.ID}}"{{if .Selected}} selected{{end}}>{{.Name}}</option>{{end}}
     </select>
   </div>
 
