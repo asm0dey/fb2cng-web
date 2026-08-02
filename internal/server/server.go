@@ -10,10 +10,10 @@ import (
 	"fb2cng-web/internal/convert"
 	"fb2cng-web/internal/jobs"
 	"fb2cng-web/internal/presets"
+	"fb2cng-web/internal/schema"
 )
 
 // Server wires configuration, the fbc runner, the job store, and the templated frontend.
-// Plan 3 appends `schema *schema.Schema`.
 type Server struct {
 	cfg     config.Config
 	runner  convert.Runner
@@ -23,6 +23,7 @@ type Server struct {
 	jobs    *jobs.Store
 	presets *presets.Store
 	mu      sync.Mutex // guards status.json read-modify-write (self-hosted, low-hardening)
+	schema  *schema.Schema
 }
 
 // New constructs a Server. Plan 3 widens this signature (adding schema) when that

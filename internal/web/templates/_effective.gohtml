@@ -1,0 +1,14 @@
+{{define "_effective"}}
+<div class="effective-head">
+  <span class="effective-title">Effective config</span>
+  <span class="effective-note">refreshed on save</span>
+</div>
+{{if or .Valid .Invalid}}
+<div class="validity{{if .Invalid}} invalid{{else}} valid{{end}}">
+  <span class="validity-dot"></span>
+  {{if .Invalid}}Invalid · {{.OverrideCount}} override{{if ne .OverrideCount 1}}s{{end}}{{else}}Valid · {{.OverrideCount}} override{{if ne .OverrideCount 1}}s{{end}} merged over defaults{{end}}
+</div>
+{{end}}
+{{if .Error}}<p class="effective-error">{{.Error}}</p>{{end}}
+<pre class="effective-yaml">{{.YAML}}</pre>
+{{end}}
