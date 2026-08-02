@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background: oklch(0.945 0.004 255); }
+  a { color: oklch(0.52 0.14 255); }
+  a:hover { color: oklch(0.42 0.14 255); }
+  @keyframes indet { 0% { transform: translateX(-100%); } 100% { transform: translateX(320%); } }
+</style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:56px;padding:48px 56px 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:oklch(0.28 0.012 255);">
+  <div id="2a" style="display:flex;flex-direction:column;gap:40px;">
+
+    <header style="display:flex;flex-direction:column;gap:10px;max-width:820px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font:600 11px/1 'IBM Plex Mono',ui-monospace,Menlo,monospace;letter-spacing:.1em;padding:5px 7px;border:1px solid oklch(0.86 0.006 255);border-radius:4px;color:oklch(0.45 0.012 255);background:#fff;">2a</span>
+        <h1 style="margin:0;font-size:20px;font-weight:600;letter-spacing:-0.01em;">Dark theme</h1>
+      </div>
+      <p style="margin:0;font-size:14px;line-height:1.55;color:oklch(0.5 0.012 255);max-width:70ch;text-wrap:pretty;">Same markup — the palette is eight custom properties on <code style="font-family:'IBM Plex Mono',monospace;">:root</code>, re-declared inside one <code style="font-family:'IBM Plex Mono',monospace;">@media (prefers-color-scheme: dark)</code> block. No toggle, no JS, no stored preference: the phone decides at night, the desktop at its own schedule. Frames below show the four screens where the dark values actually matter; every other screen is the same substitution.</p>
+    </header>
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <h2 style="margin:0;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:oklch(0.45 0.012 255);">Tokens</h2>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,260px));gap:1px;background:oklch(0.88 0.005 255);border:1px solid oklch(0.88 0.005 255);border-radius:6px;overflow:hidden;font:400 12.5px/1.5 'IBM Plex Mono',monospace;">
+        <div style="padding:8px 10px;background:oklch(0.975 0.003 255);font-weight:600;">--bg</div>
+        <div style="padding:8px 10px;background:#fff;">oklch(.99 .002 255)</div>
+        <div style="padding:8px 10px;background:oklch(0.19 0.012 255);color:oklch(0.9 0.008 255);">oklch(.19 .012 255)</div>
+        <div style="padding:8px 10px;background:#fff;color:oklch(0.5 0.012 255);">page + card surface</div>
+        <div style="padding:8px 10px;background:oklch(0.975 0.003 255);font-weight:600;">--bg-sunk</div>
+        <div style="padding:8px 10px;background:#fff;">oklch(.98 .003 255)</div>
+        <div style="padding:8px 10px;background:oklch(0.19 0.012 255);color:oklch(0.9 0.008 255);">oklch(.235 .012 255)</div>
+        <div style="padding:8px 10px;background:#fff;color:oklch(0.5 0.012 255);">header, group rows — lighter in dark, not darker</div>
+        <div style="padding:8px 10px;background:oklch(0.975 0.003 255);font-weight:600;">--line</div>
+        <div style="padding:8px 10px;background:#fff;">oklch(.89 .006 255)</div>
+        <div style="padding:8px 10px;background:oklch(0.19 0.012 255);color:oklch(0.9 0.008 255);">oklch(.33 .012 255)</div>
+        <div style="padding:8px 10px;background:#fff;color:oklch(0.5 0.012 255);">every hairline</div>
+        <div style="padding:8px 10px;background:oklch(0.975 0.003 255);font-weight:600;">--fg</div>
+        <div style="padding:8px 10px;background:#fff;">oklch(.28 .012 255)</div>
+        <div style="padding:8px 10px;background:oklch(0.19 0.012 255);color:oklch(0.9 0.008 255);">oklch(.92 .008 255)</div>
+        <div style="padding:8px 10px;background:#fff;color:oklch(0.5 0.012 255);">never pure white</div>
+        <div style="padding:8px 10px;background:oklch(0.975 0.003 255);font-weight:600;">--fg-muted</div>
+        <div style="padding:8px 10px;background:#fff;">oklch(.46 .012 255)</div>
+        <div style="padding:8px 10px;background:oklch(0.19 0.012 255);color:oklch(0.9 0.008 255);">oklch(.7 .01 255)</div>
+        <div style="padding:8px 10px;background:#fff;color:oklch(0.5 0.012 255);">descriptions</div>
+        <div style="padding:8px 10px;background:oklch(0.975 0.003 255);font-weight:600;">--fg-dim</div>
+        <div style="padding:8px 10px;background:#fff;">oklch(.68 .01 255)</div>
+        <div style="padding:8px 10px;background:oklch(0.19 0.012 255);color:oklch(0.9 0.008 255);">oklch(.55 .01 255)</div>
+        <div style="padding:8px 10px;background:#fff;color:oklch(0.5 0.012 255);">“default …” — recedes in both</div>
+        <div style="padding:8px 10px;background:oklch(0.975 0.003 255);font-weight:600;">--accent</div>
+        <div style="padding:8px 10px;background:#fff;">oklch(.52 .14 255)</div>
+        <div style="padding:8px 10px;background:oklch(0.19 0.012 255);color:oklch(0.9 0.008 255);">oklch(.66 .13 255)</div>
+        <div style="padding:8px 10px;background:#fff;color:oklch(0.5 0.012 255);">lifted so it stays visible on dark</div>
+        <div style="padding:8px 10px;background:oklch(0.975 0.003 255);font-weight:600;">--changed</div>
+        <div style="padding:8px 10px;background:#fff;">oklch(.72 .14 75)</div>
+        <div style="padding:8px 10px;background:oklch(0.19 0.012 255);color:oklch(0.9 0.008 255);">oklch(.78 .13 75)</div>
+        <div style="padding:8px 10px;background:#fff;color:oklch(0.5 0.012 255);">amber marker + rule</div>
+      </div>
+      <p style="margin:0;font-size:13px;line-height:1.5;color:oklch(0.55 0.012 255);max-width:78ch;">Two rules beyond substitution: the log <code style="font-family:'IBM Plex Mono',monospace;">&lt;pre&gt;</code> keeps its own near-black (<span style="font-family:'IBM Plex Mono',monospace;">oklch(.15 .01 255)</span>) so it still reads as terminal output rather than melting into the card, and success/error tints drop to ~0.28 lightness instead of inverting.</p>
+    </div>
+
+    <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;">
+
+      <!-- dark · convert done 375 -->
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">375 · done</div>
+        <div style="width:375px;background:oklch(0.19 0.012 255);border:1px solid oklch(0.33 0.012 255);border-radius:8px;overflow:hidden;color:oklch(0.92 0.008 255);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-bottom:1px solid oklch(0.33 0.012 255);background:oklch(0.235 0.012 255);">
+            <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+            <nav style="display:flex;gap:14px;font-size:14px;">
+              <a href="#2a" style="text-decoration:none;font-weight:600;color:oklch(0.92 0.008 255);border-bottom:2px solid oklch(0.66 0.13 255);padding-bottom:2px;">Convert</a>
+              <a href="#2a" style="text-decoration:none;color:oklch(0.7 0.01 255);padding-bottom:2px;">Settings</a>
+            </nav>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px;padding:16px;">
+            <div style="display:flex;flex-direction:column;gap:12px;padding:14px;border:1px solid oklch(0.4 0.06 155);border-radius:8px;background:oklch(0.28 0.04 155);">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="width:8px;height:8px;border-radius:50%;background:oklch(0.72 0.14 155);"></span>
+                <span style="font-size:14px;font-weight:600;">3 of 3 converted · 9.6 s</span>
+              </div>
+              <div style="display:flex;flex-direction:column;background:oklch(0.22 0.015 155);border:1px solid oklch(0.38 0.05 155);border-radius:6px;overflow:hidden;">
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid oklch(0.33 0.03 155);min-height:48px;">
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font:500 13.5px/1.35 'IBM Plex Mono',monospace;word-break:break-all;">Strugatsky - Piknik na obochine.epub</span>
+                    <span style="font-size:12px;color:oklch(0.7 0.01 255);">2.1 MB</span>
+                  </div>
+                  <a href="#2a" style="font-size:14px;text-decoration:none;color:oklch(0.72 0.11 255);padding:6px 2px;">Download</a>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid oklch(0.33 0.03 155);min-height:48px;">
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font:500 13.5px/1.35 'IBM Plex Mono',monospace;word-break:break-all;">Lem - Solaris.epub</span>
+                    <span style="font-size:12px;color:oklch(0.7 0.01 255);">0.9 MB</span>
+                  </div>
+                  <a href="#2a" style="font-size:14px;text-decoration:none;color:oklch(0.72 0.11 255);padding:6px 2px;">Download</a>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;min-height:48px;">
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font:500 13.5px/1.35 'IBM Plex Mono',monospace;word-break:break-all;">Dick - Ubik.epub</span>
+                    <span style="font-size:12px;color:oklch(0.7 0.01 255);">1.4 MB</span>
+                  </div>
+                  <a href="#2a" style="font-size:14px;text-decoration:none;color:oklch(0.72 0.11 255);padding:6px 2px;">Download</a>
+                </div>
+              </div>
+              <a href="#2a" style="display:flex;align-items:center;justify-content:center;height:50px;border-radius:6px;background:oklch(0.66 0.13 255);color:oklch(0.16 0.02 255);font-size:16px;font-weight:600;text-decoration:none;">Download all · 4.4 MB .zip</a>
+            </div>
+            <details style="border:1px solid oklch(0.33 0.012 255);border-radius:6px;">
+              <summary style="padding:12px 14px;font-size:14px;color:oklch(0.7 0.01 255);cursor:pointer;list-style:none;">Logs · 3 files, 118 lines</summary>
+            </details>
+            <a href="#2a" style="align-self:center;font-size:15px;padding:10px;text-decoration:none;color:oklch(0.72 0.11 255);">Convert another</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- dark · failure 375 -->
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">375 · failed</div>
+        <div style="width:375px;background:oklch(0.19 0.012 255);border:1px solid oklch(0.33 0.012 255);border-radius:8px;overflow:hidden;color:oklch(0.92 0.008 255);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-bottom:1px solid oklch(0.33 0.012 255);background:oklch(0.235 0.012 255);">
+            <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+            <nav style="display:flex;gap:14px;font-size:14px;">
+              <a href="#2a" style="text-decoration:none;font-weight:600;color:oklch(0.92 0.008 255);border-bottom:2px solid oklch(0.66 0.13 255);padding-bottom:2px;">Convert</a>
+              <a href="#2a" style="text-decoration:none;color:oklch(0.7 0.01 255);padding-bottom:2px;">Settings</a>
+            </nav>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px;padding:16px;">
+            <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid oklch(0.42 0.09 27);border-radius:8px;background:oklch(0.28 0.05 27);">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="width:8px;height:8px;border-radius:50%;background:oklch(0.65 0.19 27);"></span>
+                <span style="font-size:15px;font-weight:600;">1 of 3 books failed</span>
+              </div>
+              <div style="font:500 13px/1.35 'IBM Plex Mono',monospace;word-break:break-all;">dick-ubik.fb2.zip</div>
+              <p style="margin:0;font-size:14px;line-height:1.5;text-wrap:pretty;">The FB2 is malformed: an image reference points at a binary that isn’t in the file. fb2cng stopped at chapter 12. The other two books converted.</p>
+              <p style="margin:0;font-size:13px;line-height:1.5;color:oklch(0.82 0.06 27);">Try again with <b>use_broken_images</b> on — it substitutes a blank image and keeps going.</p>
+              <div style="display:flex;flex-direction:column;gap:8px;padding-top:2px;">
+                <a href="#2a" style="display:flex;align-items:center;justify-content:center;height:46px;border-radius:6px;border:1px solid oklch(0.6 0.15 27);color:oklch(0.88 0.08 27);font-size:15px;font-weight:600;text-decoration:none;background:oklch(0.24 0.04 27);">Retry with use_broken_images</a>
+                <a href="#2a" style="display:flex;align-items:center;justify-content:center;height:46px;border-radius:6px;border:1px solid oklch(0.4 0.02 27);color:oklch(0.86 0.01 255);font-size:15px;text-decoration:none;background:oklch(0.23 0.02 27);">Skip it</a>
+              </div>
+            </div>
+            <div style="font:500 12px/1 'IBM Plex Mono',monospace;color:oklch(0.7 0.01 255);">First error · dick-ubik.fb2.zip</div>
+            <pre style="margin:0;padding:10px 12px;border-radius:6px;background:oklch(0.15 0.01 255);color:oklch(0.84 0.08 27);font:400 12px/1.5 'IBM Plex Mono',monospace;overflow-x:auto;white-space:pre;">ERR image ref "#img_37" not found
+    at chapter 12 (Глава 12)</pre>
+            <details style="border:1px solid oklch(0.33 0.012 255);border-radius:6px;overflow:hidden;">
+              <summary style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 14px;font-size:14px;font-weight:500;cursor:pointer;background:oklch(0.235 0.012 255);">
+                <span>Full log · dick-ubik · 142 lines</span><span style="color:oklch(0.7 0.01 255);font-size:12px;">▾</span>
+              </summary>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border-top:1px solid oklch(0.33 0.012 255);border-bottom:1px solid oklch(0.33 0.012 255);font-size:13px;color:oklch(0.7 0.01 255);">
+                <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" style="width:16px;height:16px;"> wrap</label>
+                <span style="display:flex;gap:14px;"><a href="#2a" style="text-decoration:none;color:oklch(0.72 0.11 255);">Other files’ logs</a><a href="#2a" style="text-decoration:none;color:oklch(0.72 0.11 255);">Copy</a></span>
+              </div>
+              <pre style="margin:0;max-height:260px;overflow:auto;padding:12px;background:oklch(0.15 0.01 255);color:oklch(0.86 0.01 255);font:400 12px/1.55 'IBM Plex Mono',monospace;white-space:pre;">INFO fb2cng 1.9.2 (go1.22.4)
+INFO input  /tmp/up-7f31/ubik.fb2
+INFO preset kobo (7 overrides)
+DEBG parse: 38 sections, 22 binaries
+WARN section 9: nested &lt;emphasis&gt; depth 4
+DEBG hyphenation: ru dictionary, 118443 patterns
+ERR  image ref "#img_37" not found
+     at chapter 12 (Глава 12)
+     src/epub/images.go:212
+ERR  aborting: 1 unresolved reference
+EXIT status 2</pre>
+            </details>
+          </div>
+        </div>
+      </div>
+
+      <!-- dark · presets 375 -->
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">375 · presets</div>
+        <div style="width:375px;background:oklch(0.19 0.012 255);border:1px solid oklch(0.33 0.012 255);border-radius:8px;overflow:hidden;color:oklch(0.92 0.008 255);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-bottom:1px solid oklch(0.33 0.012 255);background:oklch(0.235 0.012 255);">
+            <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+            <nav style="display:flex;gap:14px;font-size:14px;">
+              <a href="#2a" style="text-decoration:none;color:oklch(0.7 0.01 255);padding-bottom:2px;">Convert</a>
+              <a href="#2a" style="text-decoration:none;font-weight:600;color:oklch(0.92 0.008 255);border-bottom:2px solid oklch(0.66 0.13 255);padding-bottom:2px;">Settings</a>
+            </nav>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px 10px;">
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <h3 style="margin:0;font-size:16px;font-weight:600;">Presets</h3>
+              <span style="font-size:12.5px;color:oklch(0.7 0.01 255);">Selected = preselected on Convert</span>
+            </div>
+            <a href="#2a" style="font-size:14px;text-decoration:none;font-weight:500;color:oklch(0.72 0.11 255);">+ New</a>
+          </div>
+          <ul style="list-style:none;margin:0;padding:0;border-top:1px solid oklch(0.31 0.012 255);">
+            <li style="display:flex;flex-direction:column;gap:8px;padding:12px 16px;border-bottom:1px solid oklch(0.31 0.012 255);">
+              <label style="display:flex;align-items:center;gap:10px;min-height:44px;">
+                <input type="radio" name="def-dk" checked="checked" style="width:20px;height:20px;accent-color:oklch(0.66 0.13 255);">
+                <span style="font-size:16px;font-weight:600;">Kobo</span>
+              </label>
+              <span style="font-size:13px;color:oklch(0.7 0.01 255);">7 options changed · edited 12 Jul</span>
+              <div style="display:flex;gap:6px;">
+                <a href="#2a" style="flex:1;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.36 0.012 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.9 0.008 255);">Edit</a>
+                <a href="#2a" style="flex:1;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.36 0.012 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.9 0.008 255);">Duplicate</a>
+                <a href="#2a" style="width:60px;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.36 0.012 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.72 0.15 27);">Delete</a>
+              </div>
+            </li>
+            <li style="display:flex;flex-direction:column;gap:8px;padding:12px 16px;border-bottom:1px solid oklch(0.31 0.012 255);">
+              <label style="display:flex;align-items:center;gap:10px;min-height:44px;">
+                <input type="radio" name="def-dk" style="width:20px;height:20px;accent-color:oklch(0.66 0.13 255);">
+                <span style="font-size:16px;font-weight:600;">Kindle</span>
+              </label>
+              <span style="font-size:13px;color:oklch(0.7 0.01 255);">11 options changed · edited 3 May</span>
+              <div style="display:flex;gap:6px;">
+                <a href="#2a" style="flex:1;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.36 0.012 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.9 0.008 255);">Edit</a>
+                <a href="#2a" style="flex:1;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.36 0.012 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.9 0.008 255);">Duplicate</a>
+                <a href="#2a" style="width:60px;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.36 0.012 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.72 0.15 27);">Delete</a>
+              </div>
+            </li>
+            <li style="display:flex;flex-direction:column;gap:8px;padding:12px 16px;">
+              <div style="display:flex;align-items:center;gap:10px;min-height:44px;padding-left:30px;">
+                <span style="font-size:16px;font-weight:600;">Defaults</span>
+                <span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;padding:4px 6px;border-radius:3px;border:1px solid oklch(0.38 0.012 255);color:oklch(0.7 0.01 255);">Built-in</span>
+              </div>
+              <span style="font-size:13px;color:oklch(0.7 0.01 255);">0 options changed · read-only</span>
+            </li>
+          </ul>
+          <details style="border-top:1px solid oklch(0.31 0.012 255);">
+            <summary style="padding:14px 16px;font-size:14px;font-weight:500;cursor:pointer;">How presets work</summary>
+          </details>
+        </div>
+      </div>
+
+      <!-- dark · preset editor 1440 -->
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">1440 · preset editor</div>
+        <div style="width:1440px;background:oklch(0.19 0.012 255);border:1px solid oklch(0.33 0.012 255);border-radius:8px;overflow:hidden;color:oklch(0.92 0.008 255);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 24px;border-bottom:1px solid oklch(0.33 0.012 255);background:oklch(0.235 0.012 255);">
+            <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+            <nav style="display:flex;gap:18px;font-size:14px;">
+              <a href="#2a" style="text-decoration:none;color:oklch(0.7 0.01 255);padding-bottom:2px;">Convert</a>
+              <a href="#2a" style="text-decoration:none;font-weight:600;color:oklch(0.92 0.008 255);border-bottom:2px solid oklch(0.66 0.13 255);padding-bottom:2px;">Settings</a>
+            </nav>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;padding:12px 24px;border-bottom:1px solid oklch(0.33 0.012 255);">
+            <a href="#2a" style="text-decoration:none;font-size:14px;color:oklch(0.72 0.11 255);">← Presets</a>
+            <span style="font-size:16px;font-weight:600;">Kobo</span>
+            <span style="font-size:13px;color:oklch(0.7 0.01 255);">7 of 104 options changed</span>
+            <label style="display:flex;align-items:center;gap:8px;font-size:14px;white-space:nowrap;"><input type="checkbox" checked="checked" style="width:16px;height:16px;accent-color:oklch(0.66 0.13 255);"> Default preset</label>
+            <input type="search" placeholder="Search options…" style="flex:1;max-width:420px;height:36px;padding:0 12px;border:1px solid oklch(0.36 0.012 255);border-radius:6px;font-size:16px;font-family:inherit;background:oklch(0.235 0.012 255);color:oklch(0.92 0.008 255);">
+            <label style="display:flex;align-items:center;gap:8px;font-size:14px;white-space:nowrap;"><input type="checkbox" style="width:16px;height:16px;accent-color:oklch(0.66 0.13 255);"> Changed only</label>
+            <div style="flex:1;"></div>
+            <button type="submit" style="height:36px;padding:0 22px;border:0;border-radius:6px;background:oklch(0.66 0.13 255);color:oklch(0.16 0.02 255);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;">Save preset</button>
+          </div>
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 380px;">
+            <div style="border-right:1px solid oklch(0.31 0.012 255);">
+              <div style="display:flex;align-items:baseline;gap:10px;padding:9px 24px;font:600 12px/1.4 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.82 0.01 255);background:oklch(0.235 0.012 255);border-bottom:1px solid oklch(0.31 0.012 255);">document <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.7 0.01 255);">18 options · 3 changed</span></div>
+              <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px 7px 21px;border-left:3px solid oklch(0.78 0.13 75);border-bottom:1px solid oklch(0.28 0.01 255);min-height:38px;">
+                <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">open_from_cover <span style="color:oklch(0.78 0.13 75);">•</span></span>
+                <input type="checkbox" checked="checked" style="width:18px;height:18px;accent-color:oklch(0.66 0.13 255);justify-self:start;">
+                <span style="font-size:13px;color:oklch(0.7 0.01 255);">start the book at the cover page · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.55 0.01 255);">default false</span> · <a href="#2a" style="text-decoration:none;color:oklch(0.72 0.11 255);">reset</a></span>
+              </div>
+              <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px;border-bottom:1px solid oklch(0.28 0.01 255);min-height:38px;">
+                <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">insert_soft_hyphen</span>
+                <input type="checkbox" style="width:18px;height:18px;accent-color:oklch(0.66 0.13 255);justify-self:start;">
+                <span style="font-size:13px;color:oklch(0.7 0.01 255);">hyphenation hints for narrow screens · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.55 0.01 255);">default false</span></span>
+              </div>
+              <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px 7px 21px;border-left:3px solid oklch(0.78 0.13 75);border-bottom:1px solid oklch(0.28 0.01 255);min-height:38px;">
+                <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">chapter_per_file <span style="color:oklch(0.78 0.13 75);">•</span></span>
+                <input type="checkbox" style="width:18px;height:18px;accent-color:oklch(0.66 0.13 255);justify-self:start;">
+                <span style="font-size:13px;color:oklch(0.7 0.01 255);">off keeps Kobo from re-paginating · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.55 0.01 255);">default true</span> · <a href="#2a" style="text-decoration:none;color:oklch(0.72 0.11 255);">reset</a></span>
+              </div>
+              <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px 7px 21px;border-left:3px solid oklch(0.78 0.13 75);border-bottom:1px solid oklch(0.28 0.01 255);min-height:38px;">
+                <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">hyphenation_language <span style="color:oklch(0.78 0.13 75);">•</span></span>
+                <div style="display:flex;align-items:center;justify-content:space-between;width:120px;height:32px;padding:0 10px;border:1px solid oklch(0.36 0.012 255);border-radius:5px;font-size:16px;background:oklch(0.235 0.012 255);"><span>ru</span><span style="color:oklch(0.65 0.01 255);font-size:11px;">▾</span></div>
+                <span style="font-size:13px;color:oklch(0.7 0.01 255);">dictionary used when hyphenating · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.55 0.01 255);">default en</span> · <a href="#2a" style="text-decoration:none;color:oklch(0.72 0.11 255);">reset</a></span>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:10px;padding:9px 24px;font:600 12px/1.4 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.82 0.01 255);background:oklch(0.235 0.012 255);border-bottom:1px solid oklch(0.31 0.012 255);border-top:1px solid oklch(0.31 0.012 255);">images <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.7 0.01 255);">14 options · 2 changed</span></div>
+              <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px;border-bottom:1px solid oklch(0.28 0.01 255);min-height:38px;">
+                <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">optimize</span>
+                <input type="checkbox" checked="checked" style="width:18px;height:18px;accent-color:oklch(0.66 0.13 255);justify-self:start;">
+                <span style="font-size:13px;color:oklch(0.7 0.01 255);">recompress images on the way in · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.55 0.01 255);">default true</span></span>
+              </div>
+              <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px 7px 21px;border-left:3px solid oklch(0.78 0.13 75);border-bottom:1px solid oklch(0.28 0.01 255);min-height:38px;">
+                <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">jpeg_quality_level <span style="color:oklch(0.78 0.13 75);">•</span></span>
+                <input type="number" value="75" style="width:80px;height:32px;padding:0 8px;border:1px solid oklch(0.36 0.012 255);border-radius:5px;font:500 16px/1 'IBM Plex Mono',monospace;text-align:right;background:oklch(0.235 0.012 255);color:oklch(0.92 0.008 255);">
+                <span style="font-size:13px;color:oklch(0.7 0.01 255);">1–100, lower = smaller file · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.55 0.01 255);">default 85</span> · <a href="#2a" style="text-decoration:none;color:oklch(0.72 0.11 255);">reset</a></span>
+              </div>
+              <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px 7px 21px;border-left:3px solid oklch(0.78 0.13 75);border-bottom:1px solid oklch(0.28 0.01 255);min-height:38px;">
+                <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">use_broken_images <span style="color:oklch(0.78 0.13 75);">•</span></span>
+                <input type="checkbox" checked="checked" style="width:18px;height:18px;accent-color:oklch(0.66 0.13 255);justify-self:start;">
+                <span style="font-size:13px;color:oklch(0.7 0.01 255);">blank placeholder for missing binaries · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.55 0.01 255);">default false</span> · <a href="#2a" style="text-decoration:none;color:oklch(0.72 0.11 255);">reset</a></span>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:10px;padding:9px 24px;font:600 12px/1.4 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.82 0.01 255);background:oklch(0.235 0.012 255);border-bottom:1px solid oklch(0.31 0.012 255);">output <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.7 0.01 255);">3 options · 1 changed</span></div>
+              <div style="display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:start;padding:10px 24px 14px 21px;border-left:3px solid oklch(0.78 0.13 75);">
+                <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;padding-top:8px;">output_name_template <span style="color:oklch(0.78 0.13 75);">•</span></span>
+                <div style="display:flex;flex-direction:column;gap:6px;max-width:660px;">
+                  <textarea rows="3" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid oklch(0.36 0.012 255);border-radius:5px;font:400 13.5px/1.6 'IBM Plex Mono',monospace;resize:vertical;background:oklch(0.235 0.012 255);color:oklch(0.92 0.008 255);">{​{.Authors}​} - {​{.Title}​}{​{if .Series}​} ({​{.Series}​} #{​{.SeriesNum}​}){​{end}​}</textarea>
+                  <div style="font:400 13px/1.5 'IBM Plex Mono',monospace;color:oklch(0.65 0.01 255);">→ Strugatsky - Piknik na obochine.epub</div>
+                </div>
+              </div>
+            </div>
+            <aside style="padding:18px 20px 40px;display:flex;flex-direction:column;gap:12px;background:oklch(0.215 0.012 255);">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
+                <span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.82 0.01 255);">Effective config</span>
+                <span style="font-size:12px;color:oklch(0.65 0.01 255);">refreshed on save</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid oklch(0.4 0.06 155);border-radius:6px;background:oklch(0.28 0.04 155);font-size:13px;">
+                <span style="width:7px;height:7px;border-radius:50%;background:oklch(0.72 0.14 155);"></span>Valid · 7 overrides merged over defaults
+              </div>
+              <pre style="margin:0;flex:1;max-height:420px;overflow:auto;padding:12px;border:1px solid oklch(0.33 0.012 255);border-radius:6px;background:oklch(0.15 0.01 255);font:400 12.5px/1.65 'IBM Plex Mono',monospace;white-space:pre;color:oklch(0.86 0.01 255);">document:
+  open_from_cover: true      # changed
+  insert_soft_hyphen: false
+  chapter_per_file: false    # changed
+  hyphenation_language: ru   # changed
+images:
+  optimize: true
+  jpeg_quality_level: 75     # changed
+  use_broken_images: true    # changed
+screen:
+  width: 1264                # changed
+  height: 1680               # changed
+cover:
+  generate: true
+  resize: fit                # changed
+footnotes:
+  mode: float
+metainformation:
+  transliterate: true        # changed</pre>
+            </aside>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:56px;padding:24px 56px 96px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:oklch(0.28 0.012 255);">
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:56px;">
+
+    <header style="display:flex;flex-direction:column;gap:10px;max-width:820px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font:600 11px/1 'IBM Plex Mono',ui-monospace,Menlo,monospace;letter-spacing:.1em;padding:5px 7px;border:1px solid oklch(0.86 0.006 255);border-radius:4px;color:oklch(0.45 0.012 255);background:#fff;">1a</span>
+        <h1 style="margin:0;font-size:20px;font-weight:600;letter-spacing:-0.01em;">fb2 → epub — front-end spec</h1>
+      </div>
+      <p style="margin:0;font-size:14px;line-height:1.55;color:oklch(0.5 0.012 255);max-width:70ch;text-wrap:pretty;">Every screen at 375px and 1440px. One stylesheet, one breakpoint at 640px, server-rendered markup: real <code style="font-family:'IBM Plex Mono',monospace;">&lt;form&gt;</code> POSTs, <code style="font-family:'IBM Plex Mono',monospace;">&lt;details&gt;</code> for collapse, htmx only for swapping the convert-card region.</p>
+    </header>
+
+    <!-- ============ SCREEN 1 + 2a: CONVERT / IDLE ============ -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <h2 style="margin:0;font:600 12px/1 'IBM Plex Mono',ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:oklch(0.45 0.012 255);">Convert · idle</h2>
+      <p style="margin:0;font-size:13px;line-height:1.5;color:oklch(0.55 0.012 255);max-width:78ch;">The default route. Three taps on a phone: file picker → pick → Convert. The dashed area is a <code style="font-family:'IBM Plex Mono',monospace;">&lt;label for="file"&gt;</code> wrapping an <code style="font-family:'IBM Plex Mono',monospace;">&lt;input type="file" multiple&gt;</code>, so it is a native tap target on iOS and a drop target on desktop (5 lines of JS: dragover/drop → assign <code style="font-family:'IBM Plex Mono',monospace;">files</code>). Multi-select and dropping several files land in the same queue; one preset applies to the whole batch.</p>
+      <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;">
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">375</div>
+          <div style="width:375px;background:#fff;border:1px solid oklch(0.87 0.006 255);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(20,25,40,.05);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-bottom:1px solid oklch(0.9 0.005 255);background:oklch(0.98 0.003 255);">
+              <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+              <nav style="display:flex;gap:14px;font-size:14px;">
+                <a href="#1a" style="text-decoration:none;font-weight:600;color:oklch(0.28 0.012 255);border-bottom:2px solid oklch(0.52 0.14 255);padding-bottom:2px;">Convert</a>
+                <a href="#1a" style="text-decoration:none;color:oklch(0.5 0.012 255);padding-bottom:2px;">Settings</a>
+              </nav>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px;padding:16px;">
+              <label for="f-m" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:150px;padding:20px;border:1.5px dashed oklch(0.78 0.01 255);border-radius:8px;background:oklch(0.985 0.003 255);text-align:center;cursor:pointer;">
+                <span style="font-size:16px;font-weight:600;">Choose books</span>
+                <span style="font-size:13px;color:oklch(0.55 0.012 255);">.fb2 · .zip · .fb2.zip — one or several</span>
+              </label>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label for="p-m" style="font-size:13px;color:oklch(0.5 0.012 255);">Preset</label>
+                <div style="position:relative;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;height:46px;padding:0 12px;border:1px solid oklch(0.85 0.006 255);border-radius:6px;font-size:16px;background:#fff;">
+                    <span>Kobo</span>
+                    <span style="color:oklch(0.6 0.012 255);font-size:12px;">▾</span>
+                  </div>
+                </div>
+              </div>
+              <button type="submit" style="height:50px;border:0;border-radius:6px;background:oklch(0.52 0.14 255);color:#fff;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;opacity:.45;">Convert</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">1440</div>
+          <div style="width:1440px;background:#fff;border:1px solid oklch(0.87 0.006 255);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(20,25,40,.05);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 24px;border-bottom:1px solid oklch(0.9 0.005 255);background:oklch(0.98 0.003 255);">
+              <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+              <nav style="display:flex;gap:18px;font-size:14px;">
+                <a href="#1a" style="text-decoration:none;font-weight:600;color:oklch(0.28 0.012 255);border-bottom:2px solid oklch(0.52 0.14 255);padding-bottom:2px;">Convert</a>
+                <a href="#1a" style="text-decoration:none;color:oklch(0.5 0.012 255);padding-bottom:2px;">Settings</a>
+              </nav>
+            </div>
+            <div style="padding:40px 24px 56px;display:flex;justify-content:center;">
+              <div style="width:100%;max-width:560px;display:flex;flex-direction:column;gap:16px;">
+                <label for="f-d" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:170px;border:1.5px dashed oklch(0.78 0.01 255);border-radius:8px;background:oklch(0.985 0.003 255);text-align:center;cursor:pointer;">
+                  <span style="font-size:16px;font-weight:600;">Drop books here, or choose files</span>
+                  <span style="font-size:13px;color:oklch(0.55 0.012 255);">.fb2 · .zip · .fb2.zip — drop a whole folder’s worth at once</span>
+                </label>
+                <div style="display:flex;gap:12px;align-items:flex-end;">
+                  <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
+                    <label for="p-d" style="font-size:13px;color:oklch(0.5 0.012 255);">Preset</label>
+                    <div style="display:flex;align-items:center;justify-content:space-between;height:44px;padding:0 12px;border:1px solid oklch(0.85 0.006 255);border-radius:6px;font-size:16px;background:#fff;">
+                      <span>Kobo</span><span style="color:oklch(0.6 0.012 255);font-size:12px;">▾</span>
+                    </div>
+                  </div>
+                  <button type="submit" style="height:44px;padding:0 28px;border:0;border-radius:6px;background:oklch(0.52 0.14 255);color:#fff;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;opacity:.45;">Convert</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ 2b: FILE SELECTED ============ -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <h2 style="margin:0;font:600 12px/1 'IBM Plex Mono',ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:oklch(0.45 0.012 255);">Convert · file selected</h2>
+      <p style="margin:0;font-size:13px;line-height:1.5;color:oklch(0.55 0.012 255);max-width:78ch;">The drop zone collapses into a file row; Convert becomes live. Same DOM, one <code style="font-family:'IBM Plex Mono',monospace;">.is-empty</code> class off the form — no second template.</p>
+      <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;">
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">375</div>
+          <div style="width:375px;background:#fff;border:1px solid oklch(0.87 0.006 255);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(20,25,40,.05);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-bottom:1px solid oklch(0.9 0.005 255);background:oklch(0.98 0.003 255);">
+              <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+              <nav style="display:flex;gap:14px;font-size:14px;">
+                <a href="#1a" style="text-decoration:none;font-weight:600;color:oklch(0.28 0.012 255);border-bottom:2px solid oklch(0.52 0.14 255);padding-bottom:2px;">Convert</a>
+                <a href="#1a" style="text-decoration:none;color:oklch(0.5 0.012 255);padding-bottom:2px;">Settings</a>
+              </nav>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px;padding:16px;">
+              <div style="border:1px solid oklch(0.85 0.006 255);border-radius:8px;overflow:hidden;background:#fff;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;background:oklch(0.98 0.003 255);border-bottom:1px solid oklch(0.92 0.004 255);">
+                  <span style="font:500 12px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:oklch(0.45 0.012 255);">3 files · 3.5 MB</span>
+                  <a href="#1a" style="font-size:14px;text-decoration:none;">Clear</a>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid oklch(0.94 0.004 255);min-height:48px;">
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font:500 13.5px/1.35 'IBM Plex Mono',monospace;word-break:break-all;">strugatsky-piknik.fb2.zip</span>
+                    <span style="font-size:12px;color:oklch(0.55 0.012 255);">1.8 MB</span>
+                  </div>
+                  <a href="#1a" style="font-size:18px;line-height:1;text-decoration:none;color:oklch(0.55 0.012 255);padding:8px;">×</a>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid oklch(0.94 0.004 255);min-height:48px;">
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font:500 13.5px/1.35 'IBM Plex Mono',monospace;word-break:break-all;">lem-solaris.fb2</span>
+                    <span style="font-size:12px;color:oklch(0.55 0.012 255);">640 KB</span>
+                  </div>
+                  <a href="#1a" style="font-size:18px;line-height:1;text-decoration:none;color:oklch(0.55 0.012 255);padding:8px;">×</a>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;min-height:48px;">
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font:500 13.5px/1.35 'IBM Plex Mono',monospace;word-break:break-all;">dick-ubik.fb2.zip</span>
+                    <span style="font-size:12px;color:oklch(0.55 0.012 255);">1.1 MB</span>
+                  </div>
+                  <a href="#1a" style="font-size:18px;line-height:1;text-decoration:none;color:oklch(0.55 0.012 255);padding:8px;">×</a>
+                </div>
+              </div>
+              <a href="#1a" style="align-self:flex-start;font-size:14px;text-decoration:none;">+ Add more files</a>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label style="font-size:13px;color:oklch(0.5 0.012 255);">Preset</label>
+                <div style="display:flex;align-items:center;justify-content:space-between;height:46px;padding:0 12px;border:1px solid oklch(0.85 0.006 255);border-radius:6px;font-size:16px;background:#fff;">
+                  <span>Kobo</span><span style="color:oklch(0.6 0.012 255);font-size:12px;">▾</span>
+                </div>
+              </div>
+              <button type="submit" style="height:50px;border:0;border-radius:6px;background:oklch(0.52 0.14 255);color:#fff;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;">Convert 3 books</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">1440</div>
+          <div style="width:1440px;background:#fff;border:1px solid oklch(0.87 0.006 255);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(20,25,40,.05);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 24px;border-bottom:1px solid oklch(0.9 0.005 255);background:oklch(0.98 0.003 255);">
+              <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+              <nav style="display:flex;gap:18px;font-size:14px;">
+                <a href="#1a" style="text-decoration:none;font-weight:600;color:oklch(0.28 0.012 255);border-bottom:2px solid oklch(0.52 0.14 255);padding-bottom:2px;">Convert</a>
+                <a href="#1a" style="text-decoration:none;color:oklch(0.5 0.012 255);padding-bottom:2px;">Settings</a>
+              </nav>
+            </div>
+            <div style="padding:40px 24px 56px;display:flex;justify-content:center;">
+              <div style="width:100%;max-width:560px;display:flex;flex-direction:column;gap:16px;">
+                <div style="border:1px solid oklch(0.85 0.006 255);border-radius:8px;overflow:hidden;background:#fff;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px;background:oklch(0.98 0.003 255);border-bottom:1px solid oklch(0.92 0.004 255);">
+                    <span style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.07em;text-transform:uppercase;color:oklch(0.45 0.012 255);">3 files · 3.5 MB</span>
+                    <span style="display:flex;gap:14px;font-size:13px;"><a href="#1a" style="text-decoration:none;">Add more</a><a href="#1a" style="text-decoration:none;">Clear</a></span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:16px;padding:8px 14px;border-bottom:1px solid oklch(0.95 0.003 255);">
+                    <span style="flex:1;font:500 13.5px/1.3 'IBM Plex Mono',monospace;">strugatsky-piknik.fb2.zip</span>
+                    <span style="width:80px;text-align:right;font-size:13px;color:oklch(0.55 0.012 255);">1.8 MB</span>
+                    <a href="#1a" style="text-decoration:none;color:oklch(0.55 0.012 255);font-size:16px;line-height:1;">×</a>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:16px;padding:8px 14px;border-bottom:1px solid oklch(0.95 0.003 255);">
+                    <span style="flex:1;font:500 13.5px/1.3 'IBM Plex Mono',monospace;">lem-solaris.fb2</span>
+                    <span style="width:80px;text-align:right;font-size:13px;color:oklch(0.55 0.012 255);">640 KB</span>
+                    <a href="#1a" style="text-decoration:none;color:oklch(0.55 0.012 255);font-size:16px;line-height:1;">×</a>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:16px;padding:8px 14px;">
+                    <span style="flex:1;font:500 13.5px/1.3 'IBM Plex Mono',monospace;">dick-ubik.fb2.zip</span>
+                    <span style="width:80px;text-align:right;font-size:13px;color:oklch(0.55 0.012 255);">1.1 MB</span>
+                    <a href="#1a" style="text-decoration:none;color:oklch(0.55 0.012 255);font-size:16px;line-height:1;">×</a>
+                  </div>
+                </div>
+                <div style="display:flex;gap:12px;align-items:flex-end;">
+                  <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
+                    <label style="font-size:13px;color:oklch(0.5 0.012 255);">Preset</label>
+                    <div style="display:flex;align-items:center;justify-content:space-between;height:44px;padding:0 12px;border:1px solid oklch(0.85 0.006 255);border-radius:6px;font-size:16px;background:#fff;">
+                      <span>Kobo</span><span style="color:oklch(0.6 0.012 255);font-size:12px;">▾</span>
+                    </div>
+                  </div>
+                  <button type="submit" style="height:44px;padding:0 28px;border:0;border-radius:6px;background:oklch(0.52 0.14 255);color:#fff;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;">Convert 3 books</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ 2c: CONVERTING ============ -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <h2 style="margin:0;font:600 12px/1 'IBM Plex Mono',ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:oklch(0.45 0.012 255);">Convert · running</h2>
+      <p style="margin:0;font-size:13px;line-height:1.5;color:oklch(0.55 0.012 255);max-width:78ch;">Form POSTs with <code style="font-family:'IBM Plex Mono',monospace;">hx-post</code> + <code style="font-family:'IBM Plex Mono',monospace;">hx-target="#card"</code>; this frame is the <code style="font-family:'IBM Plex Mono',monospace;">hx-indicator</code> fragment. Indeterminate — fb2cng reports no progress. Controls stay visible but disabled so the layout does not jump.</p>
+      <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;">
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">375</div>
+          <div style="width:375px;background:#fff;border:1px solid oklch(0.87 0.006 255);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(20,25,40,.05);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-bottom:1px solid oklch(0.9 0.005 255);background:oklch(0.98 0.003 255);">
+              <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+              <nav style="display:flex;gap:14px;font-size:14px;">
+                <a href="#1a" style="text-decoration:none;font-weight:600;color:oklch(0.28 0.012 255);border-bottom:2px solid oklch(0.52 0.14 255);padding-bottom:2px;">Convert</a>
+                <a href="#1a" style="text-decoration:none;color:oklch(0.5 0.012 255);padding-bottom:2px;">Settings</a>
+              </nav>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px;padding:16px;">
+              <div style="display:flex;flex-direction:column;gap:12px;padding:16px 14px;border:1px solid oklch(0.85 0.006 255);border-radius:8px;background:oklch(0.985 0.003 255);">
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:15px;font-weight:600;">Converting 2 of 3…</span>
+                  <span style="font:400 13px/1.4 'IBM Plex Mono',monospace;color:oklch(0.55 0.012 255);">preset Kobo · one at a time</span>
+                </div>
+                <div style="position:relative;height:4px;border-radius:2px;background:oklch(0.9 0.006 255);overflow:hidden;">
+                  <div style="position:absolute;inset:0 auto 0 0;width:30%;border-radius:2px;background:oklch(0.52 0.14 255);animation:indet 1.15s ease-in-out infinite;"></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:0;border-top:1px solid oklch(0.92 0.004 255);">
+                  <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid oklch(0.94 0.004 255);">
+                    <span style="width:8px;height:8px;border-radius:50%;background:oklch(0.6 0.13 155);flex:none;"></span>
+                    <span style="flex:1;min-width:0;font:500 13px/1.3 'IBM Plex Mono',monospace;word-break:break-all;">strugatsky-piknik.fb2.zip</span>
+                    <span style="font-size:12px;color:oklch(0.5 0.012 255);">done</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid oklch(0.94 0.004 255);">
+                    <span style="width:8px;height:8px;border-radius:50%;background:oklch(0.52 0.14 255);flex:none;"></span>
+                    <span style="flex:1;min-width:0;font:500 13px/1.3 'IBM Plex Mono',monospace;font-weight:600;word-break:break-all;">lem-solaris.fb2</span>
+                    <span style="font-size:12px;color:oklch(0.5 0.012 255);">converting</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px;padding:9px 0;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:oklch(0.85 0.006 255);flex:none;"></span>
+                    <span style="flex:1;min-width:0;font:500 13px/1.3 'IBM Plex Mono',monospace;color:oklch(0.55 0.012 255);word-break:break-all;">dick-ubik.fb2.zip</span>
+                    <span style="font-size:12px;color:oklch(0.55 0.012 255);">queued</span>
+                  </div>
+                </div>
+              </div>
+              <button type="button" style="height:50px;border:0;border-radius:6px;background:oklch(0.52 0.14 255);color:#fff;font-size:16px;font-weight:600;font-family:inherit;opacity:.4;">Converting…</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">1440</div>
+          <div style="width:1440px;background:#fff;border:1px solid oklch(0.87 0.006 255);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(20,25,40,.05);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 24px;border-bottom:1px solid oklch(0.9 0.005 255);background:oklch(0.98 0.003 255);">
+              <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+              <nav style="display:flex;gap:18px;font-size:14px;">
+                <a href="#1a" style="text-decoration:none;font-weight:600;color:oklch(0.28 0.012 255);border-bottom:2px solid oklch(0.52 0.14 255);padding-bottom:2px;">Convert</a>
+                <a href="#1a" style="text-decoration:none;color:oklch(0.5 0.012 255);padding-bottom:2px;">Settings</a>
+              </nav>
+            </div>
+            <div style="padding:40px 24px 56px;display:flex;justify-content:center;">
+              <div style="width:100%;max-width:560px;display:flex;flex-direction:column;gap:16px;">
+                <div style="display:flex;flex-direction:column;gap:12px;padding:18px 16px;border:1px solid oklch(0.85 0.006 255);border-radius:8px;background:oklch(0.985 0.003 255);">
+                  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;">
+                    <span style="font-size:15px;font-weight:600;">Converting 2 of 3…</span>
+                    <span style="font:400 13px/1.3 'IBM Plex Mono',monospace;color:oklch(0.55 0.012 255);">preset Kobo</span>
+                  </div>
+                  <div style="position:relative;height:4px;border-radius:2px;background:oklch(0.9 0.006 255);overflow:hidden;">
+                    <div style="position:absolute;inset:0 auto 0 0;width:30%;border-radius:2px;background:oklch(0.52 0.14 255);animation:indet 1.15s ease-in-out infinite;"></div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;border-top:1px solid oklch(0.92 0.004 255);">
+                    <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid oklch(0.94 0.004 255);">
+                      <span style="width:8px;height:8px;border-radius:50%;background:oklch(0.6 0.13 155);flex:none;"></span><span style="flex:1;font:500 13.5px/1.3 'IBM Plex Mono',monospace;">strugatsky-piknik.fb2.zip</span><span style="font-size:13px;color:oklch(0.5 0.012 255);">done · 3.4 s</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid oklch(0.94 0.004 255);">
+                      <span style="width:8px;height:8px;border-radius:50%;background:oklch(0.52 0.14 255);flex:none;"></span><span style="flex:1;font:600 13.5px/1.3 'IBM Plex Mono',monospace;">lem-solaris.fb2</span><span style="font-size:13px;color:oklch(0.5 0.012 255);">converting</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;padding:8px 0;">
+                      <span style="width:8px;height:8px;border-radius:50%;background:oklch(0.85 0.006 255);flex:none;"></span><span style="flex:1;font:500 13.5px/1.3 'IBM Plex Mono',monospace;color:oklch(0.55 0.012 255);">dick-ubik.fb2.zip</span><span style="font-size:13px;color:oklch(0.55 0.012 255);">queued</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:flex-end;">
+                  <button type="button" style="height:44px;padding:0 28px;border:0;border-radius:6px;background:oklch(0.52 0.14 255);color:#fff;font-size:15px;font-weight:600;font-family:inherit;opacity:.4;">Converting…</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ 2d: DONE ============ -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <h2 style="margin:0;font:600 12px/1 'IBM Plex Mono',ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:oklch(0.45 0.012 255);">Convert · done</h2>
+      <p style="margin:0;font-size:13px;line-height:1.5;color:oklch(0.55 0.012 255);max-width:78ch;">Download is a plain <code style="font-family:'IBM Plex Mono',monospace;">&lt;a download&gt;</code> to the artefact URL — works when the phone is offline from the app afterwards. The log stays reachable but collapsed even on success.</p>
+      <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;">
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">375</div>
+          <div style="width:375px;background:#fff;border:1px solid oklch(0.87 0.006 255);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(20,25,40,.05);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-bottom:1px solid oklch(0.9 0.005 255);background:oklch(0.98 0.003 255);">
+              <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+              <nav style="display:flex;gap:14px;font-size:14px;">
+                <a href="#1a" style="text-decoration:none;font-weight:600;color:oklch(0.28 0.012 255);border-bottom:2px solid oklch(0.52 0.14 255);padding-bottom:2px;">Convert</a>
+                <a href="#1a" style="text-decoration:none;color:oklch(0.5 0.012 255);padding-bottom:2px;">Settings</a>
+              </nav>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px;padding:16px;">
+              <div style="display:flex;flex-direction:column;gap:12px;padding:14px;border:1px solid oklch(0.84 0.03 155);border-radius:8px;background:oklch(0.975 0.02 155);">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="width:8px;height:8px;border-radius:50%;background:oklch(0.6 0.13 155);"></span>
+                  <span style="font-size:14px;font-weight:600;">3 of 3 converted · 9.6 s</span>
+                </div>
+                <div style="display:flex;flex-direction:column;background:#fff;border:1px solid oklch(0.88 0.02 155);border-radius:6px;overflow:hidden;">
+                  <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid oklch(0.93 0.01 155);min-height:48px;">
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                      <span style="font:500 13.5px/1.35 'IBM Plex Mono',monospace;word-break:break-all;">Strugatsky - Piknik na obochine.epub</span>
+                      <span style="font-size:12px;color:oklch(0.5 0.012 255);">2.1 MB</span>
+                    </div>
+                    <a href="#1a" style="font-size:14px;text-decoration:none;padding:6px 2px;">Download</a>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid oklch(0.93 0.01 155);min-height:48px;">
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                      <span style="font:500 13.5px/1.35 'IBM Plex Mono',monospace;word-break:break-all;">Lem - Solaris.epub</span>
+                      <span style="font-size:12px;color:oklch(0.5 0.012 255);">0.9 MB</span>
+                    </div>
+                    <a href="#1a" style="font-size:14px;text-decoration:none;padding:6px 2px;">Download</a>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;min-height:48px;">
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                      <span style="font:500 13.5px/1.35 'IBM Plex Mono',monospace;word-break:break-all;">Dick - Ubik.epub</span>
+                      <span style="font-size:12px;color:oklch(0.5 0.012 255);">1.4 MB</span>
+                    </div>
+                    <a href="#1a" style="font-size:14px;text-decoration:none;padding:6px 2px;">Download</a>
+                  </div>
+                </div>
+                <a href="#1a" style="display:flex;align-items:center;justify-content:center;height:50px;border-radius:6px;background:oklch(0.52 0.14 255);color:#fff;font-size:16px;font-weight:600;text-decoration:none;">Download all · 4.4 MB .zip</a>
+              </div>
+              <details style="border:1px solid oklch(0.88 0.005 255);border-radius:6px;">
+                <summary style="padding:12px 14px;font-size:14px;color:oklch(0.45 0.012 255);cursor:pointer;list-style:none;">Logs · 3 files, 118 lines</summary>
+              </details>
+              <a href="#1a" style="align-self:center;font-size:15px;padding:10px;text-decoration:none;">Convert another</a>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">1440</div>
+          <div style="width:1440px;background:#fff;border:1px solid oklch(0.87 0.006 255);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(20,25,40,.05);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 24px;border-bottom:1px solid oklch(0.9 0.005 255);background:oklch(0.98 0.003 255);">
+              <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+              <nav style="display:flex;gap:18px;font-size:14px;">
+                <a href="#1a" style="text-decoration:none;font-weight:600;color:oklch(0.28 0.012 255);border-bottom:2px solid oklch(0.52 0.14 255);padding-bottom:2px;">Convert</a>
+                <a href="#1a" style="text-decoration:none;color:oklch(0.5 0.012 255);padding-bottom:2px;">Settings</a>
+              </nav>
+            </div>
+            <div style="padding:40px 24px 56px;display:flex;justify-content:center;">
+              <div style="width:100%;max-width:560px;display:flex;flex-direction:column;gap:16px;">
+                <div style="display:flex;flex-direction:column;gap:14px;padding:18px 16px;border:1px solid oklch(0.84 0.03 155);border-radius:8px;background:oklch(0.975 0.02 155);">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+                    <span style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;"><span style="width:8px;height:8px;border-radius:50%;background:oklch(0.6 0.13 155);"></span>3 of 3 converted · 9.6 s</span>
+                    <a href="#1a" style="display:flex;align-items:center;height:40px;padding:0 22px;border-radius:6px;background:oklch(0.52 0.14 255);color:#fff;font-size:15px;font-weight:600;text-decoration:none;">Download all · 4.4 MB .zip</a>
+                  </div>
+                  <div style="display:flex;flex-direction:column;background:#fff;border:1px solid oklch(0.88 0.02 155);border-radius:6px;overflow:hidden;">
+                    <div style="display:flex;align-items:center;gap:16px;padding:8px 14px;border-bottom:1px solid oklch(0.93 0.01 155);">
+                      <span style="flex:1;font:500 13.5px/1.3 'IBM Plex Mono',monospace;">Strugatsky - Piknik na obochine.epub</span>
+                      <span style="width:90px;text-align:right;font-size:13px;color:oklch(0.5 0.012 255);">2.1 MB</span>
+                      <a href="#1a" style="font-size:14px;text-decoration:none;">Download</a>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:16px;padding:8px 14px;border-bottom:1px solid oklch(0.93 0.01 155);">
+                      <span style="flex:1;font:500 13.5px/1.3 'IBM Plex Mono',monospace;">Lem - Solaris.epub</span>
+                      <span style="width:90px;text-align:right;font-size:13px;color:oklch(0.5 0.012 255);">0.9 MB</span>
+                      <a href="#1a" style="font-size:14px;text-decoration:none;">Download</a>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:16px;padding:8px 14px;">
+                      <span style="flex:1;font:500 13.5px/1.3 'IBM Plex Mono',monospace;">Dick - Ubik.epub</span>
+                      <span style="width:90px;text-align:right;font-size:13px;color:oklch(0.5 0.012 255);">1.4 MB</span>
+                      <a href="#1a" style="font-size:14px;text-decoration:none;">Download</a>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+                  <details style="flex:1;border:1px solid oklch(0.88 0.005 255);border-radius:6px;">
+                    <summary style="padding:10px 14px;font-size:14px;color:oklch(0.45 0.012 255);cursor:pointer;">Logs · 3 files, 118 lines</summary>
+                  </details>
+                  <a href="#1a" style="font-size:15px;text-decoration:none;white-space:nowrap;">Convert another</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ SCREEN 3: FAILURE ============ -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <h2 style="margin:0;font:600 12px/1 'IBM Plex Mono',ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:oklch(0.45 0.012 255);">Convert · failed</h2>
+      <p style="margin:0;font-size:13px;line-height:1.5;color:oklch(0.55 0.012 255);max-width:78ch;">A batch fails per file, never as a whole: the failed book is called out first, the ones that worked stay downloadable below. Plain-language summary first, then the one line of the log that matters, then the raw log in a collapsed <code style="font-family:'IBM Plex Mono',monospace;">&lt;details&gt;</code> (one log per file, the failed one preselected). On the phone the <code style="font-family:'IBM Plex Mono',monospace;">&lt;pre&gt;</code> scrolls in both axes (max-height 260px) rather than wrapping — wrapped stack traces are unreadable; a "wrap" checkbox toggles <code style="font-family:'IBM Plex Mono',monospace;">white-space</code> when you do want it.</p>
+      <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;">
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">375</div>
+          <div style="width:375px;background:#fff;border:1px solid oklch(0.87 0.006 255);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(20,25,40,.05);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-bottom:1px solid oklch(0.9 0.005 255);background:oklch(0.98 0.003 255);">
+              <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+              <nav style="display:flex;gap:14px;font-size:14px;">
+                <a href="#1a" style="text-decoration:none;font-weight:600;color:oklch(0.28 0.012 255);border-bottom:2px solid oklch(0.52 0.14 255);padding-bottom:2px;">Convert</a>
+                <a href="#1a" style="text-decoration:none;color:oklch(0.5 0.012 255);padding-bottom:2px;">Settings</a>
+              </nav>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px;padding:16px;">
+              <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid oklch(0.84 0.06 27);border-radius:8px;background:oklch(0.975 0.02 27);">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="width:8px;height:8px;border-radius:50%;background:oklch(0.55 0.19 27);"></span>
+                  <span style="font-size:15px;font-weight:600;">1 of 3 books failed</span>
+                </div>
+                <div style="font:500 13px/1.35 'IBM Plex Mono',monospace;word-break:break-all;">dick-ubik.fb2.zip</div>
+                <p style="margin:0;font-size:14px;line-height:1.5;text-wrap:pretty;">The FB2 is malformed: an image reference points at a binary that isn’t in the file. fb2cng stopped at chapter 12. The other two books converted.</p>
+                <p style="margin:0;font-size:13px;line-height:1.5;color:oklch(0.45 0.04 27);">Try again with <b>use_broken_images</b> on — it substitutes a blank image and keeps going.</p>
+                <div style="display:flex;flex-direction:column;gap:8px;padding-top:2px;">
+                  <a href="#1a" style="display:flex;align-items:center;justify-content:center;height:46px;border-radius:6px;border:1px solid oklch(0.55 0.19 27);color:oklch(0.45 0.17 27);font-size:15px;font-weight:600;text-decoration:none;background:#fff;">Retry with use_broken_images</a>
+                  <a href="#1a" style="display:flex;align-items:center;justify-content:center;height:46px;border-radius:6px;border:1px solid oklch(0.85 0.006 255);color:oklch(0.35 0.012 255);font-size:15px;text-decoration:none;background:#fff;">Skip it</a>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid oklch(0.84 0.03 155);border-radius:8px;background:oklch(0.975 0.02 155);">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="width:8px;height:8px;border-radius:50%;background:oklch(0.6 0.13 155);"></span>
+                  <span style="font-size:14px;font-weight:600;">2 converted</span>
+                </div>
+                <div style="display:flex;flex-direction:column;background:#fff;border:1px solid oklch(0.88 0.02 155);border-radius:6px;overflow:hidden;">
+                  <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid oklch(0.93 0.01 155);min-height:48px;">
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                      <span style="font:500 13.5px/1.35 'IBM Plex Mono',monospace;word-break:break-all;">Strugatsky - Piknik na obochine.epub</span>
+                      <span style="font-size:12px;color:oklch(0.5 0.012 255);">2.1 MB</span>
+                    </div>
+                    <a href="#1a" style="font-size:14px;text-decoration:none;padding:6px 2px;">Download</a>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;min-height:48px;">
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                      <span style="font:500 13.5px/1.35 'IBM Plex Mono',monospace;word-break:break-all;">Lem - Solaris.epub</span>
+                      <span style="font-size:12px;color:oklch(0.5 0.012 255);">0.9 MB</span>
+                    </div>
+                    <a href="#1a" style="font-size:14px;text-decoration:none;padding:6px 2px;">Download</a>
+                  </div>
+                </div>
+                <a href="#1a" style="display:flex;align-items:center;justify-content:center;height:46px;border-radius:6px;background:oklch(0.52 0.14 255);color:#fff;font-size:16px;font-weight:600;text-decoration:none;">Download the 2 that worked</a>
+              </div>
+              <div style="font:500 12px/1 'IBM Plex Mono',monospace;color:oklch(0.5 0.012 255);">First error · dick-ubik.fb2.zip</div>
+              <pre style="margin:0;padding:10px 12px;border-radius:6px;background:oklch(0.22 0.012 255);color:oklch(0.9 0.03 27);font:400 12px/1.5 'IBM Plex Mono',monospace;overflow-x:auto;white-space:pre;">ERR image ref "#img_37" not found
+    at chapter 12 (Глава 12)</pre>
+              <details style="border:1px solid oklch(0.88 0.005 255);border-radius:6px;overflow:hidden;">
+                <summary style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 14px;font-size:14px;font-weight:500;cursor:pointer;background:oklch(0.98 0.003 255);">
+                  <span>Full log · dick-ubik · 142 lines</span><span style="color:oklch(0.55 0.012 255);font-size:12px;">▾</span>
+                </summary>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border-top:1px solid oklch(0.9 0.005 255);border-bottom:1px solid oklch(0.9 0.005 255);font-size:13px;color:oklch(0.5 0.012 255);">
+                  <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" style="width:16px;height:16px;"> wrap</label>
+                  <span style="display:flex;gap:14px;"><a href="#1a" style="text-decoration:none;">Other files’ logs</a><a href="#1a" style="text-decoration:none;">Copy</a></span>
+                </div>
+                <pre style="margin:0;max-height:260px;overflow:auto;padding:12px;background:oklch(0.22 0.012 255);color:oklch(0.88 0.01 255);font:400 12px/1.55 'IBM Plex Mono',monospace;white-space:pre;-webkit-overflow-scrolling:touch;">INFO fb2cng 1.9.2 (go1.22.4)
+INFO input  /tmp/up-7f31/piknik.fb2
+INFO preset kobo (7 overrides)
+DEBG parse: FictionBook/description ok
+DEBG parse: 41 sections, 38 binaries
+WARN binary "cover.jpg" declared twice, using first
+DEBG images.optimize=true jpeg_quality_level=75
+DEBG resize cover 1600x2400 -> 1264x1680 (fit)
+WARN section 9: nested <emphasis> depth 4
+DEBG hyphenation: ru dictionary, 118443 patterns
+ERR  image ref "#img_37" not found
+     at chapter 12 (Глава 12)
+     src/epub/images.go:212
+ERR  aborting: 1 unresolved reference
+INFO cleanup /tmp/fb2c-9912
+EXIT status 2</pre>
+              </details>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">1440</div>
+          <div style="width:1440px;background:#fff;border:1px solid oklch(0.87 0.006 255);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(20,25,40,.05);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 24px;border-bottom:1px solid oklch(0.9 0.005 255);background:oklch(0.98 0.003 255);">
+              <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+              <nav style="display:flex;gap:18px;font-size:14px;">
+                <a href="#1a" style="text-decoration:none;font-weight:600;color:oklch(0.28 0.012 255);border-bottom:2px solid oklch(0.52 0.14 255);padding-bottom:2px;">Convert</a>
+                <a href="#1a" style="text-decoration:none;color:oklch(0.5 0.012 255);padding-bottom:2px;">Settings</a>
+              </nav>
+            </div>
+            <div style="padding:40px 24px 56px;display:flex;justify-content:center;">
+              <div style="width:100%;max-width:820px;display:flex;flex-direction:column;gap:16px;">
+                <div style="display:flex;flex-direction:column;gap:10px;padding:18px;border:1px solid oklch(0.84 0.06 27);border-radius:8px;background:oklch(0.975 0.02 27);">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:oklch(0.55 0.19 27);"></span>
+                    <span style="font-size:15px;font-weight:600;">1 of 3 books failed —</span>
+                    <span style="font:500 13.5px/1 'IBM Plex Mono',monospace;">dick-ubik.fb2.zip</span>
+                    <span style="font:400 12px/1 'IBM Plex Mono',monospace;color:oklch(0.5 0.04 27);margin-left:4px;">exit 2 · 1.1 s</span>
+                  </div>
+                  <p style="margin:0;font-size:14px;line-height:1.5;max-width:80ch;text-wrap:pretty;">The FB2 is malformed: an image reference points at a binary that isn’t in the file. fb2cng stopped at chapter 12. <span style="color:oklch(0.45 0.04 27);">Turning on <b>use_broken_images</b> substitutes a blank image and keeps going.</span></p>
+                  <div style="display:flex;gap:10px;padding-top:4px;">
+                    <a href="#1a" style="display:flex;align-items:center;height:40px;padding:0 18px;border-radius:6px;border:1px solid oklch(0.55 0.19 27);color:oklch(0.45 0.17 27);font-size:14px;font-weight:600;text-decoration:none;background:#fff;">Retry with use_broken_images</a>
+                    <a href="#1a" style="display:flex;align-items:center;height:40px;padding:0 18px;border-radius:6px;border:1px solid oklch(0.85 0.006 255);color:oklch(0.35 0.012 255);font-size:14px;text-decoration:none;background:#fff;">Skip it</a>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;border:1px solid oklch(0.84 0.03 155);border-radius:8px;background:oklch(0.975 0.02 155);">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+                    <span style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;"><span style="width:8px;height:8px;border-radius:50%;background:oklch(0.6 0.13 155);"></span>2 converted</span>
+                    <a href="#1a" style="display:flex;align-items:center;height:38px;padding:0 20px;border-radius:6px;background:oklch(0.52 0.14 255);color:#fff;font-size:14px;font-weight:600;text-decoration:none;">Download the 2 that worked · .zip</a>
+                  </div>
+                  <div style="display:flex;flex-direction:column;background:#fff;border:1px solid oklch(0.88 0.02 155);border-radius:6px;overflow:hidden;">
+                    <div style="display:flex;align-items:center;gap:16px;padding:8px 14px;border-bottom:1px solid oklch(0.93 0.01 155);">
+                      <span style="flex:1;font:500 13.5px/1.3 'IBM Plex Mono',monospace;">Strugatsky - Piknik na obochine.epub</span>
+                      <span style="width:90px;text-align:right;font-size:13px;color:oklch(0.5 0.012 255);">2.1 MB</span>
+                      <a href="#1a" style="font-size:14px;text-decoration:none;">Download</a>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:16px;padding:8px 14px;">
+                      <span style="flex:1;font:500 13.5px/1.3 'IBM Plex Mono',monospace;">Lem - Solaris.epub</span>
+                      <span style="width:90px;text-align:right;font-size:13px;color:oklch(0.5 0.012 255);">0.9 MB</span>
+                      <a href="#1a" style="font-size:14px;text-decoration:none;">Download</a>
+                    </div>
+                  </div>
+                </div>
+                <pre style="margin:0;padding:12px 14px;border-radius:6px;background:oklch(0.22 0.012 255);color:oklch(0.9 0.03 27);font:400 12.5px/1.5 'IBM Plex Mono',monospace;overflow-x:auto;white-space:pre;">ERR image ref "#img_37" not found    at chapter 12 (Глава 12)    src/epub/images.go:212</pre>
+                <details open="open" style="border:1px solid oklch(0.88 0.005 255);border-radius:6px;overflow:hidden;">
+                  <summary style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 14px;font-size:14px;font-weight:500;cursor:pointer;background:oklch(0.98 0.003 255);">
+                    <span>Full log · dick-ubik.fb2.zip · 142 lines</span>
+                    <span style="display:flex;align-items:center;gap:14px;font-weight:400;color:oklch(0.5 0.012 255);font-size:13px;"><span>piknik</span><span>solaris</span><span style="color:oklch(0.3 0.012 255);font-weight:600;">ubik</span><span>·</span><span>wrap</span><span>Copy</span><span>Download .log</span></span>
+                  </summary>
+                  <pre style="margin:0;max-height:300px;overflow:auto;padding:14px;background:oklch(0.22 0.012 255);color:oklch(0.88 0.01 255);font:400 12.5px/1.6 'IBM Plex Mono',monospace;white-space:pre;">INFO fb2cng 1.9.2 (go1.22.4)
+INFO input  /tmp/up-7f31/piknik.fb2   (1.8 MB, unzipped 6.2 MB)
+INFO preset kobo (7 overrides)        screen.width=1264 screen.height=1680
+DEBG parse: FictionBook/description ok
+DEBG parse: 41 sections, 38 binaries, 2 stylesheets
+WARN binary "cover.jpg" declared twice, using first
+DEBG images.optimize=true jpeg_quality_level=75
+DEBG resize cover 1600x2400 -> 1264x1680 (fit)
+WARN section 9: nested &lt;emphasis&gt; depth 4, flattening
+DEBG hyphenation: ru dictionary loaded, 118443 patterns
+DEBG footnotes.mode=float, 214 notes collected
+ERR  image ref "#img_37" not found
+     at chapter 12 (Глава 12)
+     src/epub/images.go:212
+ERR  aborting: 1 unresolved reference
+INFO cleanup /tmp/fb2c-9912
+EXIT status 2</pre>
+                </details>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ SCREEN 4: PRESETS ============ -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <h2 style="margin:0;font:600 12px/1 'IBM Plex Mono',ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:oklch(0.45 0.012 255);">Settings · presets</h2>
+      <p style="margin:0;font-size:13px;line-height:1.5;color:oklch(0.55 0.012 255);max-width:78ch;">Settings is only this list plus a collapsed “How presets work” note. Default is a radio inside one form — picking it POSTs immediately. Delete is a form POST with <code style="font-family:'IBM Plex Mono',monospace;">onsubmit="return confirm(…)"</code> (that is the other 5 lines of JS).</p>
+      <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;">
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">375</div>
+          <div style="width:375px;background:#fff;border:1px solid oklch(0.87 0.006 255);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(20,25,40,.05);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-bottom:1px solid oklch(0.9 0.005 255);background:oklch(0.98 0.003 255);">
+              <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+              <nav style="display:flex;gap:14px;font-size:14px;">
+                <a href="#1a" style="text-decoration:none;color:oklch(0.5 0.012 255);padding-bottom:2px;">Convert</a>
+                <a href="#1a" style="text-decoration:none;font-weight:600;color:oklch(0.28 0.012 255);border-bottom:2px solid oklch(0.52 0.14 255);padding-bottom:2px;">Settings</a>
+              </nav>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px 10px;">
+              <div style="display:flex;flex-direction:column;gap:2px;">
+                <h3 style="margin:0;font-size:16px;font-weight:600;">Presets</h3>
+                <span style="font-size:12.5px;color:oklch(0.55 0.012 255);">Selected = preselected on Convert</span>
+              </div>
+              <a href="#1a" style="font-size:14px;text-decoration:none;font-weight:500;">+ New</a>
+            </div>
+            <ul style="list-style:none;margin:0;padding:0;border-top:1px solid oklch(0.92 0.004 255);">
+              <li style="display:flex;flex-direction:column;gap:8px;padding:12px 16px;border-bottom:1px solid oklch(0.92 0.004 255);">
+                <label style="display:flex;align-items:center;gap:10px;min-height:44px;">
+                  <input type="radio" name="def-m" checked="checked" style="width:20px;height:20px;accent-color:oklch(0.52 0.14 255);">
+                  <span style="font-size:16px;font-weight:600;">Kobo</span>
+                </label>
+                <span style="font-size:13px;color:oklch(0.55 0.012 255);">7 options changed · edited 12 Jul</span>
+                <div style="display:flex;gap:6px;">
+                  <a href="#1a" style="flex:1;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.86 0.006 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.3 0.012 255);">Edit</a>
+                  <a href="#1a" style="flex:1;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.86 0.006 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.3 0.012 255);">Duplicate</a>
+                  <a href="#1a" style="width:60px;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.86 0.006 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.5 0.17 27);">Delete</a>
+                </div>
+              </li>
+              <li style="display:flex;flex-direction:column;gap:8px;padding:12px 16px;border-bottom:1px solid oklch(0.92 0.004 255);">
+                <label style="display:flex;align-items:center;gap:10px;min-height:44px;">
+                  <input type="radio" name="def-m" style="width:20px;height:20px;accent-color:oklch(0.52 0.14 255);">
+                  <span style="font-size:16px;font-weight:600;">Kindle</span>
+                </label>
+                <span style="font-size:13px;color:oklch(0.55 0.012 255);">11 options changed · edited 3 May</span>
+                <div style="display:flex;gap:6px;">
+                  <a href="#1a" style="flex:1;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.86 0.006 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.3 0.012 255);">Edit</a>
+                  <a href="#1a" style="flex:1;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.86 0.006 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.3 0.012 255);">Duplicate</a>
+                  <a href="#1a" style="width:60px;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.86 0.006 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.5 0.17 27);">Delete</a>
+                </div>
+              </li>
+              <li style="display:flex;flex-direction:column;gap:8px;padding:12px 16px;border-bottom:1px solid oklch(0.92 0.004 255);">
+                <label style="display:flex;align-items:center;gap:10px;min-height:44px;">
+                  <input type="radio" name="def-m" style="width:20px;height:20px;accent-color:oklch(0.52 0.14 255);">
+                  <span style="font-size:16px;font-weight:600;">Phone</span>
+                </label>
+                <span style="font-size:13px;color:oklch(0.55 0.012 255);">4 options changed · edited 28 Feb</span>
+                <div style="display:flex;gap:6px;">
+                  <a href="#1a" style="flex:1;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.86 0.006 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.3 0.012 255);">Edit</a>
+                  <a href="#1a" style="flex:1;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.86 0.006 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.3 0.012 255);">Duplicate</a>
+                  <a href="#1a" style="width:60px;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.86 0.006 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.5 0.17 27);">Delete</a>
+                </div>
+              </li>
+              <li style="display:flex;flex-direction:column;gap:8px;padding:12px 16px;">
+                <div style="display:flex;align-items:center;gap:10px;min-height:44px;padding-left:30px;">
+                  <span style="font-size:16px;font-weight:600;">Defaults</span>
+                  <span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;padding:4px 6px;border-radius:3px;border:1px solid oklch(0.86 0.006 255);color:oklch(0.5 0.012 255);">Built-in</span>
+                </div>
+                <span style="font-size:13px;color:oklch(0.55 0.012 255);">0 options changed · read-only</span>
+                <div style="display:flex;gap:6px;">
+                  <a href="#1a" style="flex:1;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.86 0.006 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.3 0.012 255);">View</a>
+                  <a href="#1a" style="flex:1;display:flex;align-items:center;justify-content:center;height:40px;border:1px solid oklch(0.86 0.006 255);border-radius:6px;font-size:14px;text-decoration:none;color:oklch(0.3 0.012 255);">Duplicate</a>
+                </div>
+              </li>
+            </ul>
+            <details style="border-top:1px solid oklch(0.92 0.004 255);">
+              <summary style="padding:14px 16px;font-size:14px;font-weight:500;cursor:pointer;">How presets work</summary>
+              <div style="display:flex;flex-direction:column;gap:10px;padding:0 16px 16px;font-size:13.5px;line-height:1.55;color:oklch(0.42 0.012 255);">
+                <p style="margin:0;">A preset stores only the options you changed. Everything else comes from fb2cng’s built-in defaults at conversion time, so upgrading the binary picks up new defaults for free.</p>
+                <p style="margin:0;">The default preset is preselected on the Convert screen — that is the only thing the marker does.</p>
+                <p style="margin:0;">Deleting a preset does not touch already-converted files. Presets live in <span style="font-family:'IBM Plex Mono',monospace;">~/.config/fb2web/presets/&lt;name&gt;.yaml</span>; editing that file by hand is equivalent to using this screen.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">1440</div>
+          <div style="width:1440px;background:#fff;border:1px solid oklch(0.87 0.006 255);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(20,25,40,.05);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 24px;border-bottom:1px solid oklch(0.9 0.005 255);background:oklch(0.98 0.003 255);">
+              <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+              <nav style="display:flex;gap:18px;font-size:14px;">
+                <a href="#1a" style="text-decoration:none;color:oklch(0.5 0.012 255);padding-bottom:2px;">Convert</a>
+                <a href="#1a" style="text-decoration:none;font-weight:600;color:oklch(0.28 0.012 255);border-bottom:2px solid oklch(0.52 0.14 255);padding-bottom:2px;">Settings</a>
+              </nav>
+            </div>
+            <div style="padding:32px 24px 56px;display:flex;justify-content:center;">
+              <div style="width:100%;max-width:900px;display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;">
+                  <h3 style="margin:0;font-size:17px;font-weight:600;">Presets</h3>
+                  <a href="#1a" style="font-size:14px;text-decoration:none;font-weight:500;">+ New preset</a>
+                </div>
+                <div style="border:1px solid oklch(0.89 0.005 255);border-radius:8px;overflow:hidden;">
+                  <div style="display:grid;grid-template-columns:88px 1fr 190px 150px 210px;gap:16px;align-items:center;padding:9px 16px;background:oklch(0.975 0.003 255);border-bottom:1px solid oklch(0.9 0.005 255);font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.5 0.012 255);">
+                    <span>Default</span><span>Name</span><span>Overrides</span><span>Edited</span><span></span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:88px 1fr 190px 150px 210px;gap:16px;align-items:center;padding:12px 16px;border-bottom:1px solid oklch(0.93 0.004 255);">
+                    <label style="display:flex;align-items:center;gap:8px;"><input type="radio" name="def" checked="checked" style="width:16px;height:16px;accent-color:oklch(0.52 0.14 255);"></label>
+                    <span style="font-size:15px;font-weight:600;">Kobo</span>
+                    <span style="font-size:14px;color:oklch(0.45 0.012 255);">7 options changed</span>
+                    <span style="font-size:14px;color:oklch(0.55 0.012 255);">12 Jul 2026</span>
+                    <div style="display:flex;gap:14px;justify-content:flex-end;font-size:14px;">
+                      <a href="#1a" style="text-decoration:none;">Edit</a><a href="#1a" style="text-decoration:none;">Duplicate</a><a href="#1a" style="text-decoration:none;color:oklch(0.5 0.17 27);">Delete</a>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:88px 1fr 190px 150px 210px;gap:16px;align-items:center;padding:12px 16px;border-bottom:1px solid oklch(0.93 0.004 255);">
+                    <label style="display:flex;align-items:center;gap:8px;"><input type="radio" name="def" style="width:16px;height:16px;accent-color:oklch(0.52 0.14 255);"></label>
+                    <span style="font-size:15px;font-weight:600;">Kindle</span>
+                    <span style="font-size:14px;color:oklch(0.45 0.012 255);">11 options changed</span>
+                    <span style="font-size:14px;color:oklch(0.55 0.012 255);">3 May 2026</span>
+                    <div style="display:flex;gap:14px;justify-content:flex-end;font-size:14px;">
+                      <a href="#1a" style="text-decoration:none;">Edit</a><a href="#1a" style="text-decoration:none;">Duplicate</a><a href="#1a" style="text-decoration:none;color:oklch(0.5 0.17 27);">Delete</a>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:88px 1fr 190px 150px 210px;gap:16px;align-items:center;padding:12px 16px;border-bottom:1px solid oklch(0.93 0.004 255);">
+                    <label style="display:flex;align-items:center;gap:8px;"><input type="radio" name="def" style="width:16px;height:16px;accent-color:oklch(0.52 0.14 255);"></label>
+                    <span style="font-size:15px;font-weight:600;">Phone</span>
+                    <span style="font-size:14px;color:oklch(0.45 0.012 255);">4 options changed</span>
+                    <span style="font-size:14px;color:oklch(0.55 0.012 255);">28 Feb 2026</span>
+                    <div style="display:flex;gap:14px;justify-content:flex-end;font-size:14px;">
+                      <a href="#1a" style="text-decoration:none;">Edit</a><a href="#1a" style="text-decoration:none;">Duplicate</a><a href="#1a" style="text-decoration:none;color:oklch(0.5 0.17 27);">Delete</a>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:88px 1fr 190px 150px 210px;gap:16px;align-items:center;padding:12px 16px;background:oklch(0.985 0.003 255);">
+                    <span></span>
+                    <span style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:oklch(0.45 0.012 255);">Defaults <span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;padding:4px 6px;border-radius:3px;border:1px solid oklch(0.86 0.006 255);color:oklch(0.5 0.012 255);">Built-in</span></span>
+                    <span style="font-size:14px;color:oklch(0.55 0.012 255);">—</span>
+                    <span style="font-size:14px;color:oklch(0.55 0.012 255);">—</span>
+                    <div style="display:flex;gap:14px;justify-content:flex-end;font-size:14px;">
+                      <a href="#1a" style="text-decoration:none;">View</a><a href="#1a" style="text-decoration:none;">Duplicate</a>
+                    </div>
+                  </div>
+                </div>
+                <details style="border:1px solid oklch(0.89 0.005 255);border-radius:8px;background:oklch(0.982 0.003 255);">
+                  <summary style="padding:11px 16px;font-size:14px;font-weight:500;cursor:pointer;">How presets work</summary>
+                  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;padding:4px 16px 16px;font-size:13.5px;line-height:1.55;color:oklch(0.42 0.012 255);">
+                    <p style="margin:0;">A preset stores only the options you changed; everything else comes from fb2cng’s built-in defaults at conversion time, so upgrading the binary picks up new defaults for free.</p>
+                    <p style="margin:0;">The default preset is preselected on the Convert screen. That is the only thing the marker does — every conversion still names its preset explicitly in the log.</p>
+                    <p style="margin:0;">Files live in <span style="font-family:'IBM Plex Mono',monospace;">~/.config/fb2web/presets/&lt;name&gt;.yaml</span>. Editing them by hand is equivalent to using this screen; the app re-reads on each request.</p>
+                  </div>
+                </details>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ SCREEN 5: PRESET EDITOR ============ -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <h2 style="margin:0;font:600 12px/1 'IBM Plex Mono',ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:oklch(0.45 0.012 255);">Settings · preset editor</h2>
+      <p style="margin:0;font-size:13px;line-height:1.5;color:oklch(0.55 0.012 255);max-width:78ch;">One <code style="font-family:'IBM Plex Mono',monospace;">&lt;form&gt;</code> around ~100 rows; only rows whose value differs from the built-in default are submitted (server diffs against defaults, stores the diff). Search + "changed only" are the same 20 lines of JS: hide rows whose <code style="font-family:'IBM Plex Mono',monospace;">data-path</code> doesn’t match, hide groups left empty, and rewrite each group’s match count. Changed rows carry an amber left rule and a dot after the label; the label itself is the reset link. Every row carries its default and a one-line description — on the phone as a second line, on desktop in the third column — so there is no tooltip or help modal anywhere.</p>
+      <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;">
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">375</div>
+          <div style="width:375px;background:#fff;border:1px solid oklch(0.87 0.006 255);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(20,25,40,.05);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-bottom:1px solid oklch(0.9 0.005 255);background:oklch(0.98 0.003 255);">
+              <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+              <nav style="display:flex;gap:14px;font-size:14px;">
+                <a href="#1a" style="text-decoration:none;color:oklch(0.5 0.012 255);padding-bottom:2px;">Convert</a>
+                <a href="#1a" style="text-decoration:none;font-weight:600;color:oklch(0.28 0.012 255);border-bottom:2px solid oklch(0.52 0.14 255);padding-bottom:2px;">Settings</a>
+              </nav>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;padding:12px 14px;border-bottom:1px solid oklch(0.9 0.005 255);background:#fff;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <a href="#1a" style="text-decoration:none;font-size:14px;">← Presets</a>
+                <span style="font-size:15px;font-weight:600;">Kobo</span>
+                <span style="font-size:12px;color:oklch(0.55 0.012 255);">7 changed</span>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px;">
+                <input type="checkbox" checked="checked" style="width:18px;height:18px;accent-color:oklch(0.52 0.14 255);">
+                Use as default preset
+              </label>
+              <input type="search" placeholder="Search 104 options…" style="height:44px;padding:0 12px;border:1px solid oklch(0.85 0.006 255);border-radius:6px;font-size:16px;font-family:inherit;background:oklch(0.985 0.003 255);">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                <label style="display:flex;align-items:center;gap:8px;font-size:14px;"><input type="checkbox" style="width:18px;height:18px;accent-color:oklch(0.52 0.14 255);"> Changed only</label>
+                <a href="#1a" style="font-size:13px;text-decoration:none;">Expand all</a>
+              </div>
+              <details style="border:1px solid oklch(0.89 0.005 255);border-radius:6px;background:oklch(0.982 0.003 255);">
+                <summary style="padding:11px 12px;font-size:13.5px;cursor:pointer;">What am I looking at?</summary>
+                <div style="display:flex;flex-direction:column;gap:8px;padding:0 12px 12px;font-size:13px;line-height:1.55;color:oklch(0.42 0.012 255);">
+                  <p style="margin:0;">Search matches option names, their group path and their values — faster than opening groups.</p>
+                  <p style="margin:0;"><span style="color:oklch(0.72 0.14 75);">•</span> and the amber rule mark an option that differs from the built-in default. Only those are saved.</p>
+                  <p style="margin:0;">Each row shows its default underneath; tap it to reset. Full option reference: <span style="font-family:'IBM Plex Mono',monospace;">fb2cng dumpconfig</span>.</p>
+                </div>
+              </details>
+            </div>
+
+            <details open="open" style="border-bottom:1px solid oklch(0.9 0.005 255);">
+              <summary style="display:flex;align-items:center;gap:8px;padding:11px 14px;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.4 0.012 255);background:oklch(0.975 0.003 255);cursor:pointer;">document <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.55 0.012 255);">18 · 3 changed</span></summary>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center;padding:8px 14px 8px 11px;border-left:3px solid oklch(0.72 0.14 75);border-top:1px solid oklch(0.94 0.004 255);min-height:48px;">
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                  <span style="font:500 14px/1.2 'IBM Plex Mono',monospace;">open_from_cover <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                  <span style="font-size:12px;line-height:1.4;color:oklch(0.46 0.012 255);">start the book at the cover page · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default false</span></span>
+                </div>
+                <input type="checkbox" checked="checked" style="width:22px;height:22px;accent-color:oklch(0.52 0.14 255);">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center;padding:8px 14px;border-top:1px solid oklch(0.94 0.004 255);min-height:48px;">
+                <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                  <span style="font:500 14px/1.2 'IBM Plex Mono',monospace;">insert_soft_hyphen</span>
+                  <span style="font-size:12px;line-height:1.4;color:oklch(0.46 0.012 255);">adds hyphenation hints for narrow screens · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default false</span></span>
+                </div></sc-if>
+                <input type="checkbox" style="width:22px;height:22px;accent-color:oklch(0.52 0.14 255);">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center;padding:8px 14px 8px 11px;border-left:3px solid oklch(0.72 0.14 75);border-top:1px solid oklch(0.94 0.004 255);min-height:48px;">
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                  <span style="font:500 14px/1.2 'IBM Plex Mono',monospace;">chapter_per_file <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                  <span style="font-size:12px;line-height:1.4;color:oklch(0.46 0.012 255);">off keeps Kobo from re-paginating · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default true</span></span>
+                </div>
+                <input type="checkbox" style="width:22px;height:22px;accent-color:oklch(0.52 0.14 255);">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center;padding:8px 14px;border-top:1px solid oklch(0.94 0.004 255);min-height:48px;">
+                <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                  <span style="font:500 14px/1.2 'IBM Plex Mono',monospace;">remove_empty_paragraphs</span>
+                  <span style="font-size:12px;line-height:1.4;color:oklch(0.46 0.012 255);">drops spacer paragraphs · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default true</span></span>
+                </div></sc-if>
+                <input type="checkbox" checked="checked" style="width:22px;height:22px;accent-color:oklch(0.52 0.14 255);">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center;padding:8px 14px 8px 11px;border-left:3px solid oklch(0.72 0.14 75);border-top:1px solid oklch(0.94 0.004 255);min-height:48px;">
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                  <span style="font:500 14px/1.2 'IBM Plex Mono',monospace;">hyphenation_language <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                  <span style="font-size:12px;line-height:1.4;color:oklch(0.46 0.012 255);">dictionary used when hyphenating · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default en</span></span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;height:40px;padding:0 10px;border:1px solid oklch(0.85 0.006 255);border-radius:6px;font-size:16px;background:#fff;"><span>ru</span><span style="color:oklch(0.6 0.012 255);font-size:11px;">▾</span></div>
+              </div>
+              <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="padding:8px 14px 12px;font-size:13px;color:oklch(0.55 0.012 255);border-top:1px solid oklch(0.94 0.004 255);">13 more in document — search to reach them</div></sc-if>
+            </details>
+
+            <details open="open" style="border-bottom:1px solid oklch(0.9 0.005 255);">
+              <summary style="display:flex;align-items:center;gap:8px;padding:11px 14px;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.4 0.012 255);background:oklch(0.975 0.003 255);cursor:pointer;">images <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.55 0.012 255);">14 · 2 changed</span></summary>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center;padding:8px 14px;border-top:1px solid oklch(0.94 0.004 255);min-height:48px;">
+                <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                  <span style="font:500 14px/1.2 'IBM Plex Mono',monospace;">optimize</span>
+                  <span style="font-size:12px;line-height:1.4;color:oklch(0.46 0.012 255);">recompress images on the way in · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default true</span></span>
+                </div></sc-if>
+                <input type="checkbox" checked="checked" style="width:22px;height:22px;accent-color:oklch(0.52 0.14 255);">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center;padding:8px 14px 8px 11px;border-left:3px solid oklch(0.72 0.14 75);border-top:1px solid oklch(0.94 0.004 255);min-height:48px;">
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                  <span style="font:500 14px/1.2 'IBM Plex Mono',monospace;">jpeg_quality_level <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                  <span style="font-size:12px;line-height:1.4;color:oklch(0.46 0.012 255);">1–100, lower = smaller file · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default 85</span></span>
+                </div>
+                <input type="number" value="75" style="width:84px;height:40px;padding:0 10px;border:1px solid oklch(0.85 0.006 255);border-radius:6px;font:500 16px/1 'IBM Plex Mono',monospace;text-align:right;">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center;padding:8px 14px 8px 11px;border-left:3px solid oklch(0.72 0.14 75);border-top:1px solid oklch(0.94 0.004 255);min-height:48px;">
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                  <span style="font:500 14px/1.2 'IBM Plex Mono',monospace;">use_broken_images <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                  <span style="font-size:12px;line-height:1.4;color:oklch(0.46 0.012 255);">blank placeholder for missing binaries · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default false</span></span>
+                </div>
+                <input type="checkbox" checked="checked" style="width:22px;height:22px;accent-color:oklch(0.52 0.14 255);">
+              </div>
+              <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="padding:8px 14px 12px;font-size:13px;color:oklch(0.55 0.012 255);border-top:1px solid oklch(0.94 0.004 255);">11 more in images</div></sc-if>
+            </details>
+
+            <details open="open" style="border-bottom:1px solid oklch(0.9 0.005 255);">
+              <summary style="display:flex;align-items:center;gap:8px;padding:11px 14px;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.4 0.012 255);background:oklch(0.975 0.003 255);cursor:pointer;">screen <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.55 0.012 255);">2 · 2 changed</span></summary>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center;padding:8px 14px 8px 11px;border-left:3px solid oklch(0.72 0.14 75);border-top:1px solid oklch(0.94 0.004 255);min-height:48px;">
+                <div style="display:flex;flex-direction:column;gap:2px;"><span style="font:500 14px/1.2 'IBM Plex Mono',monospace;">width <span style="color:oklch(0.72 0.14 75);">•</span></span><span style="font-size:12px;line-height:1.4;color:oklch(0.46 0.012 255);">target device pixels · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default 0</span></span></div>
+                <input type="number" value="1264" style="width:96px;height:40px;padding:0 10px;border:1px solid oklch(0.85 0.006 255);border-radius:6px;font:500 16px/1 'IBM Plex Mono',monospace;text-align:right;">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center;padding:8px 14px 8px 11px;border-left:3px solid oklch(0.72 0.14 75);border-top:1px solid oklch(0.94 0.004 255);min-height:48px;">
+                <div style="display:flex;flex-direction:column;gap:2px;"><span style="font:500 14px/1.2 'IBM Plex Mono',monospace;">height <span style="color:oklch(0.72 0.14 75);">•</span></span><span style="font-size:12px;line-height:1.4;color:oklch(0.46 0.012 255);">0 = leave images unscaled · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default 0</span></span></div>
+                <input type="number" value="1680" style="width:96px;height:40px;padding:0 10px;border:1px solid oklch(0.85 0.006 255);border-radius:6px;font:500 16px/1 'IBM Plex Mono',monospace;text-align:right;">
+              </div>
+            </details>
+
+            <details open="open" style="border-bottom:1px solid oklch(0.9 0.005 255);">
+              <summary style="display:flex;align-items:center;gap:8px;padding:11px 14px;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.4 0.012 255);background:oklch(0.975 0.003 255);cursor:pointer;">cover <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.55 0.012 255);">6 · 1 changed</span></summary>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center;padding:8px 14px;border-top:1px solid oklch(0.94 0.004 255);min-height:48px;">
+                <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                  <span style="font:500 14px/1.2 'IBM Plex Mono',monospace;">generate</span>
+                  <span style="font-size:12px;line-height:1.4;color:oklch(0.46 0.012 255);">build a cover when the book has none · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default true</span></span>
+                </div></sc-if>
+                <input type="checkbox" checked="checked" style="width:22px;height:22px;accent-color:oklch(0.52 0.14 255);">
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:10px 14px 12px 11px;border-left:3px solid oklch(0.72 0.14 75);border-top:1px solid oklch(0.94 0.004 255);">
+                <div style="display:flex;flex-direction:column;gap:2px;"><span style="font:500 14px/1.2 'IBM Plex Mono',monospace;">resize <span style="color:oklch(0.72 0.14 75);">•</span></span><span style="font-size:12px;line-height:1.4;color:oklch(0.46 0.012 255);">how the cover fills the screen · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default stretch</span></span></div>
+                <div style="display:flex;gap:0;border:1px solid oklch(0.85 0.006 255);border-radius:6px;overflow:hidden;">
+                  <span style="flex:1;text-align:center;padding:11px 0;font-size:15px;color:oklch(0.4 0.012 255);border-right:1px solid oklch(0.88 0.005 255);">stretch</span>
+                  <span style="flex:1;text-align:center;padding:11px 0;font-size:15px;font-weight:600;background:oklch(0.52 0.14 255);color:#fff;border-right:1px solid oklch(0.88 0.005 255);">fit</span>
+                  <span style="flex:1;text-align:center;padding:11px 0;font-size:15px;color:oklch(0.4 0.012 255);">none</span>
+                </div>
+              </div>
+            </details>
+
+            <details open="open" style="border-bottom:1px solid oklch(0.9 0.005 255);">
+              <summary style="display:flex;align-items:center;gap:8px;padding:11px 14px;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.4 0.012 255);background:oklch(0.975 0.003 255);cursor:pointer;">footnotes <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.55 0.012 255);">5 · 0 changed</span></summary>
+              <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:8px;padding:10px 14px 12px;border-top:1px solid oklch(0.94 0.004 255);">
+                <span style="font:500 14px/1.2 'IBM Plex Mono',monospace;">mode</span>
+                <span style="font-size:12px;line-height:1.4;color:oklch(0.46 0.012 255);">float = tap-to-open popup notes · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default float</span></span>
+                <div style="display:flex;gap:0;border:1px solid oklch(0.85 0.006 255);border-radius:6px;overflow:hidden;">
+                  <span style="flex:1;text-align:center;padding:11px 0;font-size:15px;font-weight:600;background:oklch(0.52 0.14 255);color:#fff;border-right:1px solid oklch(0.88 0.005 255);">float</span>
+                  <span style="flex:1;text-align:center;padding:11px 0;font-size:15px;color:oklch(0.4 0.012 255);border-right:1px solid oklch(0.88 0.005 255);">inline</span>
+                  <span style="flex:1;text-align:center;padding:11px 0;font-size:15px;color:oklch(0.4 0.012 255);">end</span>
+                </div>
+              </div></sc-if>
+            </details>
+
+            <details open="open" style="border-bottom:1px solid oklch(0.9 0.005 255);">
+              <summary style="display:flex;align-items:center;gap:8px;padding:11px 14px;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.4 0.012 255);background:oklch(0.975 0.003 255);cursor:pointer;">metainformation <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.55 0.012 255);">9 · 1 changed</span></summary>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px 12px;align-items:center;padding:8px 14px 8px 11px;border-left:3px solid oklch(0.72 0.14 75);border-top:1px solid oklch(0.94 0.004 255);min-height:48px;">
+                <div style="display:flex;flex-direction:column;gap:2px;"><span style="font:500 14px/1.2 'IBM Plex Mono',monospace;">transliterate <span style="color:oklch(0.72 0.14 75);">•</span></span><span style="font-size:12px;line-height:1.4;color:oklch(0.46 0.012 255);">ASCII author/title in filenames · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default false</span></span></div>
+                <input type="checkbox" checked="checked" style="width:22px;height:22px;accent-color:oklch(0.52 0.14 255);">
+              </div>
+              <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="padding:8px 14px 12px;font-size:13px;color:oklch(0.55 0.012 255);border-top:1px solid oklch(0.94 0.004 255);">8 more in metainformation</div></sc-if>
+            </details>
+
+            <details open="open">
+              <summary style="display:flex;align-items:center;gap:8px;padding:11px 14px;font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.4 0.012 255);background:oklch(0.975 0.003 255);cursor:pointer;">output <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.55 0.012 255);">3 · 1 changed</span></summary>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:10px 14px 14px 11px;border-left:3px solid oklch(0.72 0.14 75);border-top:1px solid oklch(0.94 0.004 255);">
+                <span style="font:500 14px/1.2 'IBM Plex Mono',monospace;">output_name_template <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                <textarea rows="4" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid oklch(0.85 0.006 255);border-radius:6px;font:400 14px/1.5 'IBM Plex Mono',monospace;resize:vertical;background:#fff;">{​{.Authors}​} - {​{.Title}​}{​{if .Series}​} ({​{.Series}​} #{​{.SeriesNum}​}){​{end}​}</textarea>
+                <span style="font-size:12px;line-height:1.45;color:oklch(0.55 0.012 255);">Go template · .Authors .Title .Series .SeriesNum .Lang .Year</span>
+                <div style="font:400 12px/1.5 'IBM Plex Mono',monospace;color:oklch(0.45 0.012 255);word-break:break-all;">→ Strugatsky - Piknik na obochine.epub</div>
+              </div>
+            </details>
+
+            <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-top:1px solid oklch(0.9 0.005 255);background:oklch(0.98 0.003 255);position:sticky;bottom:0;">
+              <details style="border:1px solid oklch(0.88 0.005 255);border-radius:6px;background:#fff;">
+                <summary style="padding:12px 14px;font-size:14px;cursor:pointer;">Effective config · 7 overrides</summary>
+                <pre style="margin:0;max-height:200px;overflow:auto;padding:12px;border-top:1px solid oklch(0.92 0.004 255);font:400 12px/1.55 'IBM Plex Mono',monospace;white-space:pre;color:oklch(0.3 0.012 255);">document:
+  open_from_cover: true
+  chapter_per_file: false
+  hyphenation_language: ru
+images:
+  jpeg_quality_level: 75
+  use_broken_images: true
+screen:
+  width: 1264
+  height: 1680</pre>
+              </details>
+              <button type="submit" style="height:50px;border:0;border-radius:6px;background:oklch(0.52 0.14 255);color:#fff;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;">Save preset</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;color:oklch(0.55 0.012 255);">1440</div>
+          <div style="width:1440px;background:#fff;border:1px solid oklch(0.87 0.006 255);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(20,25,40,.05);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 24px;border-bottom:1px solid oklch(0.9 0.005 255);background:oklch(0.98 0.003 255);">
+              <span style="font:600 14px/1 'IBM Plex Mono',monospace;letter-spacing:-0.02em;">fb2→epub</span>
+              <nav style="display:flex;gap:18px;font-size:14px;">
+                <a href="#1a" style="text-decoration:none;color:oklch(0.5 0.012 255);padding-bottom:2px;">Convert</a>
+                <a href="#1a" style="text-decoration:none;font-weight:600;color:oklch(0.28 0.012 255);border-bottom:2px solid oklch(0.52 0.14 255);padding-bottom:2px;">Settings</a>
+              </nav>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;padding:12px 24px;border-bottom:1px solid oklch(0.9 0.005 255);">
+              <a href="#1a" style="text-decoration:none;font-size:14px;">← Presets</a>
+              <span style="font-size:16px;font-weight:600;">Kobo</span>
+              <span style="font-size:13px;color:oklch(0.55 0.012 255);">7 of 104 options changed</span>
+              <label style="display:flex;align-items:center;gap:8px;font-size:14px;white-space:nowrap;">
+                <input type="checkbox" checked="checked" style="width:16px;height:16px;accent-color:oklch(0.52 0.14 255);">
+                Default preset
+              </label>
+              <input type="search" placeholder="Search options…  (name, path, or value)" style="flex:1;max-width:420px;height:36px;padding:0 12px;border:1px solid oklch(0.85 0.006 255);border-radius:6px;font-size:16px;font-family:inherit;background:oklch(0.98 0.003 255);">
+              <label style="display:flex;align-items:center;gap:8px;font-size:14px;white-space:nowrap;"><input type="checkbox" style="width:16px;height:16px;accent-color:oklch(0.52 0.14 255);"> Changed only</label>
+              <a href="#1a" style="font-size:13px;text-decoration:none;white-space:nowrap;">Collapse all</a>
+              <div style="flex:1;"></div>
+              <button type="submit" style="height:36px;padding:0 22px;border:0;border-radius:6px;background:oklch(0.52 0.14 255);color:#fff;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;">Save preset</button>
+            </div>
+
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 380px;">
+              <div style="border-right:1px solid oklch(0.91 0.005 255);">
+
+                <details open="open">
+                  <summary style="display:flex;align-items:baseline;gap:10px;padding:9px 24px;font:600 12px/1.4 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.4 0.012 255);background:oklch(0.975 0.003 255);border-bottom:1px solid oklch(0.92 0.004 255);cursor:pointer;">document <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.55 0.012 255);">18 options · 3 changed</span></summary>
+                  <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px 7px 21px;border-left:3px solid oklch(0.72 0.14 75);border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">open_from_cover <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                    <input type="checkbox" checked="checked" style="width:18px;height:18px;accent-color:oklch(0.52 0.14 255);justify-self:start;">
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);">start the book at the cover page · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default false</span> · <a href="#1a" style="text-decoration:none;">reset</a></span>
+                  </div>
+                  <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px;border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">insert_soft_hyphen</span>
+                    <input type="checkbox" style="width:18px;height:18px;accent-color:oklch(0.52 0.14 255);justify-self:start;">
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);">hyphenation hints for narrow screens · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default false</span></span>
+                  </div></sc-if>
+                  <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px 7px 21px;border-left:3px solid oklch(0.72 0.14 75);border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">chapter_per_file <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                    <input type="checkbox" style="width:18px;height:18px;accent-color:oklch(0.52 0.14 255);justify-self:start;">
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);">off keeps Kobo’s reader from re-paginating · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default true</span> · <a href="#1a" style="text-decoration:none;">reset</a></span>
+                  </div>
+                  <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px;border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">remove_empty_paragraphs</span>
+                    <input type="checkbox" checked="checked" style="width:18px;height:18px;accent-color:oklch(0.52 0.14 255);justify-self:start;">
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);">drops spacer paragraphs · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default true</span></span>
+                  </div></sc-if>
+                  <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px 7px 21px;border-left:3px solid oklch(0.72 0.14 75);border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">hyphenation_language <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                    <div style="display:flex;align-items:center;justify-content:space-between;width:120px;height:32px;padding:0 10px;border:1px solid oklch(0.85 0.006 255);border-radius:5px;font-size:16px;background:#fff;"><span>ru</span><span style="color:oklch(0.6 0.012 255);font-size:11px;">▾</span></div>
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);"><span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default en</span> · <a href="#1a" style="text-decoration:none;">reset</a></span>
+                  </div>
+                  <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px;border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">title_page</span>
+                    <input type="checkbox" checked="checked" style="width:18px;height:18px;accent-color:oklch(0.52 0.14 255);justify-self:start;">
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);">synthesised title page before chapter 1 · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default true</span></span>
+                  </div></sc-if>
+                  <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px;border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">toc_depth</span>
+                    <input type="number" value="3" style="width:80px;height:32px;padding:0 8px;border:1px solid oklch(0.85 0.006 255);border-radius:5px;font:500 16px/1 'IBM Plex Mono',monospace;text-align:right;">
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);">nesting levels in the EPUB nav · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default 3</span></span>
+                  </div></sc-if>
+                  <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="padding:7px 24px;border-bottom:1px solid oklch(0.95 0.003 255);font-size:13px;color:oklch(0.58 0.012 255);">11 more in <span style="font-family:'IBM Plex Mono',monospace;">document</span></div></sc-if>
+                </details>
+
+                <details open="open">
+                  <summary style="display:flex;align-items:baseline;gap:10px;padding:9px 24px;font:600 12px/1.4 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.4 0.012 255);background:oklch(0.975 0.003 255);border-bottom:1px solid oklch(0.92 0.004 255);border-top:1px solid oklch(0.92 0.004 255);cursor:pointer;">images <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.55 0.012 255);">14 options · 2 changed</span></summary>
+                  <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px;border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">optimize</span>
+                    <input type="checkbox" checked="checked" style="width:18px;height:18px;accent-color:oklch(0.52 0.14 255);justify-self:start;">
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);">recompress images on the way in · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default true</span></span>
+                  </div></sc-if>
+                  <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px 7px 21px;border-left:3px solid oklch(0.72 0.14 75);border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">jpeg_quality_level <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                    <input type="number" value="75" style="width:80px;height:32px;padding:0 8px;border:1px solid oklch(0.85 0.006 255);border-radius:5px;font:500 16px/1 'IBM Plex Mono',monospace;text-align:right;">
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);">1–100 · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default 85</span> · <a href="#1a" style="text-decoration:none;">reset</a></span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px 7px 21px;border-left:3px solid oklch(0.72 0.14 75);border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">use_broken_images <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                    <input type="checkbox" checked="checked" style="width:18px;height:18px;accent-color:oklch(0.52 0.14 255);justify-self:start;">
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);">substitute a blank for missing binaries · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default false</span> · <a href="#1a" style="text-decoration:none;">reset</a></span>
+                  </div>
+                  <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px;border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">scale_factor</span>
+                    <input type="number" value="1.0" style="width:80px;height:32px;padding:0 8px;border:1px solid oklch(0.85 0.006 255);border-radius:5px;font:500 16px/1 'IBM Plex Mono',monospace;text-align:right;">
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);">multiplier applied after screen fit · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default 1.0</span></span>
+                  </div></sc-if>
+                  <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="padding:7px 24px;border-bottom:1px solid oklch(0.95 0.003 255);font-size:13px;color:oklch(0.58 0.012 255);">10 more in <span style="font-family:'IBM Plex Mono',monospace;">images</span></div></sc-if>
+                </details>
+
+                <details open="open">
+                  <summary style="display:flex;align-items:baseline;gap:10px;padding:9px 24px;font:600 12px/1.4 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.4 0.012 255);background:oklch(0.975 0.003 255);border-bottom:1px solid oklch(0.92 0.004 255);cursor:pointer;">screen <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.55 0.012 255);">2 options · 2 changed</span></summary>
+                  <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px 7px 21px;border-left:3px solid oklch(0.72 0.14 75);border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">width <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                    <input type="number" value="1264" style="width:96px;height:32px;padding:0 8px;border:1px solid oklch(0.85 0.006 255);border-radius:5px;font:500 16px/1 'IBM Plex Mono',monospace;text-align:right;">
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);"><span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default 0 (device native)</span> · <a href="#1a" style="text-decoration:none;">reset</a></span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px 7px 21px;border-left:3px solid oklch(0.72 0.14 75);border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">height <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                    <input type="number" value="1680" style="width:96px;height:32px;padding:0 8px;border:1px solid oklch(0.85 0.006 255);border-radius:5px;font:500 16px/1 'IBM Plex Mono',monospace;text-align:right;">
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);"><span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default 0</span> · <a href="#1a" style="text-decoration:none;">reset</a></span>
+                  </div>
+                </details>
+
+                <details open="open">
+                  <summary style="display:flex;align-items:baseline;gap:10px;padding:9px 24px;font:600 12px/1.4 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.4 0.012 255);background:oklch(0.975 0.003 255);border-bottom:1px solid oklch(0.92 0.004 255);cursor:pointer;">cover <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.55 0.012 255);">6 options · 1 changed</span></summary>
+                  <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px;border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">generate</span>
+                    <input type="checkbox" checked="checked" style="width:18px;height:18px;accent-color:oklch(0.52 0.14 255);justify-self:start;">
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);">build a cover when the book has none · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default true</span></span>
+                  </div></sc-if>
+                  <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px 7px 21px;border-left:3px solid oklch(0.72 0.14 75);border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">resize <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                    <div style="display:flex;border:1px solid oklch(0.85 0.006 255);border-radius:5px;overflow:hidden;width:220px;">
+                      <span style="flex:1;text-align:center;padding:6px 0;font-size:13px;border-right:1px solid oklch(0.88 0.005 255);color:oklch(0.42 0.012 255);">stretch</span>
+                      <span style="flex:1;text-align:center;padding:6px 0;font-size:13px;font-weight:600;background:oklch(0.52 0.14 255);color:#fff;border-right:1px solid oklch(0.88 0.005 255);">fit</span>
+                      <span style="flex:1;text-align:center;padding:6px 0;font-size:13px;color:oklch(0.42 0.012 255);">none</span>
+                    </div>
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);"><span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default stretch</span> · <a href="#1a" style="text-decoration:none;">reset</a></span>
+                  </div>
+                  <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="padding:7px 24px;border-bottom:1px solid oklch(0.95 0.003 255);font-size:13px;color:oklch(0.58 0.012 255);">4 more in <span style="font-family:'IBM Plex Mono',monospace;">cover</span></div></sc-if>
+                </details>
+
+                <details open="open">
+                  <summary style="display:flex;align-items:baseline;gap:10px;padding:9px 24px;font:600 12px/1.4 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.4 0.012 255);background:oklch(0.975 0.003 255);border-bottom:1px solid oklch(0.92 0.004 255);cursor:pointer;">footnotes <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.55 0.012 255);">5 options · 0 changed</span></summary>
+                  <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px;border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">mode</span>
+                    <div style="display:flex;border:1px solid oklch(0.85 0.006 255);border-radius:5px;overflow:hidden;width:220px;">
+                      <span style="flex:1;text-align:center;padding:6px 0;font-size:13px;font-weight:600;background:oklch(0.52 0.14 255);color:#fff;border-right:1px solid oklch(0.88 0.005 255);">float</span>
+                      <span style="flex:1;text-align:center;padding:6px 0;font-size:13px;border-right:1px solid oklch(0.88 0.005 255);color:oklch(0.42 0.012 255);">inline</span>
+                      <span style="flex:1;text-align:center;padding:6px 0;font-size:13px;color:oklch(0.42 0.012 255);">end</span>
+                    </div>
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);">float = tap-to-open popup notes · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default float</span></span>
+                  </div></sc-if>
+                  <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="padding:7px 24px;border-bottom:1px solid oklch(0.95 0.003 255);font-size:13px;color:oklch(0.58 0.012 255);">4 more in <span style="font-family:'IBM Plex Mono',monospace;">footnotes</span></div></sc-if>
+                </details>
+
+                <details open="open">
+                  <summary style="display:flex;align-items:baseline;gap:10px;padding:9px 24px;font:600 12px/1.4 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.4 0.012 255);background:oklch(0.975 0.003 255);border-bottom:1px solid oklch(0.92 0.004 255);cursor:pointer;">metainformation <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.55 0.012 255);">9 options · 1 changed</span></summary>
+                  <div style="display:grid;grid-template-columns:300px 220px minmax(0,1fr);gap:16px;align-items:center;padding:7px 24px 7px 21px;border-left:3px solid oklch(0.72 0.14 75);border-bottom:1px solid oklch(0.95 0.003 255);min-height:38px;">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;">transliterate <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                    <input type="checkbox" checked="checked" style="width:18px;height:18px;accent-color:oklch(0.52 0.14 255);justify-self:start;">
+                    <span style="font-size:13px;color:oklch(0.55 0.012 255);">ASCII author/title in filenames · <span style="font-family:'IBM Plex Mono',monospace;color:oklch(0.68 0.01 255);">default false</span> · <a href="#1a" style="text-decoration:none;">reset</a></span>
+                  </div>
+                  <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="padding:7px 24px;border-bottom:1px solid oklch(0.95 0.003 255);font-size:13px;color:oklch(0.58 0.012 255);">8 more in <span style="font-family:'IBM Plex Mono',monospace;">metainformation</span></div></sc-if>
+                </details>
+
+                <details open="open">
+                  <summary style="display:flex;align-items:baseline;gap:10px;padding:9px 24px;font:600 12px/1.4 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.4 0.012 255);background:oklch(0.975 0.003 255);border-bottom:1px solid oklch(0.92 0.004 255);cursor:pointer;">output <span style="font-weight:400;text-transform:none;letter-spacing:0;color:oklch(0.55 0.012 255);">3 options · 1 changed</span></summary>
+                  <div style="display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:start;padding:10px 24px 14px 21px;border-left:3px solid oklch(0.72 0.14 75);border-bottom:1px solid oklch(0.95 0.003 255);">
+                    <span style="font:500 13.5px/1.3 'IBM Plex Mono',monospace;padding-top:8px;">output_name_template <span style="color:oklch(0.72 0.14 75);">•</span></span>
+                    <div style="display:flex;flex-direction:column;gap:6px;max-width:660px;">
+                      <textarea rows="3" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid oklch(0.85 0.006 255);border-radius:5px;font:400 13.5px/1.6 'IBM Plex Mono',monospace;resize:vertical;background:#fff;">{​{.Authors}​} - {​{.Title}​}{​{if .Series}​} ({​{.Series}​} #{​{.SeriesNum}​}){​{end}​}</textarea>
+                      <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:oklch(0.55 0.012 255);">
+                        <span>default <span style="font-family:'IBM Plex Mono',monospace;">{​{.Title}​}</span> · <a href="#1a" style="text-decoration:none;">reset</a></span>
+                        <span style="font-family:'IBM Plex Mono',monospace;">.Authors .Title .Series .SeriesNum .Lang .Year</span>
+                      </div>
+                      <div style="font:400 13px/1.5 'IBM Plex Mono',monospace;color:oklch(0.42 0.012 255);">→ Strugatsky - Piknik na obochine.epub</div>
+                    </div>
+                  </div>
+                  <sc-if value="{{ showUnchanged }}" hint-placeholder-val="{{ true }}"><div style="padding:7px 24px;font-size:13px;color:oklch(0.58 0.012 255);">2 more in <span style="font-family:'IBM Plex Mono',monospace;">output</span></div></sc-if>
+                </details>
+
+              </div>
+
+              <aside style="padding:18px 20px 40px;display:flex;flex-direction:column;gap:12px;background:oklch(0.982 0.003 255);">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
+                  <span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:oklch(0.4 0.012 255);">Effective config</span>
+                  <span style="font-size:12px;color:oklch(0.55 0.012 255);">refreshed on save</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid oklch(0.84 0.03 155);border-radius:6px;background:oklch(0.975 0.02 155);font-size:13px;">
+                  <span style="width:7px;height:7px;border-radius:50%;background:oklch(0.6 0.13 155);"></span>Valid · 7 overrides merged over defaults
+                </div>
+                <details style="border:1px solid oklch(0.89 0.005 255);border-radius:6px;background:#fff;">
+                  <summary style="padding:9px 12px;font-size:13.5px;cursor:pointer;">What am I looking at?</summary>
+                  <div style="display:flex;flex-direction:column;gap:8px;padding:0 12px 12px;font-size:13px;line-height:1.55;color:oklch(0.42 0.012 255);">
+                    <p style="margin:0;">Search matches option names, group paths and values. It is the intended navigation — the groups are only there to give each option a home.</p>
+                    <p style="margin:0;"><span style="color:oklch(0.72 0.14 75);">•</span> and the amber rule mark a value that differs from the built-in default; the third column always shows what that default is, with a reset link.</p>
+                    <p style="margin:0;">Saving writes only the marked lines. The pane below is the merged result the converter will actually see — the same thing <span style="font-family:'IBM Plex Mono',monospace;">fb2cng dumpconfig</span> prints.</p>
+                  </div>
+                </details>
+                <pre style="margin:0;flex:1;max-height:520px;overflow:auto;padding:12px;border:1px solid oklch(0.89 0.005 255);border-radius:6px;background:#fff;font:400 12.5px/1.65 'IBM Plex Mono',monospace;white-space:pre;color:oklch(0.3 0.012 255);">document:
+  open_from_cover: true      # changed
+  insert_soft_hyphen: false
+  chapter_per_file: false    # changed
+  remove_empty_paragraphs: true
+  hyphenation_language: ru   # changed
+  toc_depth: 3
+images:
+  optimize: true
+  jpeg_quality_level: 75     # changed
+  use_broken_images: true    # changed
+  scale_factor: 1.0
+screen:
+  width: 1264                # changed
+  height: 1680               # changed
+cover:
+  generate: true
+  resize: fit                # changed
+footnotes:
+  mode: float
+metainformation:
+  transliterate: true        # changed
+output:
+  name_template: >-
+    {​{.Authors}​} - {​{.Title}​}
+    {​{if .Series}​} ({​{.Series}​} #{​{.SeriesNum}​}){​{end}​}</pre>
+                <div style="font-size:12px;line-height:1.5;color:oklch(0.55 0.012 255);">Stored file contains only the marked lines.</div>
+              </aside>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;changedOnly&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Preset editor&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return { showUnchanged: !(this.props.changedOnly ?? false) };
+  }
+}
+</script>
+</body>
+</html>
+
