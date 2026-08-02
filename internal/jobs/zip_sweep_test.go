@@ -88,6 +88,50 @@ func (w *eocdFailWriter) Write(p []byte) (int, error) {
 	return w.buf.Write(p)
 }
 
+// TestWriteZipCollisionKeysOnFinalName is the regression test for bean w6pt:
+// the collision suffix must be computed against the set of names ALREADY
+// WRITTEN to the zip, not against a per-original-basename counter. Two inputs
+// producing "book.epub" get suffixed to "book.epub" + "book-1.epub"; a third,
+// unrelated input that genuinely outputs "book-1.epub" must not silently
+// collide with that suffixed name.
+func TestWriteZipCollisionKeysOnFinalName(t *testing.T) {
+	s := NewStore(t.TempDir(), time.Hour)
+	id, _ := s.Create("defaults", "epub3")
+	entries := []struct{ input, name string }{
+		{"a.fb2", "book.epub"},
+		{"b.fb2", "book.epub"},
+		{"c.fb2", "book-1.epub"},
+	}
+	for _, e := range entries {
+		dir := s.OutDir(id, e.input)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, e.name), []byte("DATA"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var buf bytes.Buffer
+	if err := s.WriteZip(id, &buf); err != nil {
+		t.Fatal(err)
+	}
+	zr, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := map[string]bool{}
+	for _, f := range zr.File {
+		if names[f.Name] {
+			t.Fatalf("duplicate zip entry %q among %d files: keys derived from original basename instead of final chosen name", f.Name, len(zr.File))
+		}
+		names[f.Name] = true
+	}
+	if len(zr.File) != 3 {
+		t.Fatalf("expected 3 entries, got %d: %v", len(zr.File), names)
+	}
+}
+
 func TestSweepRemovesOldJobs(t *testing.T) {
 	s := NewStore(t.TempDir(), time.Hour)
 	oldID, _ := s.Create("defaults", "epub3")
