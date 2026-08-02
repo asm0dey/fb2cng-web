@@ -34,8 +34,8 @@ func FromEnv() Config {
 		FBCBin:        envOr("FBC_BIN", "fbc"),
 		MaxConcurrent: atoiOr(os.Getenv("MAX_CONCURRENT"), 3),
 		ForwardAuth:   os.Getenv("AUTH_FORWARD_AUTH") == "true",
-		PresetsDir:    envOr("PRESETS_DIR", defaultPresetsDir()),
-		JobsDir:       envOr("JOBS_DIR", filepath.Join(os.TempDir(), "fb2cng-jobs")),
+		PresetsDir:    envOrFunc("PRESETS_DIR", defaultPresetsDir),
+		JobsDir:       envOrFunc("JOBS_DIR", defaultJobsDir),
 		JobsTTL:       durationOr(os.Getenv("JOBS_TTL"), time.Hour),
 		FBCTimeout:    durationOr(os.Getenv("FBC_TIMEOUT"), DefaultFBCTimeout),
 	}
@@ -54,6 +54,17 @@ func envOr(key, def string) string {
 	return def
 }
 
+// envOrFunc returns the env value for key, or def() when unset. def is evaluated
+// only on a miss, so a default helper's side effects (e.g. creating a fallback
+// dir) never run when the env var is set — the container sets JOBS_DIR/PRESETS_DIR
+// explicitly but has no HOME.
+func envOrFunc(key string, def func() string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def()
+}
+
 // defaultPresetsDir picks a writable per-user location for the preset store when
 // PRESETS_DIR is unset (a bare local run). The container image sets
 // PRESETS_DIR=/data/presets explicitly, so this default only affects env-less
@@ -62,7 +73,28 @@ func defaultPresetsDir() string {
 	if dir, err := os.UserConfigDir(); err == nil {
 		return filepath.Join(dir, "fb2cng", "presets")
 	}
-	return filepath.Join(os.TempDir(), "fb2cng-presets")
+	return privateFallbackDir("fb2cng-presets")
+}
+
+// defaultJobsDir picks a writable per-user cache location for the ephemeral job
+// store when JOBS_DIR is unset (a bare local run). The container image sets
+// JOBS_DIR explicitly, so this default only affects env-less runs.
+func defaultJobsDir() string {
+	if dir, err := os.UserCacheDir(); err == nil {
+		return filepath.Join(dir, "fb2cng", "jobs")
+	}
+	return privateFallbackDir("fb2cng-jobs")
+}
+
+// privateFallbackDir returns a private directory for the rare case where no
+// per-user config/cache dir is available (no HOME). os.MkdirTemp creates it 0700
+// with a random name, avoiding the predictable, publicly writable path that a
+// fixed name under the system temp dir would produce (Sonar go:S5445).
+func privateFallbackDir(name string) string {
+	if dir, err := os.MkdirTemp("", name+"-"); err == nil {
+		return dir
+	}
+	return filepath.Join(".", name)
 }
 
 func atoiOr(s string, def int) int {

@@ -1,8 +1,6 @@
 package config
 
 import (
-	"os"
-	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
@@ -27,7 +25,7 @@ func TestFromEnvDefaults(t *testing.T) {
 		ForwardAuth:    false,
 		TrustedProxies: nil,
 		PresetsDir:     defaultPresetsDir(),
-		JobsDir:        filepath.Join(os.TempDir(), "fb2cng-jobs"),
+		JobsDir:        defaultJobsDir(),
 		JobsTTL:        time.Hour,
 		FBCTimeout:     DefaultFBCTimeout,
 	}
