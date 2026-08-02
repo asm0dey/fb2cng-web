@@ -286,6 +286,29 @@ func TestConvertBadFormat(t *testing.T) {
 	}
 }
 
+// TestConvertBadExtensionOrphansNoJobDir is the regression test for bean
+// c4z1: a disallowed file extension must be rejected (422) BEFORE any job
+// state is created. Pre-fix, the per-file extension check ran inside the
+// input-persist loop, AFTER s.jobs.Create and the config.yaml write, so a
+// rejected upload left an orphaned job dir (config.yaml, possibly persisted
+// inputs / StatePending status.json rows) behind — same orphaned-job family
+// as bean i5e5 (unknown preset) and the sibling tests in presets_http_test.go.
+func TestConvertBadExtensionOrphansNoJobDir(t *testing.T) {
+	h := newTestServer(t, config.Config{MaxConcurrent: 1}, fakeFbcRunner(t))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, multipartConvert(t, "bad.txt", map[string]string{"format": "epub3", "preset": "defaults"}))
+	if rec.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("bad extension should be 422, got %d body=%q", rec.Code, rec.Body.String())
+	}
+	entries, err := os.ReadDir(testJobsDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("bad extension must not leave an orphaned job dir, found %d entries: %v", len(entries), entries)
+	}
+}
+
 func TestDefaultsEndpoint(t *testing.T) {
 	h := newTestServer(t, config.Config{MaxConcurrent: 1}, stubRunner{defaults: []byte("version: 1\n")})
 	rec := httptest.NewRecorder()

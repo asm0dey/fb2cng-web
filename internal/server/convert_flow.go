@@ -93,6 +93,18 @@ func (s *Server) handleConvert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate every uploaded file's extension BEFORE creating any job state,
+	// for the same reason as the preset-config check above: a rejected
+	// extension must not orphan a job dir / config.yaml / persisted inputs
+	// (bean c4z1 — same orphaned-job family as i5e5).
+	for _, fh := range files {
+		lower := strings.ToLower(filepath.Base(fh.Filename))
+		if !strings.HasSuffix(lower, ".fb2") && !strings.HasSuffix(lower, ".zip") {
+			http.Error(w, "only .fb2 and .zip files are accepted", http.StatusUnprocessableEntity)
+			return
+		}
+	}
+
 	id, err := s.jobs.Create(preset, format)
 	if err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
@@ -110,11 +122,7 @@ func (s *Server) handleConvert(w http.ResponseWriter, r *http.Request) {
 	used := map[string]bool{}
 	for _, fh := range files {
 		name := filepath.Base(fh.Filename)
-		lower := strings.ToLower(name)
-		if !strings.HasSuffix(lower, ".fb2") && !strings.HasSuffix(lower, ".zip") {
-			http.Error(w, "only .fb2 and .zip files are accepted", http.StatusUnprocessableEntity)
-			return
-		}
+		// Extension already validated in the pre-Create pass above.
 		// De-dupe colliding basenames within this batch (e.g. two uploads both
 		// named "book.fb2"): each persisted input and FileResult.Input must be
 		// unique, or the second os.Create below overwrites the first upload
