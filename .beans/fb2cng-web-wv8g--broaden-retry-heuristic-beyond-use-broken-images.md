@@ -5,7 +5,7 @@ status: todo
 type: feature
 priority: deferred
 created_at: 2026-08-02T09:59:13Z
-updated_at: 2026-08-02T09:59:13Z
+updated_at: 2026-08-02T12:54:29Z
 parent: fb2cng-web-s726
 ---
 

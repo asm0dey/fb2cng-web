@@ -1,13 +1,13 @@
 ---
 # fb2cng-web-394e
 title: Preset CRUD routes (create/duplicate/delete/set-default)
-status: todo
+status: completed
 type: task
 priority: high
 tags:
     - plan2
 created_at: 2026-08-02T09:59:00Z
-updated_at: 2026-08-02T09:59:00Z
+updated_at: 2026-08-02T13:11:22Z
 parent: fb2cng-web-ajic
 ---
 

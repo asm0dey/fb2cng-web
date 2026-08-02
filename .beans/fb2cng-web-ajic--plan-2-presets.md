@@ -1,11 +1,11 @@
 ---
 # fb2cng-web-ajic
 title: 'Plan 2: Presets'
-status: todo
+status: completed
 type: epic
 priority: high
 created_at: 2026-08-02T09:24:45Z
-updated_at: 2026-08-02T09:24:56Z
+updated_at: 2026-08-02T13:47:07Z
 parent: fb2cng-web-s726
 blocked_by:
     - fb2cng-web-odgc

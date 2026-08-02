@@ -1,13 +1,13 @@
 ---
 # fb2cng-web-w488
 title: convert.FBC.ConvertLogged + Runner interface + fake-fbc log/retry
-status: todo
+status: completed
 type: task
 priority: high
 tags:
     - plan1
 created_at: 2026-08-02T09:59:00Z
-updated_at: 2026-08-02T09:59:00Z
+updated_at: 2026-08-02T10:23:02Z
 parent: fb2cng-web-odgc
 ---
 

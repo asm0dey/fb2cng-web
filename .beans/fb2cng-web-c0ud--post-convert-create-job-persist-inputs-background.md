@@ -1,13 +1,13 @@
 ---
 # fb2cng-web-c0ud
 title: POST /convert — create job, persist inputs, background per-file convert
-status: todo
+status: completed
 type: task
 priority: high
 tags:
     - plan1
 created_at: 2026-08-02T09:59:00Z
-updated_at: 2026-08-02T09:59:00Z
+updated_at: 2026-08-02T10:55:13Z
 parent: fb2cng-web-odgc
 ---
 

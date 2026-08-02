@@ -1,11 +1,11 @@
 ---
 # fb2cng-web-odgc
 title: 'Plan 1: Visual + Convert flow'
-status: todo
+status: completed
 type: epic
 priority: high
 created_at: 2026-08-02T09:24:22Z
-updated_at: 2026-08-02T09:24:22Z
+updated_at: 2026-08-02T14:20:01Z
 parent: fb2cng-web-s726
 ---
 
