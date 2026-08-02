@@ -180,6 +180,141 @@ func TestSaveParsesYAMLBackIntoOverrides(t *testing.T) {
 	}
 }
 
+func TestBuildConfigForPreset(t *testing.T) {
+	dir := t.TempDir()
+	srv, _ := newPresetServer(t, dir)
+	p, _ := srv.presets.Create("Kindle")
+	p.Overrides = map[string]any{"document": map[string]any{"toc_type": "inline"}}
+	srv.presets.Save(p)
+
+	out, err := srv.buildConfigForPreset(p.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := string(out)
+	// Preset override is present:
+	if !strings.Contains(cfg, "toc_type: inline") {
+		t.Errorf("preset override missing:\n%s", cfg)
+	}
+	// Application defaults still layered underneath (from convert.applicationDefaults):
+	if !strings.Contains(cfg, "insert_soft_hyphen: true") {
+		t.Errorf("application defaults missing:\n%s", cfg)
+	}
+}
+
+func TestBuildConfigForDefaults(t *testing.T) {
+	srv, _ := newPresetServer(t, t.TempDir())
+	out, err := srv.buildConfigForPreset("defaults")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Empty overrides -> only the application defaults:
+	if !strings.Contains(string(out), "insert_soft_hyphen: true") {
+		t.Errorf("defaults config missing app defaults:\n%s", string(out))
+	}
+}
+
+func TestIndexListsRealPresets(t *testing.T) {
+	dir := t.TempDir()
+	srv, h := newPresetServer(t, dir)
+	p, err := srv.presets.Create("Kindle")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.presets.SetDefault(p.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/", nil))
+	if rec.Code != 200 {
+		t.Fatalf("index code=%d body=%q", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, `value="defaults"`) || !strings.Contains(body, "Defaults") {
+		t.Errorf("dropdown missing Defaults option:\n%s", body)
+	}
+	if !strings.Contains(body, `value="`+p.ID+`"`) || !strings.Contains(body, "Kindle") {
+		t.Errorf("dropdown missing created preset:\n%s", body)
+	}
+	if !strings.Contains(body, `value="`+p.ID+`" selected`) {
+		t.Errorf("default preset not marked selected in dropdown:\n%s", body)
+	}
+}
+
+func TestConvertUsesChosenPresetOverrides(t *testing.T) {
+	dir := t.TempDir()
+	srv, h := newPresetServer(t, dir)
+	p, err := srv.presets.Create("Kindle")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p.Overrides = map[string]any{"document": map[string]any{"toc_type": "inline"}}
+	if err := srv.presets.Save(p); err != nil {
+		t.Fatal(err)
+	}
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, multipartConvert(t, "book.fb2", map[string]string{"format": "epub3", "preset": p.ID}))
+	if rec.Code != 200 {
+		t.Fatalf("convert POST code=%d body=%q", rec.Code, rec.Body.String())
+	}
+	id := extractJobID(t, rec.Body.String())
+
+	cfg, err := os.ReadFile(filepath.Join(srv.jobs.Dir, id, "config.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(cfg), "toc_type: inline") {
+		t.Errorf("chosen preset's override missing from job config:\n%s", cfg)
+	}
+
+	st, err := srv.jobs.Load(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.Preset != p.ID {
+		t.Errorf("Status.Preset = %q, want %q", st.Preset, p.ID)
+	}
+}
+
+func TestConvertAbsentPresetUsesDefaults(t *testing.T) {
+	dir := t.TempDir()
+	srv, h := newPresetServer(t, dir)
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, multipartConvert(t, "book.fb2", map[string]string{"format": "epub3"})) // no preset field
+	if rec.Code != 200 {
+		t.Fatalf("convert POST code=%d body=%q", rec.Code, rec.Body.String())
+	}
+	id := extractJobID(t, rec.Body.String())
+
+	cfg, err := os.ReadFile(filepath.Join(srv.jobs.Dir, id, "config.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(cfg), "insert_soft_hyphen: true") {
+		t.Errorf("missing application defaults for absent preset:\n%s", cfg)
+	}
+
+	st, err := srv.jobs.Load(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.Preset != "defaults" {
+		t.Errorf("Status.Preset = %q, want %q", st.Preset, "defaults")
+	}
+}
+
+func TestConvertUnknownPresetRejected(t *testing.T) {
+	_, h := newPresetServer(t, t.TempDir())
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, multipartConvert(t, "book.fb2", map[string]string{"format": "epub3", "preset": "nonexistent"}))
+	if rec.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("unknown preset should be 422, got %d body=%q", rec.Code, rec.Body.String())
+	}
+}
+
 func TestSaveInvalidYAML(t *testing.T) {
 	dir := t.TempDir()
 	srv, h := newPresetServer(t, dir)

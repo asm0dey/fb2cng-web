@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"fb2cng-web/internal/convert"
 	"fb2cng-web/internal/presets"
 
 	"gopkg.in/yaml.v3"
@@ -146,4 +147,42 @@ func (s *Server) handlePresetSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/settings", http.StatusSeeOther)
+}
+
+// buildConfigForPreset marshals a preset's sparse overrides to YAML and feeds them to
+// convert.BuildConfig as the raw-YAML layer (no form options). The Builtin "defaults" preset
+// has empty overrides, so this yields just the application defaults.
+func (s *Server) buildConfigForPreset(id string) ([]byte, error) {
+	p, err := s.presets.Get(id)
+	if err != nil {
+		return nil, err
+	}
+	raw := ""
+	if len(p.Overrides) > 0 {
+		b, err := yaml.Marshal(p.Overrides)
+		if err != nil {
+			return nil, err
+		}
+		raw = string(b)
+	}
+	return convert.BuildConfig(raw, convert.FormOptions{})
+}
+
+// presetOptions returns Plan 1's convert-page dropdown options from the real preset store,
+// with the default preset marked selected. presetOption is Plan 1's type (fields ID, Name,
+// Selected — align the field names below if Plan 1 differs).
+func (s *Server) presetOptions() []presetOption {
+	list, err := s.presets.List()
+	if err != nil {
+		return []presetOption{{ID: presets.BuiltinID, Name: "Defaults", Selected: true}}
+	}
+	def := s.presets.DefaultID()
+	if def == "" {
+		def = presets.BuiltinID
+	}
+	opts := make([]presetOption, 0, len(list))
+	for _, p := range list {
+		opts = append(opts, presetOption{ID: p.ID, Name: p.Name, Selected: p.ID == def})
+	}
+	return opts
 }
