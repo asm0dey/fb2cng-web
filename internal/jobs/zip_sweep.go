@@ -85,7 +85,13 @@ func uniqueZipName(name string, written map[string]bool) string {
 	}
 }
 
-// Sweep deletes job dirs whose mtime is older than the TTL and returns the count.
+// Sweep deletes job dirs whose mtime is older than the TTL and returns the
+// count. A long-running conversion (or a queue backlog) can leave a LIVE
+// job dir's mtime untouched past the TTL between status.json writes, so age
+// alone isn't sufficient: a dir past the TTL is only deleted if its
+// status.json is either unreadable (an abandoned/incomplete dir — safe to
+// delete) or reports Done: true. A dir with a readable, not-done status is
+// preserved regardless of age.
 func (s *Store) Sweep(now time.Time) (removed int) {
 	entries, err := os.ReadDir(s.Dir)
 	if err != nil {
@@ -99,10 +105,14 @@ func (s *Store) Sweep(now time.Time) (removed int) {
 		if err != nil {
 			continue
 		}
-		if now.Sub(info.ModTime()) > s.TTL {
-			if os.RemoveAll(filepath.Join(s.Dir, e.Name())) == nil {
-				removed++
-			}
+		if now.Sub(info.ModTime()) <= s.TTL {
+			continue
+		}
+		if st, err := s.Load(e.Name()); err == nil && !st.Done {
+			continue // still running: never delete a live job
+		}
+		if os.RemoveAll(filepath.Join(s.Dir, e.Name())) == nil {
+			removed++
 		}
 	}
 	return removed
