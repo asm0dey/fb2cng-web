@@ -1,1 +1,53 @@
-[]
+[
+  {
+    "key": "version",
+    "group": "version",
+    "label": "version",
+    "kind": "int",
+    "default": 1
+  },
+  {
+    "key": "document.toc_type",
+    "group": "document",
+    "label": "toc_type",
+    "kind": "string",
+    "default": "normal",
+    "description": "Table-of-contents style."
+  },
+  {
+    "key": "document.insert_soft_hyphen",
+    "group": "document",
+    "label": "insert_soft_hyphen",
+    "kind": "bool",
+    "default": false
+  },
+  {
+    "key": "document.images.optimize",
+    "group": "document",
+    "label": "optimize",
+    "kind": "bool",
+    "default": true
+  },
+  {
+    "key": "document.images.jpeg_quality_level",
+    "group": "document",
+    "label": "jpeg_quality_level",
+    "kind": "int",
+    "default": 75,
+    "description": "JPEG quality (1-100); lower is smaller."
+  },
+  {
+    "key": "document.footnotes.mode",
+    "group": "document",
+    "label": "mode",
+    "kind": "string",
+    "default": "block"
+  },
+  {
+    "key": "document.output_name_template",
+    "group": "document",
+    "label": "output_name_template",
+    "kind": "string",
+    "default": "{title}"
+  }
+]
