@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-//go:embed index.html app.js static all:templates
+//go:embed static all:templates
 var FS embed.FS
 
 // Templates parses the layout, pages, and partials once. The result exposes named
