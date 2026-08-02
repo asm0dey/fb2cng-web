@@ -64,6 +64,24 @@ func TestSettingsListsPresets(t *testing.T) {
 	}
 }
 
+// waitJobDone polls srv.jobs.Load(id) until the batch is terminal or the
+// deadline hits. It is the presets_http_test.go analogue of handlers_test.go's
+// waitDone: that helper reads status.json via the package-level testJobsDir
+// global, which newPresetServer-based tests never populate (they build their
+// own jobs.Store directly), so it cannot be reused as-is here.
+func waitJobDone(t *testing.T, srv *Server, id string) *jobs.Status {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		if st, err := srv.jobs.Load(id); err == nil && st.Done {
+			return st
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatalf("job %s did not finish in time", id)
+	return nil
+}
+
 func postForm(h http.Handler, path string, form url.Values) *httptest.ResponseRecorder {
 	req := httptest.NewRequest("POST", path, strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -276,6 +294,18 @@ func TestConvertUsesChosenPresetOverrides(t *testing.T) {
 	if st.Preset != p.ID {
 		t.Errorf("Status.Preset = %q, want %q", st.Preset, p.ID)
 	}
+
+	// Wait for the async processFiles goroutine (launched by handleConvert)
+	// to reach Done before returning: newPresetServer roots the job store
+	// under t.TempDir(), and if the goroutine is still writing status.json /
+	// output files when the test returns, its cleanup races the goroutine's
+	// writes ("TempDir RemoveAll cleanup: directory not empty" — bean 4b5a).
+	// This mirrors the sibling waitDone helper in handlers_test.go, but polls
+	// srv.jobs.Load directly rather than reusing waitDone itself: waitDone's
+	// loadStatus reads from the package-level testJobsDir global, which
+	// newPresetServer never sets (it wires its own jobs.Store), so it would
+	// poll against the wrong directory here.
+	waitJobDone(t, srv, id)
 }
 
 func TestConvertAbsentPresetUsesDefaults(t *testing.T) {
