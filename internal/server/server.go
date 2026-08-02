@@ -58,6 +58,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /jobs/{id}/retry", s.handleRetry)
 	mux.HandleFunc("GET /settings", s.handleSettings)
 	mux.HandleFunc("POST /settings/preset", s.handlePresetCreate)
+	mux.HandleFunc("GET /settings/preset/{id}", s.handlePresetEdit)
+	mux.HandleFunc("POST /settings/preset/{id}", s.handlePresetSave)
 	mux.HandleFunc("POST /settings/preset/{id}/duplicate", s.handlePresetDuplicate)
 	mux.HandleFunc("POST /settings/preset/{id}/delete", s.handlePresetDelete)
 	mux.HandleFunc("POST /settings/preset/{id}/default", s.handlePresetDefault)

@@ -133,3 +133,60 @@ func TestDeleteDefaultBlocked(t *testing.T) {
 		t.Fatalf("deleting default should be 422, got %d", rec.Code)
 	}
 }
+
+func TestEditorSeedsYAML(t *testing.T) {
+	dir := t.TempDir()
+	srv, h := newPresetServer(t, dir)
+	p, _ := srv.presets.Create("Kindle")
+	p.Overrides = map[string]any{"document": map[string]any{"toc_type": "inline"}}
+	srv.presets.Save(p)
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/settings/preset/"+p.ID, nil))
+	if rec.Code != 200 {
+		t.Fatalf("code=%d", rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "toc_type") || !strings.Contains(body, "Kindle") {
+		t.Fatalf("editor did not seed name/overrides:\n%s", body)
+	}
+}
+
+func TestEditBuiltinRedirects(t *testing.T) {
+	_, h := newPresetServer(t, t.TempDir())
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/settings/preset/defaults", nil))
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("editing builtin should redirect, got %d", rec.Code)
+	}
+}
+
+func TestSaveParsesYAMLBackIntoOverrides(t *testing.T) {
+	dir := t.TempDir()
+	srv, h := newPresetServer(t, dir)
+	p, _ := srv.presets.Create("Kindle")
+
+	form := url.Values{
+		"name":           {"Kindle Pro"},
+		"overrides_yaml": {"document:\n  images:\n    optimize: true\n"},
+	}
+	rec := postForm(h, "/settings/preset/"+p.ID, form)
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("save code=%d body=%q", rec.Code, rec.Body.String())
+	}
+	got, _ := srv.presets.Get(p.ID)
+	if got.Name != "Kindle Pro" || got.ChangedCount() != 1 {
+		t.Fatalf("saved preset = %+v", got)
+	}
+}
+
+func TestSaveInvalidYAML(t *testing.T) {
+	dir := t.TempDir()
+	srv, h := newPresetServer(t, dir)
+	p, _ := srv.presets.Create("Kindle")
+	form := url.Values{"name": {"Kindle"}, "overrides_yaml": {"key: : broken:\n  - ]["}}
+	rec := postForm(h, "/settings/preset/"+p.ID, form)
+	if rec.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("invalid YAML should be 422, got %d", rec.Code)
+	}
+}

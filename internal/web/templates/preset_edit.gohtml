@@ -1,0 +1,17 @@
+{{define "preset_edit"}}
+<main class="preset-editor">
+  <h1>Edit preset</h1>
+  {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+  <form method="post" action="/settings/preset/{{.Preset.ID}}">
+    <label>Name
+      <input type="text" name="name" value="{{.Preset.Name}}">
+    </label>
+    <label>Overrides (YAML)
+      <textarea name="overrides_yaml" rows="20" spellcheck="false">{{.YAML}}</textarea>
+    </label>
+    <p class="hint">Minimal editor &mdash; Plan 3 replaces this with the full option grid.</p>
+    <button type="submit">Save</button>
+    <a href="/settings">Cancel</a>
+  </form>
+</main>
+{{end}}
