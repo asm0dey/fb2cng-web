@@ -34,7 +34,7 @@ func FromEnv() Config {
 		FBCBin:        envOr("FBC_BIN", "fbc"),
 		MaxConcurrent: atoiOr(os.Getenv("MAX_CONCURRENT"), 3),
 		ForwardAuth:   os.Getenv("AUTH_FORWARD_AUTH") == "true",
-		PresetsDir:    envOr("PRESETS_DIR", "/data/presets"),
+		PresetsDir:    envOr("PRESETS_DIR", defaultPresetsDir()),
 		JobsDir:       envOr("JOBS_DIR", filepath.Join(os.TempDir(), "fb2cng-jobs")),
 		JobsTTL:       durationOr(os.Getenv("JOBS_TTL"), time.Hour),
 		FBCTimeout:    durationOr(os.Getenv("FBC_TIMEOUT"), DefaultFBCTimeout),
@@ -52,6 +52,17 @@ func envOr(key, def string) string {
 		return v
 	}
 	return def
+}
+
+// defaultPresetsDir picks a writable per-user location for the preset store when
+// PRESETS_DIR is unset (a bare local run). The container image sets
+// PRESETS_DIR=/data/presets explicitly, so this default only affects env-less
+// runs — for which /data is neither writable nor creatable by a normal user.
+func defaultPresetsDir() string {
+	if dir, err := os.UserConfigDir(); err == nil {
+		return filepath.Join(dir, "fb2cng", "presets")
+	}
+	return filepath.Join(os.TempDir(), "fb2cng-presets")
 }
 
 func atoiOr(s string, def int) int {

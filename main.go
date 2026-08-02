@@ -26,6 +26,11 @@ func main() {
 	if err := os.MkdirAll(cfg.JobsDir, 0o755); err != nil {
 		log.Fatalf("jobs dir %s: %v", cfg.JobsDir, err)
 	}
+	// Fail fast with an actionable message if the preset store dir can't be
+	// created, rather than surfacing a cryptic mkdir error on the first write.
+	if err := os.MkdirAll(cfg.PresetsDir, 0o755); err != nil {
+		log.Fatalf("presets dir %s not writable (set PRESETS_DIR to a writable path): %v", cfg.PresetsDir, err)
+	}
 	tpl, err := web.Templates()
 	if err != nil {
 		log.Fatalf("parse templates: %v", err)
