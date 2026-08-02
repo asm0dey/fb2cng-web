@@ -1,0 +1,10 @@
+version: 1
+document:
+    toc_type: normal
+    insert_soft_hyphen: false
+    images:
+        optimize: true
+        jpeg_quality_level: 75
+    footnotes:
+        mode: block
+    output_name_template: "{title}"
