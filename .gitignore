@@ -8,3 +8,4 @@ fbc.log
 .playwright-mcp/
 *.png
 /fb2cng-web
+/schemagen

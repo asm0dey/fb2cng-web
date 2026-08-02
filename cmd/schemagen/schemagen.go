@@ -12,13 +12,15 @@ import (
 )
 
 type kv struct {
-	Key string
-	Val any
+	Key     string
+	Val     any
+	Comment string // the field's YAML head-comment, verbatim (may be multi-line)
 }
 
 // flattenNode walks a YAML node in document order, emitting one kv per scalar
 // leaf with a dotted key path. Nested mappings recurse; sequences/other kinds
-// are treated as leaf scalars (decoded as-is).
+// are treated as leaf scalars (decoded as-is). Each leaf carries the head-comment
+// attached to its key node — fbc's dump documents every field there.
 func flattenNode(prefix string, n *yaml.Node, out *[]kv) {
 	if n.Kind == yaml.DocumentNode {
 		for _, c := range n.Content {
@@ -30,11 +32,11 @@ func flattenNode(prefix string, n *yaml.Node, out *[]kv) {
 		return
 	}
 	for i := 0; i+1 < len(n.Content); i += 2 {
-		name := n.Content[i].Value
+		keyNode := n.Content[i]
 		val := n.Content[i+1]
-		key := name
+		key := keyNode.Value
 		if prefix != "" {
-			key = prefix + "." + name
+			key = prefix + "." + keyNode.Value
 		}
 		if val.Kind == yaml.MappingNode {
 			flattenNode(key, val, out)
@@ -42,12 +44,69 @@ func flattenNode(prefix string, n *yaml.Node, out *[]kv) {
 		}
 		var v any
 		_ = val.Decode(&v)
-		*out = append(*out, kv{Key: key, Val: v})
+		comment := keyNode.HeadComment
+		if comment == "" {
+			comment = val.LineComment
+		}
+		*out = append(*out, kv{Key: key, Val: v, Comment: comment})
 	}
 }
 
-// inferKind maps a Go scalar to a schema.Kind. Enums are never inferred (they
-// require annotation); anything non-bool/non-int is a string.
+// enumLineRe matches an fbc comment line that documents one allowed value, e.g.
+//
+//	"old_kindle" - restrict nesting for old Kindle compatibility
+var enumLineRe = regexp.MustCompile(`^"([^"]+)"\s*-`)
+
+// parseComment splits an fbc head-comment into a one-paragraph description and,
+// when the comment enumerates quoted allowed values, that list. The leading
+// prose (up to the first blank line, enum line, or NOTE:/List-of aside) is the
+// description; every `"value" - …` line contributes an enum value.
+func parseComment(comment string) (desc string, enum []string) {
+	if comment == "" {
+		return "", nil
+	}
+	var prose []string
+	inDesc := true
+	for _, ln := range strings.Split(comment, "\n") {
+		s := strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(ln), "#"))
+		if s == "" {
+			inDesc = false
+			continue
+		}
+		if m := enumLineRe.FindStringSubmatch(s); m != nil {
+			enum = append(enum, m[1])
+			inDesc = false
+			continue
+		}
+		low := strings.ToLower(s)
+		if strings.HasPrefix(low, "note:") || strings.HasPrefix(low, "list of") {
+			inDesc = false
+			continue
+		}
+		// fbc emits a file-format banner as the head-comment of the first field
+		// (version); it's not a description of that field.
+		if s == "Content should be UTF-8!" {
+			continue
+		}
+		if inDesc {
+			prose = append(prose, s)
+		}
+	}
+	return strings.Join(prose, " "), enum
+}
+
+func containsStr(ss []string, want string) bool {
+	for _, s := range ss {
+		if s == want {
+			return true
+		}
+	}
+	return false
+}
+
+// inferKind maps a Go scalar to a schema.Kind. Enums are never inferred from the
+// value type (they require comment annotation); anything non-bool/non-int is a
+// string.
 func inferKind(v any) schema.Kind {
 	switch v.(type) {
 	case bool:
@@ -67,12 +126,27 @@ func buildOptions(root *yaml.Node) []schema.Option {
 	opts := make([]schema.Option, 0, len(kvs))
 	for _, p := range kvs {
 		seg := strings.Split(p.Key, ".")
+		desc, enumVals := parseComment(p.Comment)
+		kind := inferKind(p.Val)
+		// Enums are annotation-only: promote to KindEnum only when the comment
+		// documents 2+ allowed values AND the default is one of them (a guard
+		// against a stray quoted phrase in the prose). Otherwise it stays a
+		// plain string and the enum list is dropped.
+		var enum []string
+		if len(enumVals) >= 2 {
+			if ds, ok := p.Val.(string); ok && containsStr(enumVals, ds) {
+				kind = schema.KindEnum
+				enum = enumVals
+			}
+		}
 		opts = append(opts, schema.Option{
-			Key:     p.Key,
-			Group:   seg[0],
-			Label:   seg[len(seg)-1],
-			Kind:    inferKind(p.Val),
-			Default: p.Val,
+			Key:         p.Key,
+			Group:       seg[0],
+			Label:       seg[len(seg)-1],
+			Kind:        kind,
+			Default:     p.Val,
+			Enum:        enum,
+			Description: desc,
 		})
 	}
 	return opts
