@@ -366,5 +366,46 @@ func ioCopyWriter(w http.ResponseWriter, f *os.File) (int64, error) {
 	}
 }
 func (s *Server) handleRetry(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "not yet", http.StatusNotImplemented)
+	id := r.PathValue("id")
+	st, err := s.jobs.Load(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	var failed []string
+	for i := range st.Files {
+		if st.Files[i].State == jobs.StateFailed {
+			failed = append(failed, st.Files[i].Input)
+			st.Files[i].State = jobs.StatePending
+			st.Files[i].Err = ""
+			st.Files[i].FirstError = ""
+		}
+	}
+	if len(failed) == 0 {
+		s.renderPartial(w, "convert_card", cardFor(st))
+		return
+	}
+	st.Done = false
+	if err := s.jobs.Save(id, st); err != nil {
+		http.Error(w, "server error", http.StatusInternalServerError)
+		return
+	}
+
+	// Retry config = batch defaults + the broken-image tolerance flip.
+	cfgBytes, err := convert.BuildConfig("use_broken_images: true", convert.FormOptions{})
+	if err != nil {
+		http.Error(w, "invalid retry config: "+err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+	cfgPath := filepath.Join(s.jobs.Dir, id, "retry-config.yaml")
+	if err := os.WriteFile(cfgPath, cfgBytes, 0o644); err != nil {
+		http.Error(w, "server error", http.StatusInternalServerError)
+		return
+	}
+
+	go s.processFiles(id, cfgPath, st.Format, failed)
+
+	st, _ = s.jobs.Load(id)
+	s.renderPartial(w, "convert_card", cardFor(st))
 }
