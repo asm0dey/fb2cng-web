@@ -367,8 +367,17 @@ func ioCopyWriter(w http.ResponseWriter, f *os.File) (int64, error) {
 }
 func (s *Server) handleRetry(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
+
+	// The failed->pending reset must be atomic with respect to updateFile's
+	// read-modify-write of status.json (guarded by the same s.mu), or a
+	// concurrent in-flight worker write can be lost. Holding the lock across
+	// Load+Save also dedupes concurrent retry requests for free: a second
+	// retry entering after the first finds no StateFailed files (they're
+	// already pending) and launches no worker.
+	s.mu.Lock()
 	st, err := s.jobs.Load(id)
 	if err != nil {
+		s.mu.Unlock()
 		http.NotFound(w, r)
 		return
 	}
@@ -383,11 +392,14 @@ func (s *Server) handleRetry(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if len(failed) == 0 {
+		s.mu.Unlock()
 		s.renderPartial(w, "convert_card", cardFor(st))
 		return
 	}
 	st.Done = false
-	if err := s.jobs.Save(id, st); err != nil {
+	saveErr := s.jobs.Save(id, st)
+	s.mu.Unlock()
+	if saveErr != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
