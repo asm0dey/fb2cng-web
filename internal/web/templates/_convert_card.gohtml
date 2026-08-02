@@ -1,0 +1,82 @@
+{{define "convert_card"}}
+{{if .Status}}
+<div id="convert-card"
+     {{if not .Status.Done}}hx-get="/jobs/{{.Status.ID}}" hx-trigger="load delay:1s" hx-swap="outerHTML"{{end}}>
+
+  {{if not .Status.Done}}
+  {{/* ---------- RUNNING ---------- */}}
+  <div class="card running">
+    <div>
+      <div class="card-head">Converting {{.DoneCount}} of {{.Total}}…</div>
+      <div class="file-state mono">preset {{.Status.Preset}} · one at a time</div>
+    </div>
+    <div class="bar"><i></i></div>
+    <div class="prog-list">
+      {{range .Status.Files}}
+      <div class="prog-row">
+        <span class="dot {{if eq .State "done"}}done{{else if eq .State "running"}}running{{else if eq .State "failed"}}failed{{else}}queued{{end}}"></span>
+        <span class="prog-name">{{.Input}}</span>
+        <span class="file-state">{{if eq .State "pending"}}queued{{else if eq .State "running"}}converting{{else}}{{.State}}{{end}}</span>
+      </div>
+      {{end}}
+    </div>
+  </div>
+
+  {{else}}
+  {{/* ---------- FAILURES FIRST (one error card per failed file) ---------- */}}
+  {{range .Status.Files}}
+  {{if eq .State "failed"}}
+  <div class="card error">
+    <div class="card-head"><span class="dot failed"></span>{{$.FailedCount}} of {{$.Total}} book{{if gt $.Total 1}}s{{end}} failed</div>
+    <div class="fail-file">{{.Input}}</div>
+    <p class="fail-msg">fb2cng could not finish this book. {{if .FirstError}}The log's first error is shown below.{{end}} The other books in the batch are unaffected.</p>
+    <p class="fail-hint">Try again with <b>use_broken_images</b> on — it substitutes a blank image and keeps going.</p>
+    <div class="fail-actions">
+      <form hx-post="/jobs/{{$.Status.ID}}/retry" hx-target="#convert-card" hx-swap="outerHTML">
+        <button type="submit" class="btn-retry">Retry with use_broken_images</button>
+      </form>
+      <a class="btn-skip" href="/jobs/{{$.Status.ID}}">Skip it</a>
+    </div>
+    {{if .FirstError}}
+    <div class="first-error-label">First error · {{.Input}}</div>
+    <pre class="err">{{.FirstError}}</pre>
+    {{end}}
+    <details class="logs">
+      <summary>Full log · {{.Input}} · {{.LogLines}} lines</summary>
+      <pre class="log" hx-get="/jobs/{{$.Status.ID}}/log/{{.Input}}" hx-trigger="revealed" hx-swap="innerHTML">…</pre>
+    </details>
+  </div>
+  {{end}}
+  {{end}}
+
+  {{/* ---------- SUCCESSFUL FILES ---------- */}}
+  {{if gt .DoneCount 0}}
+  <div class="card success">
+    <div class="card-head"><span class="dot done"></span>{{.DoneCount}} of {{.Total}} converted</div>
+    <div class="file-list">
+      {{range .Status.Files}}
+      {{if eq .State "done"}}
+      {{$input := .Input}}
+      {{range .Outputs}}
+      <div class="file-row">
+        <div class="file-info">
+          <span class="file-name">{{.}}</span>
+        </div>
+        <a class="dl" href="/jobs/{{$.Status.ID}}/download/{{.}}">Download</a>
+      </div>
+      {{end}}
+      {{end}}
+      {{end}}
+    </div>
+    {{if gt .TotalOutputs 1}}
+    <a class="zip-btn" href="/jobs/{{.Status.ID}}/zip">Download all · {{.TotalOutputs}} files .zip</a>
+    {{end}}
+  </div>
+  {{end}}
+  {{end}}
+
+</div>
+{{else}}
+<div id="convert-card"></div>
+{{end}}
+{{end}}

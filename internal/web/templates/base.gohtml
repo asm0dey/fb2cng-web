@@ -1,0 +1,41 @@
+{{define "base"}}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>fb2 converter</title>
+  <script>
+    // Apply theme before first paint to avoid a flash.
+    (function () {
+      var t = localStorage.getItem('theme') || 'system';
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">fb2→epub</span>
+    <nav class="tabs">
+      <a href="/" class="{{if eq .Tab "convert"}}active{{end}}">Convert</a>
+      <a href="/settings" class="{{if eq .Tab "settings"}}active{{end}}">Settings</a>
+    </nav>
+    <div class="right">
+      <span id="user">{{if .User}}👤 {{.User}}{{end}}</span>
+      <select id="theme" aria-label="Theme">
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </div>
+  </header>
+  <main class="page">
+    {{content .ContentName .}}
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>{{end}}
