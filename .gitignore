@@ -1,2 +1,5 @@
 .superpowers/
 /bin/
+
+# schemagen/go:generate byproduct (fbc writes a debug log to CWD)
+fbc.log
