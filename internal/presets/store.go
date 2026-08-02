@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -88,4 +89,70 @@ func (s *Store) List() ([]*Preset, error) {
 		return strings.ToLower(users[i].Name) < strings.ToLower(users[j].Name)
 	})
 	return append(out, users...), nil
+}
+
+// Create makes a new empty preset named name and persists it.
+func (s *Store) Create(name string) (*Preset, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		name = "New preset"
+	}
+	id, err := s.freeID(slugify(name))
+	if err != nil {
+		return nil, err
+	}
+	p := &Preset{ID: id, Name: name, Overrides: map[string]any{}}
+	if err := s.write(p); err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+// freeID returns base, or base-2, base-3, … until an unused id is found.
+func (s *Store) freeID(base string) (string, error) {
+	if !validID(base) {
+		base = "preset"
+	}
+	candidate := base
+	for i := 2; ; i++ {
+		_, err := os.Stat(s.path(candidate))
+		if os.IsNotExist(err) {
+			return candidate, nil
+		}
+		if err != nil {
+			return "", err
+		}
+		candidate = fmt.Sprintf("%s-%d", base, i)
+	}
+}
+
+// Save persists p, rejecting the Builtin, and stamps UpdatedAt.
+func (s *Store) Save(p *Preset) error {
+	if p.Builtin || p.ID == BuiltinID {
+		return fmt.Errorf("cannot save built-in preset")
+	}
+	if !validID(p.ID) {
+		return fmt.Errorf("invalid preset id %q", p.ID)
+	}
+	if p.Overrides == nil {
+		p.Overrides = map[string]any{}
+	}
+	return s.write(p)
+}
+
+// write stamps UpdatedAt and atomically writes the preset file.
+func (s *Store) write(p *Preset) error {
+	if err := os.MkdirAll(s.Dir, 0o755); err != nil {
+		return err
+	}
+	p.UpdatedAt = time.Now().UTC().Truncate(time.Second)
+	b, err := yaml.Marshal(p)
+	if err != nil {
+		return err
+	}
+	tmp := s.path(p.ID) + ".tmp"
+	if err := os.WriteFile(tmp, b, 0o644); err != nil {
+		return err
+	}
+	return os.Rename(tmp, s.path(p.ID))
 }
