@@ -4,7 +4,7 @@
 
 **Goal:** Add a checked-in option schema (`internal/schema` + a `go generate` scaffolder `cmd/schemagen`) and replace Plan 2's minimal raw-YAML preset editor with a full per-option grid editor that has type-aware widgets, changed markers, sparse Save, and a live effective-config pane whose validity is confirmed by having `fbc` parse the merged config.
 
-**Architecture:** `cmd/schemagen` reads `fbc dumpconfig --default` YAML, flattens it to dotted keys, infers a `schema.Kind` from each value's Go type, merges best-effort descriptions parsed from `docs/config.md`, and writes `internal/schema/options.json` (printing a drift report vs the previous file). At runtime `schema.Load` reads that JSON into an ordered, grouped `*schema.Schema`. The editor handler (`GET /settings/preset/{id}`) renders every option grouped by `Group` in schema order using `presets.Store` for the current preset; Save (`POST /settings/preset/{id}`) collects field values, drops any equal to the schema default (sparse), and writes `Preset.Overrides` via `presets.Store.Save`; the effective pane (`POST /settings/preset/{id}/effective`, htmx-swapped into `#effective`) merges the current field values over fbc defaults with `convert.BuildConfig` and validates them with a new `convert.Runner.Validate` probe.
+**Architecture:** `cmd/schemagen` reads `fbc dumpconfig --default` YAML, flattens it to dotted keys, infers a `schema.Kind` from each value's Go type, merges best-effort descriptions parsed from `docs/config.md`, and writes `internal/schema/options.json` (printing a drift report vs the previous file), which is embedded into the `schema` package via `//go:embed`. At runtime `schema.Load()` parses that embedded JSON into an ordered, grouped `*schema.Schema` (no path argument, no `SCHEMA_PATH` env — it ships inside the binary like `internal/web` assets). The editor handler (`GET /settings/preset/{id}`) renders every option grouped by `Group` in schema order using `presets.Store` for the current preset; Save (`POST /settings/preset/{id}`) collects field values, drops any equal to the schema default (sparse), and writes `Preset.Overrides` via `presets.Store.Save`; the effective pane (`POST /settings/preset/{id}/effective`, htmx-swapped into `#effective`) merges the current field values over fbc defaults with `convert.BuildConfig` and validates them with a new `convert.Runner.Validate` probe.
 
 **Tech Stack:** Go 1.26, `gopkg.in/yaml.v3`, `html/template`, `net/http` (`ServeMux` path values), htmx (CDN), `httptest`, a fake `fbc` (`testdata/fake-fbc.sh`).
 
@@ -26,14 +26,14 @@
 **Created:**
 - `internal/schema/schema.go` — `Kind` consts, `Option`, `Option.IsDefault`, `normalize` helper. (Task 1)
 - `internal/schema/schema_test.go` — `IsDefault` tests. (Task 1)
-- `internal/schema/load.go` — `Schema`, `Load`, `Get`, `Groups`, `InGroup`. (Task 2)
+- `internal/schema/load.go` — `Schema`, `Load` (no-arg, `//go:embed options.json`), unexported `parse`, `Get`, `Groups`, `InGroup`. (Task 2)
 - `internal/schema/load_test.go` — load/get/groups tests. (Task 2)
 - `cmd/schemagen/schemagen.go` — flatten/infer/build + descriptions/drift/write. (Tasks 3, 4)
 - `cmd/schemagen/main.go` — CLI `main()`. (Task 4)
 - `cmd/schemagen/schemagen_test.go` — schemagen unit tests. (Tasks 3, 4)
 - `cmd/schemagen/testdata/dump.yaml` — fixture defaults dump. (Task 3)
 - `cmd/schemagen/testdata/config.md` — fixture descriptions doc. (Task 4)
-- `internal/schema/options.json` — generated checked-in scaffold. (Task 4)
+- `internal/schema/options.json` — embedded checked-in scaffold (placeholder `[]` committed in Task 2 so the `//go:embed` compiles; regenerated with real content in Task 4). (Tasks 2, 4)
 - `internal/convert/runner_validate_test.go` — `Validate` probe tests. (Task 5)
 - `internal/server/editor.go` — VM types, flatten/unflatten, `buildEditorVM`, `collectOverrides`, `handlePresetEditor`, `handlePresetSave`. (Tasks 6, 7)
 - `internal/server/effective.go` — `computeEffective`, `handlePresetEffective`, `renderEffective`. (Task 8)
@@ -47,10 +47,8 @@
 - `testdata/fake-fbc.sh` — `dumpconfig` branch handles `-c` and rejects a `__invalid` marker. (Task 5)
 - `internal/server/handlers_test.go` — existing `stubRunner` gains a `Validate` method. (Task 5)
 - `internal/server/server.go` — append concrete field `schema *schema.Schema` to `Server` (Task 6); widen `New(...)` to 7 args + assign, and register the three editor routes in `Handler()` (Task 9).
-- `internal/config/config.go` — add `SchemaPath` field + `SCHEMA_PATH` env. (Task 9)
-- `internal/config/config_test.go` — cover `SchemaPath`. (Task 9)
 - `internal/server/editor.go` (Plan 2's minimal editor) — delete `handlePresetEdit`, `handlePresetSave`, `presetEditData`; remove Plan 2's `GET`/`POST /settings/preset/{id}` route registrations and `preset_edit.gohtml`. (Task 9)
-- `main.go` — `schema.Load(cfg.SchemaPath)` wired as the 7th `New(...)` arg (real code). (Task 9)
+- `main.go` — `schema.Load()` wired as the 7th `New(...)` arg (real code). (Task 9)
 
 ---
 
@@ -217,12 +215,13 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 - Produces:
   ```go
   type Schema struct { Options []Option }
-  func Load(path string) (*Schema, error)      // parses a JSON array of Option
+  func Load() (*Schema, error)                 // parses the //go:embed-ed options.json (no path/env)
+  func parse(data []byte) (*Schema, error)     // unexported; Load = parse(embedded); tests drive this
   func (s *Schema) Get(key string) (Option, bool)
   func (s *Schema) Groups() []string           // group names in first-seen order
   func (s *Schema) InGroup(g string) []Option  // options in group g, schema order
   ```
-  `options.json` is a **top-level JSON array** of `Option`.
+  `options.json` is a **top-level JSON array** of `Option`, embedded into the binary via `//go:embed options.json`. Because embedding requires the file to exist at compile time, this task also commits a placeholder `internal/schema/options.json` containing `[]`; Task 4 regenerates it with the real scaffold.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -231,11 +230,7 @@ Create `internal/schema/load_test.go`:
 ```go
 package schema
 
-import (
-	"os"
-	"path/filepath"
-	"testing"
-)
+import "testing"
 
 const fixtureJSON = `[
   {"key":"version","group":"version","label":"version","kind":"int","default":1},
@@ -243,17 +238,8 @@ const fixtureJSON = `[
   {"key":"document.images.optimize","group":"document","label":"optimize","kind":"bool","default":true}
 ]`
 
-func writeFixture(t *testing.T) string {
-	t.Helper()
-	p := filepath.Join(t.TempDir(), "options.json")
-	if err := os.WriteFile(p, []byte(fixtureJSON), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	return p
-}
-
-func TestLoadAndGet(t *testing.T) {
-	s, err := Load(writeFixture(t))
+func TestParseAndGet(t *testing.T) {
+	s, err := parse([]byte(fixtureJSON))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -270,7 +256,7 @@ func TestLoadAndGet(t *testing.T) {
 }
 
 func TestGroupsAndInGroup(t *testing.T) {
-	s, err := Load(writeFixture(t))
+	s, err := parse([]byte(fixtureJSON))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -284,19 +270,34 @@ func TestGroupsAndInGroup(t *testing.T) {
 	}
 }
 
-func TestLoadMissingFile(t *testing.T) {
-	if _, err := Load(filepath.Join(t.TempDir(), "absent.json")); err == nil {
-		t.Fatal("Load of a missing file should error")
+func TestParseInvalidJSON(t *testing.T) {
+	if _, err := parse([]byte("{not json")); err == nil {
+		t.Fatal("parse of invalid JSON should error")
+	}
+}
+
+// TestLoadEmbedded confirms the //go:embed-ed options.json parses. In Task 2 the
+// embedded file is the placeholder `[]` (0 options); after Task 4 regenerates it
+// this still passes with the real option count.
+func TestLoadEmbedded(t *testing.T) {
+	if _, err := Load(); err != nil {
+		t.Fatalf("Load() embedded options.json: %v", err)
 	}
 }
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `go test ./internal/schema/ -run 'TestLoad|TestGroups' -v`
-Expected: FAIL — build error `undefined: Load` / `undefined: Schema`.
+Run: `go test ./internal/schema/ -run 'TestParse|TestGroups|TestLoadEmbedded' -v`
+Expected: FAIL — build error `undefined: parse` / `undefined: Load` / `undefined: Schema`.
 
 - [ ] **Step 3: Write minimal implementation**
+
+First commit the embed placeholder so `//go:embed options.json` compiles (Task 4 regenerates it with real content):
+
+```bash
+printf '[]\n' > internal/schema/options.json
+```
 
 Create `internal/schema/load.go`:
 
@@ -304,25 +305,32 @@ Create `internal/schema/load.go`:
 package schema
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
-	"os"
 )
+
+// optionsJSON is the checked-in option schema, compiled into the binary. It is
+// regenerated by cmd/schemagen (see gen.go); no runtime file or SCHEMA_PATH env.
+//
+//go:embed options.json
+var optionsJSON []byte
 
 // Schema is the ordered, grouped list of option descriptors.
 type Schema struct {
 	Options []Option
 }
 
-// Load parses an options.json file (a JSON array of Option) into a Schema.
-func Load(path string) (*Schema, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
+// Load parses the embedded options.json into a Schema.
+func Load() (*Schema, error) {
+	return parse(optionsJSON)
+}
+
+// parse decodes a JSON array of Option into a Schema.
+func parse(data []byte) (*Schema, error) {
 	var opts []Option
 	if err := json.Unmarshal(data, &opts); err != nil {
-		return nil, fmt.Errorf("parse %s: %w", path, err)
+		return nil, fmt.Errorf("parse options.json: %w", err)
 	}
 	return &Schema{Options: opts}, nil
 }
@@ -370,7 +378,7 @@ Expected: PASS (all Task 1 + Task 2 tests).
 - [ ] **Step 5: Commit**
 
 ```bash
-git add internal/schema/load.go internal/schema/load_test.go
+git add internal/schema/load.go internal/schema/load_test.go internal/schema/options.json
 git commit -m "feat(schema): add Schema.Load/Get/Groups/InGroup
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -663,13 +671,20 @@ func TestWriteAndReloadRoundTrip(t *testing.T) {
 	if err := writeOptions(out, opts); err != nil {
 		t.Fatal(err)
 	}
-	s, err := schema.Load(out)
+	// schema.Load reads the embedded file, so reload the written array directly to
+	// confirm writeOptions emits valid, re-parseable JSON.
+	data, err := os.ReadFile(out)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(s.Options) != len(opts) {
-		t.Fatalf("round-trip count %d vs %d", len(s.Options), len(opts))
+	var reloaded []schema.Option
+	if err := json.Unmarshal(data, &reloaded); err != nil {
+		t.Fatalf("re-parse written options.json: %v", err)
 	}
+	if len(reloaded) != len(opts) {
+		t.Fatalf("round-trip count %d vs %d", len(reloaded), len(opts))
+	}
+	s := &schema.Schema{Options: reloaded}
 	o, ok := s.Get("document.images.jpeg_quality_level")
 	if !ok || o.Kind != schema.KindInt {
 		t.Fatalf("reloaded jpeg option: %+v ok=%v", o, ok)
@@ -677,7 +692,7 @@ func TestWriteAndReloadRoundTrip(t *testing.T) {
 }
 ```
 
-Add `"path/filepath"` to the test file's import block (alongside `os`, `testing`, `schema`, `yaml`).
+Add `"encoding/json"` and `"path/filepath"` to the test file's import block (alongside `os`, `testing`, `schema`, `yaml`).
 
 - [ ] **Step 3: Run tests to verify they fail**
 
@@ -885,9 +900,9 @@ Expected: PASS (all schemagen tests). Also confirm the command builds: `go build
 - [ ] **Step 7: Generate the checked-in scaffold**
 
 Run: `go run ./cmd/schemagen -dump cmd/schemagen/testdata/dump.yaml -docs cmd/schemagen/testdata/config.md -out internal/schema/options.json`
-Expected on stderr: a `DRIFT added=7 removed=0 retyped=0` block (first run — the old file is absent) and `wrote 7 options to internal/schema/options.json`.
+Expected on stderr: a `DRIFT added=7 removed=0 retyped=0` block (the prior file is the Task 2 placeholder `[]`, so every key reads as added) and `wrote 7 options to internal/schema/options.json`. This overwrites the placeholder with the real scaffold that the `//go:embed` in Task 2 already references.
 
-Verify it loads: `go test ./internal/schema/ -v` (still PASS — this file is not read by those tests, but confirms the package builds).
+Verify it loads: `go test ./internal/schema/ -v` (still PASS — `TestLoadEmbedded` now parses the real 7-option file instead of the placeholder).
 
 - [ ] **Step 8: Commit**
 
@@ -1259,20 +1274,13 @@ func editorTemplates(t *testing.T) *template.Template {
 
 func testSchema(t *testing.T) *schema.Schema {
 	t.Helper()
-	p := filepath.Join(t.TempDir(), "options.json")
-	js := `[
-      {"key":"document.toc_type","group":"document","label":"toc_type","kind":"string","default":"normal"},
-      {"key":"document.images.optimize","group":"document","label":"optimize","kind":"bool","default":true},
-      {"key":"document.images.jpeg_quality_level","group":"document","label":"jpeg_quality_level","kind":"int","default":75}
-    ]`
-	if err := os.WriteFile(p, []byte(js), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	s, err := schema.Load(p)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return s
+	// schema.Load reads the embedded production options.json; tests build a small
+	// fixed schema directly (Schema.Options is exported) to stay hermetic.
+	return &schema.Schema{Options: []schema.Option{
+		{Key: "document.toc_type", Group: "document", Label: "toc_type", Kind: schema.KindString, Default: "normal"},
+		{Key: "document.images.optimize", Group: "document", Label: "optimize", Kind: schema.KindBool, Default: true},
+		{Key: "document.images.jpeg_quality_level", Group: "document", Label: "jpeg_quality_level", Kind: schema.KindInt, Default: float64(75)},
+	}}
 }
 
 func TestPresetEditorRendersGrid(t *testing.T) {
@@ -1975,80 +1983,23 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-### Task 9: Integration — delete Plan 2's minimal editor, widen `New`, routes, config, go:generate, Docker
+### Task 9: Integration — delete Plan 2's minimal editor, widen `New`, routes, go:generate, Docker
 
 **Files:**
-- Modify: `internal/config/config.go` (add `SchemaPath` + `SCHEMA_PATH`)
-- Modify: `internal/config/config_test.go` (cover `SchemaPath`)
 - Modify: `internal/server/editor.go` (Plan 2's file) — **delete** `handlePresetEdit`, `handlePresetSave`, `presetEditData`
 - Delete: `internal/web/templates/preset_edit.gohtml` (Plan 2's minimal editor template)
 - Modify: `internal/server/server.go` — remove Plan 2's `GET`/`POST /settings/preset/{id}` registrations, register Plan 3's three routes, and widen `New(...)` to 7 args assigning `schema`
 - Create: `internal/schema/gen.go` (`//go:generate` directive)
-- Modify: `main.go` — `schema.Load(cfg.SchemaPath)` as the 7th `New(...)` arg (real code)
-- Modify: `Dockerfile` — COPY the checked-in `options.json` into the runtime image + `SCHEMA_PATH`
+- Modify: `main.go` — `schema.Load()` as the 7th `New(...)` arg (real code)
+- Modify: `Dockerfile` — declare `PRESETS_DIR` + `JOBS_DIR` env (no schema COPY — `options.json` is embedded in the binary)
 - Modify: `docker-compose.example.yml` — declare `PRESETS_DIR` volume + `JOBS_DIR`
 
 **Interfaces:**
 - Consumes: `schema.Load` (Task 2); handler methods (Tasks 6–8); Plan 1's `New(cfg, runner, static, tpl, jobs)` widened by Plan 2 to `+presets`; `Server.Handler()`.
-- Produces: `config.Config.SchemaPath string`; final `func New(cfg config.Config, runner convert.Runner, static fs.FS, tpl *template.Template, jobs *jobs.Store, presets *presets.Store, schema *schema.Schema) *Server` (schema **last**).
-- Note: `options.json` is a **runtime disk file** loaded via `schema.Load(cfg.SchemaPath)` — it is NOT embedded in `web.FS`, so the runtime image must ship it (Docker step below).
+- Produces: final `func New(cfg config.Config, runner convert.Runner, static fs.FS, tpl *template.Template, jobs *jobs.Store, presets *presets.Store, schema *schema.Schema) *Server` (schema **last**).
+- Note: `options.json` is **embedded into the `schema` package via `//go:embed`** (Task 2), so `schema.Load()` takes no path, there is no `SCHEMA_PATH` env, and the runtime image ships nothing extra — the schema is inside the compiled binary.
 
-- [ ] **Step 1: Write the failing config test**
-
-In `internal/config/config_test.go`, update `TestFromEnvDefaults`'s `want` to include the new field, and append two focused tests. Replace the `want` line:
-
-```go
-	want := Config{Addr: ":8080", FBCBin: "fbc", MaxConcurrent: 3, ForwardAuth: false, TrustedProxies: nil}
-```
-
-with:
-
-```go
-	want := Config{Addr: ":8080", FBCBin: "fbc", MaxConcurrent: 3, ForwardAuth: false, TrustedProxies: nil, SchemaPath: "internal/schema/options.json"}
-```
-
-Append:
-
-```go
-func TestFromEnvSchemaPath(t *testing.T) {
-	t.Setenv("SCHEMA_PATH", "")
-	if got := FromEnv().SchemaPath; got != "internal/schema/options.json" {
-		t.Fatalf("default SchemaPath = %q", got)
-	}
-	t.Setenv("SCHEMA_PATH", "/data/options.json")
-	if got := FromEnv().SchemaPath; got != "/data/options.json" {
-		t.Fatalf("override SchemaPath = %q", got)
-	}
-}
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `go test ./internal/config/ -v`
-Expected: FAIL — `unknown field SchemaPath in struct literal` / `got.SchemaPath undefined`.
-
-- [ ] **Step 3: Add the config field**
-
-In `internal/config/config.go`, add the field to `Config`:
-
-```go
-	TrustedProxies []string // source IPs allowed to set Remote-* headers (empty = trust any source)
-	SchemaPath     string   // path to the checked-in options.json schema
-```
-
-and to `FromEnv()`'s struct literal (alongside the other fields):
-
-```go
-		ForwardAuth:   os.Getenv("AUTH_FORWARD_AUTH") == "true",
-		SchemaPath:    envOr("SCHEMA_PATH", "internal/schema/options.json"),
-```
-
-- [ ] **Step 4: Run config test to verify it passes**
-
-Run: `go test ./internal/config/ -v`
-Expected: PASS.
-
-- [ ] **Step 5: Delete Plan 2's minimal editor (required — avoids a duplicate-function compile error and a double-registration panic)**
+- [ ] **Step 1: Delete Plan 2's minimal editor (required — avoids a duplicate-function compile error and a double-registration panic)**
 
 Plan 3's `internal/server/editor.go` already defines `handlePresetEditor`, `handlePresetSave`, and the VM types. Plan 2 shipped a *minimal* raw-YAML editor whose symbols collide with Plan 3's and whose routes register the same mux patterns. Two Go functions named `handlePresetSave` in package `server` is a compile error; registering `GET /settings/preset/{id}` twice on one `ServeMux` **panics at startup**. So remove Plan 2's versions:
 
@@ -2060,7 +2011,7 @@ Plan 3's `internal/server/editor.go` already defines `handlePresetEditor`, `hand
   mux.HandleFunc("POST /settings/preset/{id}", s.handlePresetSave)
   ```
 
-- [ ] **Step 6: Register Plan 3's routes and widen `New(...)`**
+- [ ] **Step 2: Register Plan 3's routes and widen `New(...)`**
 
 In `internal/server/server.go`, inside `Handler()`, register Plan 3's three routes before the catch-all `mux.Handle("/", ...)` (these are the ONLY `/settings/preset/{id}` registrations now):
 
@@ -2086,7 +2037,7 @@ func New(cfg config.Config, runner convert.Runner, static fs.FS, tpl *template.T
 }
 ```
 
-- [ ] **Step 7: Add the go:generate directive**
+- [ ] **Step 3: Add the go:generate directive**
 
 Create `internal/schema/gen.go`:
 
@@ -2100,9 +2051,9 @@ package schema
 //go:generate go run ../../cmd/schemagen -out options.json
 ```
 
-- [ ] **Step 8: Wire schema into main.go (real code)**
+- [ ] **Step 4: Wire schema into main.go (real code)**
 
-Plan 2 already updated `main.go` to build `tpl`, `jobStore`, and `presetStore` and call the 6-arg `New`. Plan 3 adds the schema import, loads it, and appends `sch` as the 7th argument. After Plan 2, `main()` looks like the left column; change it to the right column (add the two blocks):
+Plan 2 already updated `main.go` to build `tpl`, `jobStore`, and `presetStore` and call the 6-arg `New`. Plan 3 adds the schema import, loads the embedded schema, and appends `sch` as the 7th argument. After Plan 2, `main()` looks like the left column; change it to the right column (add the two blocks):
 
 ```go
 package main
@@ -2122,9 +2073,9 @@ import (
 func main() {
 	cfg := config.FromEnv()
 
-	sch, err := schema.Load(cfg.SchemaPath)
+	sch, err := schema.Load()
 	if err != nil {
-		log.Fatalf("load schema %s: %v", cfg.SchemaPath, err)
+		log.Fatalf("load embedded schema: %v", err)
 	}
 
 	// tpl, jobStore, presetStore are constructed by Plan 1/2 (templates parsed
@@ -2138,15 +2089,13 @@ func main() {
 }
 ```
 
-- [ ] **Step 9: Ship options.json in the image + declare storage volumes**
+- [ ] **Step 5: Declare storage volumes**
 
-`options.json` is loaded from disk at runtime (`schema.Load(cfg.SchemaPath)`), and the hardened runtime stage is COPY-only, so the file must be copied in and `SCHEMA_PATH` pointed at it. In `Dockerfile`, add a COPY to the runtime stage and extend `ENV` (place the COPY next to the other stage-3 COPYs):
+`options.json` is embedded in the binary (`//go:embed`, Task 2), so the runtime image needs no schema COPY and no `SCHEMA_PATH` — nothing to ship. Only extend the runtime stage's `ENV` with the store locations. In `Dockerfile`:
 
 ```dockerfile
 COPY --from=build /out/fb2cng-web /usr/local/bin/fb2cng-web
-COPY --from=build /src/internal/schema/options.json /usr/local/share/fb2cng-web/options.json
 ENV FBC_BIN=/usr/local/bin/fbc PORT=8080 TMPDIR=/tmp \
-    SCHEMA_PATH=/usr/local/share/fb2cng-web/options.json \
     PRESETS_DIR=/data/presets JOBS_DIR=/tmp/fb2cng-jobs
 ```
 
@@ -2171,7 +2120,7 @@ volumes:
   presets:
 ```
 
-- [ ] **Step 10: Verify the build and full suite**
+- [ ] **Step 6: Verify the build and full suite**
 
 Run: `go build ./...`
 Expected: success (Plan 3 executes after Plans 1 & 2, so `New`'s first six args, `tpl`, `jobStore`, `presetStore`, `layout`, and `render` all exist).
@@ -2179,17 +2128,17 @@ Expected: success (Plan 3 executes after Plans 1 & 2, so `New`'s first six args,
 Run: `go test ./...`
 Expected: PASS across `internal/schema`, `cmd/schemagen`, `internal/convert`, `internal/server`, `internal/config`.
 
-Sanity-check the container builds and finds the schema: `docker build -t fb2cng-web:plan3 .` (expected: success; the `COPY ... options.json` layer resolves because Task 4 committed the file).
+Sanity-check the container builds: `docker build -t fb2cng-web:plan3 .` (expected: success; the schema is embedded in the binary, so no extra COPY layer is needed).
 
-- [ ] **Step 11: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add internal/config/config.go internal/config/config_test.go internal/server/server.go internal/server/editor.go internal/schema/gen.go main.go Dockerfile docker-compose.example.yml
+git add internal/server/server.go internal/server/editor.go internal/schema/gen.go main.go Dockerfile docker-compose.example.yml
 git rm internal/web/templates/preset_edit.gohtml
 git commit -m "feat: wire option schema + editor routes; drop Plan 2's minimal editor
 
 Widens server.New to (cfg, runner, static, tpl, jobs, presets, schema) and
-ships options.json into the runtime image via SCHEMA_PATH.
+loads the //go:embed-ed options.json via schema.Load().
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
@@ -2200,16 +2149,16 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 **Spec coverage (Plan 3 scope):**
 - `cmd/schemagen` reads dump YAML, flattens to dotted keys, infers Kind, Group=first segment, Label=last, merges best-effort descriptions from `docs/config.md`, writes `options.json`, prints DRIFT — Tasks 3, 4. Tests drive a fixture dump, not real fbc — Tasks 3, 4.
-- `internal/schema` exactly per contract (Kind consts, Option+IsDefault, Schema Load/Get/Groups/InGroup) — Tasks 1, 2.
+- `internal/schema` exactly per contract (Kind consts, Option+IsDefault, Schema no-arg `Load()` over the `//go:embed`-ed options.json + `Get`/`Groups`/`InGroup`) — Tasks 1, 2.
 - Full option-grid editor replacing Plan 2's minimal editor; widgets by Kind (checkbox/number/select/textarea); `output_name_template` textarea + live filename preview; per-row description + `default X` + reset; amber changed marker (`.changed`, `changed-dot`); toolbar search / Changed-only / Default-preset / Save — Task 6 (markup mirrors mockup SCREEN 5).
 - Save collects field values, drops equal-to-default (sparse), writes `Preset.Overrides` via `presets.Store.Save` — Task 7.
 - Effective pane (`#effective`, htmx) merges via `convert.BuildConfig` + validity chip via `fbc` parse; `Runner.Validate` probe added to interface + FBC + fake — Tasks 5, 8.
 - Options absent from `options.json` still render (synthetic rows) — Task 6.
 - Editor uses the shared `base.gohtml` layout (`{{define "editor"}}` content template via `s.render`, embedding Plan 1's `layout` header for nav/theme/pre-paint) — NOT a standalone document — Task 6.
 - `Server` gains one concrete field `schema *schema.Schema` (Task 6); `New(...)` widened to 7 args `(cfg, runner, static, tpl, jobs, presets, schema)` with schema last (Task 9); Plan 2's minimal editor (`handlePresetEdit`/`handlePresetSave`/`presetEditData`/`preset_edit.gohtml` + its routes) deleted to prevent duplicate-symbol/double-registration failures (Task 9); `main.go` loads schema and passes it in as real code — Task 9.
-- Dockerfile ships `options.json` into the runtime image with `SCHEMA_PATH`; docker-compose declares `PRESETS_DIR` volume + `JOBS_DIR` — Task 9.
+- `options.json` is embedded into the binary via `//go:embed` (no Dockerfile COPY, no `SCHEMA_PATH`); Dockerfile + docker-compose declare `PRESETS_DIR` volume + `JOBS_DIR` — Tasks 2, 9.
 
-**Placeholder scan:** No `TBD`/`...`/"handle errors" — every code step is complete. `main.go` (Task 9 Step 8) is real code: `schema.Load(cfg.SchemaPath)` passed as the 7th `New(...)` arg, no `_ = sch` fallback. The only cross-plan seams are the `tpl`/`jobStore`/`presetStore` construction lines in `main.go` and the `layout`/`render` symbols, all owned by Plans 1 & 2, which land before Plan 3.
+**Placeholder scan:** No `TBD`/`...`/"handle errors" — every code step is complete. `main.go` (Task 9 Step 4) is real code: `schema.Load()` passed as the 7th `New(...)` arg, no `_ = sch` fallback. The only cross-plan seams are the `tpl`/`jobStore`/`presetStore` construction lines in `main.go` and the `layout`/`render` symbols, all owned by Plans 1 & 2, which land before Plan 3.
 
 **Type consistency:** `schema.Option`/`schema.Kind`/`schema.Schema`, `presets.Store`/`presets.Preset`, `convert.BuildConfig`/`convert.FormOptions`/`convert.Runner.Validate`, and the internal `rowVM`/`groupVM`/`effectiveVM`/`editorVM` + `flattenOverrides`/`unflatten`/`collectOverrides`/`computeEffective` names are used identically across Tasks 6–9. Route strings match across Tasks 6–9 (`GET`/`POST /settings/preset/{id}`, `POST /settings/preset/{id}/effective`).
 
