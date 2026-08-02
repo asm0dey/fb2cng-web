@@ -1,0 +1,28 @@
+{{define "convert"}}
+<form class="convert-form" hx-post="/convert" hx-target="#convert-card" hx-swap="outerHTML"
+      hx-encoding="multipart/form-data" hx-disabled-elt="find button">
+  <label class="dropzone" for="file" id="drop">
+    <span class="dz-title" id="drop-label">Drop books here, or choose files</span>
+    <span class="dz-hint">.fb2 · .zip · .fb2.zip — one or several</span>
+    <input id="file" type="file" name="file" accept=".fb2,.zip" multiple hidden>
+  </label>
+
+  <div class="field">
+    <label for="preset">Preset</label>
+    <select class="select" id="preset" name="preset">
+      {{range .Presets}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="format">Output format</label>
+    <select class="select" id="format" name="format">
+      {{range .Formats}}<option value="{{.}}"{{if eq . $.Format}} selected{{end}}>{{.}}</option>{{end}}
+    </select>
+  </div>
+
+  <button type="submit" class="btn-primary">Convert</button>
+</form>
+
+{{template "convert_card" .Card}}
+{{end}}
