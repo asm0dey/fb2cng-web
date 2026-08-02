@@ -13,14 +13,22 @@ import (
 )
 
 // WriteZip streams every output file under <id>/out/ into w as one flat zip,
-// suffixing basename collisions (book.epub, book-1.epub, ...).
-func (s *Store) WriteZip(id string, w io.Writer) error {
+// suffixing basename collisions (book.epub, book-1.epub, ...) against the set
+// of names already written to the archive.
+func (s *Store) WriteZip(id string, w io.Writer) (err error) {
 	if !ValidID(id) {
 		return fmt.Errorf("invalid id %q", id)
 	}
 	outRoot := filepath.Join(s.root(id), "out")
 	zw := zip.NewWriter(w)
-	defer zw.Close()
+	defer func() {
+		// zip.Writer.Close() flushes the central directory to w; without this,
+		// a failure there would be silently dropped and callers would treat a
+		// truncated archive as valid.
+		if cerr := zw.Close(); err == nil {
+			err = cerr
+		}
+	}()
 
 	seen := map[string]int{}
 	return filepath.WalkDir(outRoot, func(path string, d fs.DirEntry, err error) error {
