@@ -269,6 +269,30 @@ func TestDownloadZipAndLog(t *testing.T) {
 	}
 }
 
+func TestRetryReRunsFailedWithOverride(t *testing.T) {
+	h := newTestServer(t, config.Config{MaxConcurrent: 2}, fakeFbcRunner(t))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, multipartConvert(t, "corrupt.fb2", map[string]string{"format": "epub3", "preset": "defaults"}))
+	id := extractJobID(t, rec.Body.String())
+	st := waitDone(t, h, id)
+	if st.Files[0].State != jobs.StateFailed {
+		t.Fatalf("precondition: expected failed, got %s", st.Files[0].State)
+	}
+
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("POST", "/jobs/"+id+"/retry", nil))
+	if rec.Code != 200 {
+		t.Fatalf("retry code=%d body=%q", rec.Code, rec.Body.String())
+	}
+	st = waitDone(t, h, id)
+	if st.Files[0].State != jobs.StateDone {
+		t.Fatalf("retry with use_broken_images should succeed, got %s (err=%q)", st.Files[0].State, st.Files[0].Err)
+	}
+	if len(st.Files[0].Outputs) != 1 {
+		t.Fatalf("expected an output after retry, got %+v", st.Files[0])
+	}
+}
+
 // TestDownloadTraversalRejected exercises encoded path-traversal payloads and
 // unknown job ids against all three download routes: these reach our handler
 // code directly, so each must 404 there (never stream a file).
