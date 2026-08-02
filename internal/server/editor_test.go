@@ -290,6 +290,53 @@ func TestPresetSaveKeepsValidInt(t *testing.T) {
 	}
 }
 
+func TestRowLabel(t *testing.T) {
+	cases := map[string]string{
+		"document.images.optimize":                    "optimize",
+		"document.output_name_template":               "output_name_template",
+		"document.text_transformations.speech.enable": "speech.enable",
+		"document.vignettes.chapter.end":              "chapter.end",
+		"version":                                     "version",
+	}
+	for k, want := range cases {
+		if got := rowLabel(k); got != want {
+			t.Errorf("rowLabel(%q) = %q, want %q", k, got, want)
+		}
+	}
+}
+
+// TestBuildEditorVMDeepLabels covers keys nested deeper than a section: they
+// group under the section (2nd segment) but keep the remaining path as their
+// row label so same-leaf keys stay distinguishable.
+func TestBuildEditorVMDeepLabels(t *testing.T) {
+	s := &Server{schema: &schema.Schema{Options: []schema.Option{
+		{Key: "document.vignettes.chapter.end", Group: "document", Label: "end", Kind: schema.KindString, Default: ""},
+		{Key: "document.vignettes.book.title_top", Group: "document", Label: "title_top", Kind: schema.KindString, Default: ""},
+	}}}
+	vm := s.buildEditorVM(&presets.Preset{}, map[string]any{})
+	var vig *sectionVM
+	for i := range vm.Groups {
+		if vm.Groups[i].Name != "document" {
+			continue
+		}
+		for j := range vm.Groups[i].Sections {
+			if vm.Groups[i].Sections[j].Name == "vignettes" {
+				vig = &vm.Groups[i].Sections[j]
+			}
+		}
+	}
+	if vig == nil {
+		t.Fatalf("no vignettes section in %+v", vm.Groups)
+	}
+	if vig.Label != "Vignettes" {
+		t.Errorf("section label = %q, want Vignettes", vig.Label)
+	}
+	if len(vig.Rows) != 2 || vig.Rows[0].Label != "chapter.end" || vig.Rows[1].Label != "book.title_top" {
+		t.Errorf("row labels = %v, want [chapter.end book.title_top]",
+			[]string{vig.Rows[0].Label, vig.Rows[1].Label})
+	}
+}
+
 func TestPrettify(t *testing.T) {
 	cases := map[string]string{
 		"general":              "General",

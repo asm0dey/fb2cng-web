@@ -385,6 +385,70 @@
     "default": " "
   },
   {
+    "key": "document.vignettes.book.title_top",
+    "group": "document",
+    "label": "title_top",
+    "kind": "string",
+    "default": "",
+    "description": "Decorative vignette above the book title. Empty = disabled, \"builtin\" = default image, or a path to an image file. Ignored for txt/md."
+  },
+  {
+    "key": "document.vignettes.book.title_bottom",
+    "group": "document",
+    "label": "title_bottom",
+    "kind": "string",
+    "default": "",
+    "description": "Decorative vignette below the book title. Empty = disabled, \"builtin\" = default image, or a path to an image file. Ignored for txt/md."
+  },
+  {
+    "key": "document.vignettes.chapter.title_top",
+    "group": "document",
+    "label": "title_top",
+    "kind": "string",
+    "default": "",
+    "description": "Decorative vignette above each chapter title. Empty = disabled, \"builtin\" = default image, or a path to an image file. Ignored for txt/md."
+  },
+  {
+    "key": "document.vignettes.chapter.title_bottom",
+    "group": "document",
+    "label": "title_bottom",
+    "kind": "string",
+    "default": "",
+    "description": "Decorative vignette below each chapter title. Empty = disabled, \"builtin\" = default image, or a path to an image file. Ignored for txt/md."
+  },
+  {
+    "key": "document.vignettes.chapter.end",
+    "group": "document",
+    "label": "end",
+    "kind": "string",
+    "default": "",
+    "description": "Decorative vignette at each chapter end. Empty = disabled, \"builtin\" = default image, or a path to an image file. Ignored for txt/md."
+  },
+  {
+    "key": "document.vignettes.section.title_top",
+    "group": "document",
+    "label": "title_top",
+    "kind": "string",
+    "default": "",
+    "description": "Decorative vignette above each section title. Empty = disabled, \"builtin\" = default image, or a path to an image file. Ignored for txt/md."
+  },
+  {
+    "key": "document.vignettes.section.title_bottom",
+    "group": "document",
+    "label": "title_bottom",
+    "kind": "string",
+    "default": "",
+    "description": "Decorative vignette below each section title. Empty = disabled, \"builtin\" = default image, or a path to an image file. Ignored for txt/md."
+  },
+  {
+    "key": "document.vignettes.section.end",
+    "group": "document",
+    "label": "end",
+    "kind": "string",
+    "default": "",
+    "description": "Decorative vignette at each section end. Empty = disabled, \"builtin\" = default image, or a path to an image file. Ignored for txt/md."
+  },
+  {
     "key": "logging.console.level",
     "group": "logging",
     "label": "level",

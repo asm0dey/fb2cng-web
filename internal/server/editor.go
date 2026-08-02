@@ -177,6 +177,23 @@ func sectionName(key string) string {
 	return "general"
 }
 
+// rowLabel is the option's display label within its section: the key path
+// after the section segment, so keys nested deeper than a section stay
+// distinguishable. "document.vignettes.chapter.end" -> "chapter.end",
+// "document.text_transformations.speech.enable" -> "speech.enable". Section-
+// level keys ("document.images.optimize") and bare group keys
+// ("document.output_name_template") are unchanged.
+func rowLabel(key string) string {
+	parts := strings.Split(key, ".")
+	if len(parts) >= 3 {
+		return strings.Join(parts[2:], ".")
+	}
+	if len(parts) == 2 {
+		return parts[1]
+	}
+	return key
+}
+
 // prettify turns a raw section segment into a header label:
 // "text_transformations" -> "Text transformations".
 func prettify(name string) string {
@@ -236,7 +253,7 @@ func (gs *groupSet) finalize(p *presets.Preset, totalOptions int) editorVM {
 func (s *Server) rowFor(opt schema.Option, val any, present bool) rowVM {
 	r := rowVM{
 		Key:         opt.Key,
-		Label:       opt.Label,
+		Label:       rowLabel(opt.Key),
 		Kind:        string(opt.Kind),
 		Enum:        opt.Enum,
 		StrValue:    normalizeStr(val),
