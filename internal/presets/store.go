@@ -156,3 +156,49 @@ func (s *Store) write(p *Preset) error {
 	}
 	return os.Rename(tmp, s.path(p.ID))
 }
+
+// DefaultID returns the id of the default preset, or "" if unset (UI treats "" as "defaults").
+func (s *Store) DefaultID() string {
+	b, err := os.ReadFile(s.metaPath())
+	if err != nil {
+		return ""
+	}
+	var m meta
+	if err := yaml.Unmarshal(b, &m); err != nil {
+		return ""
+	}
+	if m.Default == BuiltinID {
+		return ""
+	}
+	return m.Default
+}
+
+// SetDefault marks id as the default preset; the Builtin ("" or "defaults") clears the marker.
+func (s *Store) SetDefault(id string) error {
+	if id == "" || id == BuiltinID {
+		return s.writeMeta(meta{Default: ""})
+	}
+	if !validID(id) {
+		return fmt.Errorf("invalid preset id %q", id)
+	}
+	if _, err := os.Stat(s.path(id)); err != nil {
+		return fmt.Errorf("unknown preset %q", id)
+	}
+	return s.writeMeta(meta{Default: id})
+}
+
+// writeMeta atomically writes the _meta.yaml sidecar.
+func (s *Store) writeMeta(m meta) error {
+	if err := os.MkdirAll(s.Dir, 0o755); err != nil {
+		return err
+	}
+	b, err := yaml.Marshal(m)
+	if err != nil {
+		return err
+	}
+	tmp := s.metaPath() + ".tmp"
+	if err := os.WriteFile(tmp, b, 0o644); err != nil {
+		return err
+	}
+	return os.Rename(tmp, s.metaPath())
+}
