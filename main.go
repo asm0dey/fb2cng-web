@@ -21,7 +21,7 @@ func main() {
 	}
 	tpl, err := web.Templates()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("parse templates: %v", err)
 	}
 	jobStore := jobs.NewStore(cfg.JobsDir, cfg.JobsTTL)
 
