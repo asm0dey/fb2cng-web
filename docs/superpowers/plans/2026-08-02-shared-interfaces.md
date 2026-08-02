@@ -139,7 +139,7 @@ type Option struct {
 
 type Schema struct { Options []Option /* ordered; grouped by Group in file order */ }
 
-func Load(path string) (*Schema, error)           // parse options.json
+func Load() (*Schema, error)                       // parse the embedded options.json (//go:embed, no path/env)
 func (s *Schema) Get(key string) (Option, bool)
 func (s *Schema) Groups() []string                // group names in first-seen order
 func (s *Schema) InGroup(g string) []Option
@@ -152,6 +152,10 @@ func (o Option) IsDefault(val any) bool
 infers Kind from value type → Group = first path segment → merges descriptions
 parsed from `docs/config.md` (best-effort) → writes `internal/schema/options.json`.
 Prints a drift report vs the existing options.json (added/removed/retyped keys).
+The written `options.json` is embedded into the binary via `//go:embed` in the
+`schema` package; there is **no `SCHEMA_PATH` env and no Dockerfile COPY** — the
+file ships inside the compiled binary the same way `internal/web` assets do.
+`main.go` calls `schema.Load()` with no argument.
 
 ## HTTP / template conventions (all plans)
 
