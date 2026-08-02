@@ -111,6 +111,40 @@ func TestPresetEditorRendersGrid(t *testing.T) {
 	}
 }
 
+func TestPresetEditorRendersSections(t *testing.T) {
+	store := presets.NewStore(t.TempDir())
+	p, err := store.Create("P")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Save(p); err != nil {
+		t.Fatal(err)
+	}
+	s := &Server{schema: testSchema(t), presets: store, tpl: editorTemplates(t), runner: effRunner{}}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /settings/preset/{id}", s.handlePresetEditor)
+
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest("GET", "/settings/preset/"+p.ID, nil))
+	if rec.Code != 200 {
+		t.Fatalf("code=%d body=%s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, `class="opt-section`) {
+		t.Fatalf("no nested section rendered: %s", body)
+	}
+	if !strings.Contains(body, `data-section="images"`) {
+		t.Fatal("images section header missing")
+	}
+	if !strings.Contains(body, `<span class="opt-section-name">Images</span>`) {
+		t.Fatal("prettified Images label missing")
+	}
+	// optimize row still rendered (now nested inside the images section)
+	if !strings.Contains(body, `name="document.images.optimize"`) {
+		t.Fatal("optimize control missing after restructure")
+	}
+}
+
 func TestPresetSaveSparse(t *testing.T) {
 	store := presets.NewStore(t.TempDir())
 	p, err := store.Create("P")
