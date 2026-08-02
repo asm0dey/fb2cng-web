@@ -3,3 +3,8 @@
 
 # schemagen/go:generate byproduct (fbc writes a debug log to CWD)
 fbc.log
+
+# local UI-review artifacts
+.playwright-mcp/
+*.png
+/fb2cng-web
