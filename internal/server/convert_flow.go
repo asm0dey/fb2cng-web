@@ -331,7 +331,7 @@ func (s *Server) handleZip(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleLog(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	input := r.PathValue("file")
-	if strings.ContainsAny(input, `/\`) || strings.Contains(input, "..") {
+	if !jobs.ValidID(id) || strings.ContainsAny(input, `/\`) || strings.Contains(input, "..") {
 		http.NotFound(w, r)
 		return
 	}

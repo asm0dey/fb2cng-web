@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"archive/zip"
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -14,6 +15,9 @@ import (
 // WriteZip streams every output file under <id>/out/ into w as one flat zip,
 // suffixing basename collisions (book.epub, book-1.epub, ...).
 func (s *Store) WriteZip(id string, w io.Writer) error {
+	if !ValidID(id) {
+		return fmt.Errorf("invalid id %q", id)
+	}
 	outRoot := filepath.Join(s.root(id), "out")
 	zw := zip.NewWriter(w)
 	defer zw.Close()
