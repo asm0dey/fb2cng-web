@@ -25,11 +25,21 @@ type rowVM struct {
 	IsTemplate  bool // output_name_template -> textarea + preview
 }
 
-type groupVM struct {
-	Name    string
+type sectionVM struct {
+	Name    string // raw key segment; used for data-section and search
+	Label   string // prettified header
 	Total   int
 	Changed int
 	Rows    []rowVM
+}
+
+type groupVM struct {
+	Name     string
+	Total    int
+	Changed  int
+	Flat     bool    // len(Sections) == 1 -> template renders rows directly
+	Rows     []rowVM // build-time scratch; partitioned into Sections in finalize
+	Sections []sectionVM
 }
 
 type effectiveVM struct {
@@ -156,17 +166,84 @@ func appendSyntheticRows(gs *groupSet, flat map[string]any, used map[string]bool
 	}
 }
 
+// sectionName derives a group's sub-section from an option key: the 2nd path
+// segment when the key nests (document.images.optimize -> "images"), else
+// "general" for bare group options (document.fix_zip -> "general").
+func sectionName(key string) string {
+	parts := strings.Split(key, ".")
+	if len(parts) >= 3 {
+		return parts[1]
+	}
+	return "general"
+}
+
+// rowLabel is the option's display label within its section: the key path
+// after the section segment, so keys nested deeper than a section stay
+// distinguishable. "document.vignettes.chapter.end" -> "chapter.end",
+// "document.text_transformations.speech.enable" -> "speech.enable". Section-
+// level keys ("document.images.optimize") and bare group keys
+// ("document.output_name_template") are unchanged.
+func rowLabel(key string) string {
+	parts := strings.Split(key, ".")
+	if len(parts) >= 3 {
+		return strings.Join(parts[2:], ".")
+	}
+	if len(parts) == 2 {
+		return parts[1]
+	}
+	return key
+}
+
+// prettify turns a raw section segment into a header label:
+// "text_transformations" -> "Text transformations".
+func prettify(name string) string {
+	s := strings.ReplaceAll(name, "_", " ")
+	if s == "" {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+// partition splits a group's rows into sections, preserving first-seen order.
+func partition(rows []rowVM) []sectionVM {
+	var order []string
+	byName := map[string]*sectionVM{}
+	for _, r := range rows {
+		name := sectionName(r.Key)
+		sec, ok := byName[name]
+		if !ok {
+			sec = &sectionVM{Name: name, Label: prettify(name)}
+			byName[name] = sec
+			order = append(order, name)
+		}
+		sec.Rows = append(sec.Rows, r)
+	}
+	out := make([]sectionVM, 0, len(order))
+	for _, n := range order {
+		sec := byName[n]
+		sec.Total = len(sec.Rows)
+		for _, r := range sec.Rows {
+			if r.Changed {
+				sec.Changed++
+			}
+		}
+		out = append(out, *sec)
+	}
+	return out
+}
+
 // finalize computes per-group and total change counts and returns the VM.
 func (gs *groupSet) finalize(p *presets.Preset, totalOptions int) editorVM {
 	vm := editorVM{Preset: p, TotalOptions: totalOptions}
 	for _, name := range gs.order {
 		g := gs.byName[name]
-		g.Total = len(g.Rows)
-		for _, row := range g.Rows {
-			if row.Changed {
-				g.Changed++
-				vm.ChangedCount++
-			}
+		g.Sections = partition(g.Rows)
+		g.Rows = nil
+		g.Flat = len(g.Sections) == 1
+		for _, sec := range g.Sections {
+			g.Total += sec.Total
+			g.Changed += sec.Changed
+			vm.ChangedCount += sec.Changed
 		}
 		vm.Groups = append(vm.Groups, *g)
 	}
@@ -176,7 +253,7 @@ func (gs *groupSet) finalize(p *presets.Preset, totalOptions int) editorVM {
 func (s *Server) rowFor(opt schema.Option, val any, present bool) rowVM {
 	r := rowVM{
 		Key:         opt.Key,
-		Label:       opt.Label,
+		Label:       rowLabel(opt.Key),
 		Kind:        string(opt.Kind),
 		Enum:        opt.Enum,
 		StrValue:    normalizeStr(val),

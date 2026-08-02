@@ -269,6 +269,20 @@ details.logs > summary::-webkit-details-marker { display: none; }
 .opt-group.has-changes > .opt-group-sum { border-left: 3px solid var(--changed); padding-left: 17px; }
 .opt-group.has-changes > .opt-group-sum .grp-changed { color: var(--changed); font-weight: 600; }
 
+.opt-section { border-top: 1px solid var(--line); }
+.opt-section-sum {
+  display: flex; gap: 8px; align-items: center;
+  padding: 8px 20px 8px 30px; cursor: pointer; list-style: none;
+  font-size: 12px; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--fg-muted);
+}
+.opt-section-sum::-webkit-details-marker { display: none; }
+.opt-section[open] > .opt-section-sum .caret { transform: rotate(90deg); }
+.opt-section-name { color: var(--fg); }
+.opt-section-count { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--fg-muted); }
+.opt-section.has-changes > .opt-section-sum { border-left: 3px solid var(--changed); padding-left: 27px; }
+.opt-section.has-changes > .opt-section-sum .sec-changed { color: var(--changed); font-weight: 600; }
+
 .option-row {
   display: grid; grid-template-columns: minmax(180px, 300px) 200px minmax(0, 1fr); gap: 16px; align-items: center;
   padding: 7px 20px; border-bottom: 1px solid var(--line); min-height: 40px;

@@ -10,7 +10,7 @@ func TestTemplatesParse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"base", "convert", "convert_card"} {
+	for _, name := range []string{"base", "convert", "convert_card", "editor", "optrow"} {
 		if tpl.Lookup(name) == nil {
 			t.Fatalf("template %q not defined", name)
 		}
@@ -34,6 +34,7 @@ func TestAppCSSCarriesTokens(t *testing.T) {
 		// the two extra dark rules: log pre near-black + success/error tints
 		"oklch(.15 .01 255)",
 		"[data-theme=",
+		".opt-section-sum",
 	} {
 		if !strings.Contains(css, tok) {
 			t.Errorf("app.css missing %q", tok)

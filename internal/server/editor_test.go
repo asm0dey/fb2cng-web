@@ -111,6 +111,40 @@ func TestPresetEditorRendersGrid(t *testing.T) {
 	}
 }
 
+func TestPresetEditorRendersSections(t *testing.T) {
+	store := presets.NewStore(t.TempDir())
+	p, err := store.Create("P")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Save(p); err != nil {
+		t.Fatal(err)
+	}
+	s := &Server{schema: testSchema(t), presets: store, tpl: editorTemplates(t), runner: effRunner{}}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /settings/preset/{id}", s.handlePresetEditor)
+
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest("GET", "/settings/preset/"+p.ID, nil))
+	if rec.Code != 200 {
+		t.Fatalf("code=%d body=%s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, `class="opt-section`) {
+		t.Fatalf("no nested section rendered: %s", body)
+	}
+	if !strings.Contains(body, `data-section="images"`) {
+		t.Fatal("images section header missing")
+	}
+	if !strings.Contains(body, `<span class="opt-section-name">Images</span>`) {
+		t.Fatal("prettified Images label missing")
+	}
+	// optimize row still rendered (now nested inside the images section)
+	if !strings.Contains(body, `name="document.images.optimize"`) {
+		t.Fatal("optimize control missing after restructure")
+	}
+}
+
 func TestPresetSaveSparse(t *testing.T) {
 	store := presets.NewStore(t.TempDir())
 	p, err := store.Create("P")
@@ -253,6 +287,122 @@ func TestPresetSaveKeepsValidInt(t *testing.T) {
 	}
 	if v.(int) != 40 {
 		t.Fatalf("valid int override wrong value: %v", v)
+	}
+}
+
+func TestRowLabel(t *testing.T) {
+	cases := map[string]string{
+		"document.images.optimize":                    "optimize",
+		"document.output_name_template":               "output_name_template",
+		"document.text_transformations.speech.enable": "speech.enable",
+		"document.images.cover.default_image_path":    "cover.default_image_path",
+		"document.stylesheet_path":                    "stylesheet_path",
+		"document.vignettes.chapter.end":              "chapter.end",
+		"version":                                     "version",
+	}
+	for k, want := range cases {
+		if got := rowLabel(k); got != want {
+			t.Errorf("rowLabel(%q) = %q, want %q", k, got, want)
+		}
+	}
+}
+
+// TestBuildEditorVMDeepLabels covers keys nested deeper than a section: they
+// group under the section (2nd segment) but keep the remaining path as their
+// row label so same-leaf keys stay distinguishable.
+func TestBuildEditorVMDeepLabels(t *testing.T) {
+	s := &Server{schema: &schema.Schema{Options: []schema.Option{
+		{Key: "document.vignettes.chapter.end", Group: "document", Label: "end", Kind: schema.KindString, Default: ""},
+		{Key: "document.vignettes.book.title_top", Group: "document", Label: "title_top", Kind: schema.KindString, Default: ""},
+	}}}
+	vm := s.buildEditorVM(&presets.Preset{}, map[string]any{})
+	var vig *sectionVM
+	for i := range vm.Groups {
+		if vm.Groups[i].Name != "document" {
+			continue
+		}
+		for j := range vm.Groups[i].Sections {
+			if vm.Groups[i].Sections[j].Name == "vignettes" {
+				vig = &vm.Groups[i].Sections[j]
+			}
+		}
+	}
+	if vig == nil {
+		t.Fatalf("no vignettes section in %+v", vm.Groups)
+	}
+	if vig.Label != "Vignettes" {
+		t.Errorf("section label = %q, want Vignettes", vig.Label)
+	}
+	if len(vig.Rows) != 2 || vig.Rows[0].Label != "chapter.end" || vig.Rows[1].Label != "book.title_top" {
+		t.Errorf("row labels = %v, want [chapter.end book.title_top]",
+			[]string{vig.Rows[0].Label, vig.Rows[1].Label})
+	}
+}
+
+func TestPrettify(t *testing.T) {
+	cases := map[string]string{
+		"general":              "General",
+		"images":               "Images",
+		"text_transformations": "Text transformations",
+		"page_map":             "Page map",
+		"":                     "",
+	}
+	for in, want := range cases {
+		if got := prettify(in); got != want {
+			t.Errorf("prettify(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestBuildEditorVMSections(t *testing.T) {
+	s := &Server{schema: &schema.Schema{Options: []schema.Option{
+		{Key: "document.toc_type", Group: "document", Label: "toc_type", Kind: schema.KindString, Default: "normal"},
+		{Key: "document.images.optimize", Group: "document", Label: "optimize", Kind: schema.KindBool, Default: true},
+		{Key: "document.images.jpeg_quality_level", Group: "document", Label: "jpeg_quality_level", Kind: schema.KindInt, Default: float64(75)},
+		{Key: "version", Group: "version", Label: "version", Kind: schema.KindString, Default: "2.0"},
+	}}}
+	// buildEditorVM's "flat" param is an already-flattened dotted-key map (as
+	// produced by flattenOverrides and passed by every real caller), not a
+	// nested map — use the dotted form here to match that contract.
+	vm := s.buildEditorVM(&presets.Preset{}, map[string]any{
+		"document.images.jpeg_quality_level": 40,
+	})
+
+	find := func(name string) groupVM {
+		t.Helper()
+		for _, g := range vm.Groups {
+			if g.Name == name {
+				return g
+			}
+		}
+		t.Fatalf("group %q not found in %+v", name, vm.Groups)
+		return groupVM{}
+	}
+
+	doc := find("document")
+	if doc.Flat {
+		t.Fatal("document has 2 sections, must not be Flat")
+	}
+	if len(doc.Sections) != 2 {
+		t.Fatalf("want 2 sections, got %d: %+v", len(doc.Sections), doc.Sections)
+	}
+	if doc.Sections[0].Name != "general" || doc.Sections[0].Label != "General" {
+		t.Fatalf("section 0 = %+v, want general/General", doc.Sections[0])
+	}
+	if doc.Sections[1].Name != "images" || doc.Sections[1].Label != "Images" {
+		t.Fatalf("section 1 = %+v, want images/Images", doc.Sections[1])
+	}
+	if len(doc.Sections[1].Rows) != 2 || doc.Sections[1].Rows[0].Key != "document.images.optimize" {
+		t.Fatalf("images section rows wrong: %+v", doc.Sections[1].Rows)
+	}
+	if doc.Sections[1].Changed != 1 { // jpeg override differs from default
+		t.Fatalf("images Changed = %d, want 1", doc.Sections[1].Changed)
+	}
+	if doc.Total != 3 || doc.Changed != 1 {
+		t.Fatalf("group totals wrong: Total=%d Changed=%d", doc.Total, doc.Changed)
+	}
+	if ver := find("version"); !ver.Flat || len(ver.Sections) != 1 {
+		t.Fatalf("version must be Flat single-section: %+v", ver)
 	}
 }
 
