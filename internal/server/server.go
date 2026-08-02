@@ -57,6 +57,10 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /jobs/{id}/log/{file}", s.handleLog)
 	mux.HandleFunc("POST /jobs/{id}/retry", s.handleRetry)
 	mux.HandleFunc("GET /settings", s.handleSettings)
+	mux.HandleFunc("POST /settings/preset", s.handlePresetCreate)
+	mux.HandleFunc("POST /settings/preset/{id}/duplicate", s.handlePresetDuplicate)
+	mux.HandleFunc("POST /settings/preset/{id}/delete", s.handlePresetDelete)
+	mux.HandleFunc("POST /settings/preset/{id}/default", s.handlePresetDefault)
 	mux.Handle("GET /static/", http.FileServer(http.FS(s.static)))
 	return ForwardAuth(s.cfg.ForwardAuth, s.cfg.TrustedProxies, mux)
 }
