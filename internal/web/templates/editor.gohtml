@@ -1,0 +1,99 @@
+{{define "editor"}}
+<form id="preset-form" class="editor" method="post" action="/settings/preset/{{.Preset.ID}}"
+      hx-post="/settings/preset/{{.Preset.ID}}/effective"
+      hx-trigger="change delay:300ms"
+      hx-target="#effective" hx-swap="innerHTML">
+  <div class="editor-toolbar">
+    <a class="back-link" href="/settings">← Presets</a>
+    <input class="preset-name" type="text" name="name" value="{{.Preset.Name}}" aria-label="Preset name">
+    <span class="changed-summary">{{.ChangedCount}} of {{.TotalOptions}} options changed</span>
+    <label class="tb-check"><input type="checkbox" name="is_default" value="true" {{if .IsDefaultPreset}}checked{{end}}> Default preset</label>
+    <input class="option-search" type="search" id="option-search" placeholder="Search options…" aria-label="Search options">
+    <label class="tb-check"><input type="checkbox" id="changed-only"> Changed only</label>
+    <span class="tb-spacer"></span>
+    <button class="save-btn" type="submit">Save preset</button>
+  </div>
+
+  <div class="editor-grid">
+    <div class="option-list">
+      {{range .Groups}}
+      <div class="group-header" data-group="{{.Name}}">{{.Name}} <span class="group-count">{{.Total}} options · {{.Changed}} changed</span></div>
+      {{range .Rows}}
+      {{$row := .}}
+      <div class="option-row{{if .Changed}} changed{{end}}{{if .IsTemplate}} template-row{{end}}" data-path="{{.Key}}">
+        <span class="option-key">{{.Label}}{{if .Changed}} <span class="changed-dot">•</span>{{end}}</span>
+        <div class="option-control">
+          {{if eq .Kind "bool"}}
+            <input type="hidden" name="{{.Key}}" value="false">
+            <input type="checkbox" id="opt-{{.Key}}" name="{{.Key}}" value="true" data-default="{{.DefaultStr}}" {{if .Checked}}checked{{end}}>
+          {{else if eq .Kind "int"}}
+            <input type="number" id="opt-{{.Key}}" name="{{.Key}}" value="{{.StrValue}}" data-default="{{.DefaultStr}}">
+          {{else if eq .Kind "enum"}}
+            <select id="opt-{{.Key}}" name="{{.Key}}" data-default="{{.DefaultStr}}">
+              {{range .Enum}}<option value="{{.}}"{{if eq $row.StrValue .}} selected{{end}}>{{.}}</option>{{end}}
+            </select>
+          {{else if .IsTemplate}}
+            <div class="template-wrap">
+              <textarea id="opt-{{.Key}}" name="{{.Key}}" rows="3" class="template-input" data-default="{{.DefaultStr}}">{{.StrValue}}</textarea>
+              <div class="filename-preview" data-for="opt-{{.Key}}"></div>
+            </div>
+          {{else}}
+            <input type="text" id="opt-{{.Key}}" name="{{.Key}}" value="{{.StrValue}}" data-default="{{.DefaultStr}}">
+          {{end}}
+        </div>
+        <span class="option-meta">{{if .Description}}{{.Description}} · {{end}}{{if .Known}}<span class="option-default">default {{.DefaultStr}}</span>{{end}}{{if .Changed}} · <a class="reset" href="#" data-target="opt-{{.Key}}">reset</a>{{end}}</span>
+      </div>
+      {{end}}
+      {{end}}
+    </div>
+
+    <aside id="effective" class="effective">
+      {{template "_effective" .Effective}}
+    </aside>
+  </div>
+</form>
+
+<script>
+(function () {
+  var form = document.getElementById('preset-form');
+  if (!form) return;
+  var search = document.getElementById('option-search');
+  var changedOnly = document.getElementById('changed-only');
+  function apply() {
+    var q = (search && search.value || '').toLowerCase();
+    var only = changedOnly && changedOnly.checked;
+    form.querySelectorAll('.option-list .group-header').forEach(function (h) {
+      var shown = 0, row = h.nextElementSibling;
+      while (row && row.classList.contains('option-row')) {
+        var path = (row.getAttribute('data-path') || '').toLowerCase();
+        var match = path.indexOf(q) !== -1;
+        if (only && !row.classList.contains('changed')) match = false;
+        row.style.display = match ? '' : 'none';
+        if (match) shown++;
+        row = row.nextElementSibling;
+      }
+      h.style.display = shown ? '' : 'none';
+    });
+  }
+  if (search) search.addEventListener('input', apply);
+  if (changedOnly) changedOnly.addEventListener('change', apply);
+  form.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t.classList.contains('reset')) return;
+    e.preventDefault();
+    var el = document.getElementById(t.getAttribute('data-target'));
+    if (!el) return;
+    var d = el.getAttribute('data-default') || '';
+    if (el.type === 'checkbox') el.checked = (d === 'true');
+    else el.value = d;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  form.addEventListener('input', function (e) {
+    var t = e.target;
+    if (!t.classList.contains('template-input')) return;
+    var prev = form.querySelector('.filename-preview[data-for="' + t.id + '"]');
+    if (prev) prev.textContent = '→ ' + t.value.replace(/\{\{[^}]*\}\}/g, 'sample') + '.epub';
+  });
+})();
+</script>
+{{end}}
