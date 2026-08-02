@@ -28,7 +28,7 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		def = presets.BuiltinID
 	}
 	s.render(w, settingsData{
-		layout:    layout{Tab: "settings", ContentName: "settings"},
+		layout:    layout{Tab: "settings", ContentName: "settings", User: s.userLabel(r)},
 		DefaultID: def,
 		Presets:   list,
 	})

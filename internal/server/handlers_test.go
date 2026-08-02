@@ -349,28 +349,86 @@ func TestConvertBadExtensionOrphansNoJobDir(t *testing.T) {
 	}
 }
 
-func TestMeDisabled(t *testing.T) {
-	h := newTestServer(t, config.Config{MaxConcurrent: 1, ForwardAuth: false}, stubRunner{})
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest("GET", "/me", nil))
-	var body map[string]any
-	json.Unmarshal(rec.Body.Bytes(), &body)
-	if body["enabled"] != false {
-		t.Fatalf("expected enabled=false, got %v", body)
-	}
+// TestUserBadgeConsistentAcrossPages is the regression test for bean zc9c: the
+// header username badge had two sources of truth (server-side layout.User, set
+// inconsistently per page, masked by a client-side /me fetch that overwrote
+// #user on every page). This asserts all three full-page GET routes render the
+// same badge from the same server-side header logic: prefer Remote-Name, else
+// Remote-User, and only when forward-auth is enabled.
+func TestUserBadgeConsistentAcrossPages(t *testing.T) {
+	pages := []string{"/", "/settings", "/settings/preset/defaults"}
+
+	t.Run("RemoteName preferred", func(t *testing.T) {
+		h := newTestServer(t, config.Config{MaxConcurrent: 1, ForwardAuth: true}, stubRunner{})
+		for _, path := range pages {
+			req := httptest.NewRequest("GET", path, nil)
+			req.Header.Set("Remote-Name", "Alice")
+			req.Header.Set("Remote-User", "alice")
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, req)
+			if rec.Code != 200 {
+				t.Fatalf("%s: code=%d body=%q", path, rec.Code, rec.Body.String())
+			}
+			if !strings.Contains(rec.Body.String(), "👤 Alice") {
+				t.Errorf("%s: expected badge \"👤 Alice\", body:\n%s", path, rec.Body.String())
+			}
+		}
+	})
+
+	t.Run("falls back to Remote-User when Remote-Name absent", func(t *testing.T) {
+		h := newTestServer(t, config.Config{MaxConcurrent: 1, ForwardAuth: true}, stubRunner{})
+		for _, path := range pages {
+			req := httptest.NewRequest("GET", path, nil)
+			req.Header.Set("Remote-User", "bob")
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, req)
+			if rec.Code != 200 {
+				t.Fatalf("%s: code=%d body=%q", path, rec.Code, rec.Body.String())
+			}
+			if !strings.Contains(rec.Body.String(), "👤 bob") {
+				t.Errorf("%s: expected badge \"👤 bob\", body:\n%s", path, rec.Body.String())
+			}
+		}
+	})
+
+	t.Run("no badge when forward-auth disabled", func(t *testing.T) {
+		h := newTestServer(t, config.Config{MaxConcurrent: 1, ForwardAuth: false}, stubRunner{})
+		for _, path := range pages {
+			req := httptest.NewRequest("GET", path, nil)
+			req.Header.Set("Remote-Name", "Alice")
+			req.Header.Set("Remote-User", "alice")
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, req)
+			if rec.Code != 200 {
+				t.Fatalf("%s: code=%d body=%q", path, rec.Code, rec.Body.String())
+			}
+			if strings.Contains(rec.Body.String(), "👤") {
+				t.Errorf("%s: expected no badge with ForwardAuth=false, body:\n%s", path, rec.Body.String())
+			}
+		}
+	})
 }
 
-func TestMeEnabled(t *testing.T) {
+// TestMeRemoved is the regression test for bean zc9c: /me was the client-side
+// fetch this fix removes in favor of server-rendered layout.User (see
+// TestUserBadgeConsistentAcrossPages). There are no external API consumers, so
+// the route must simply be gone: net/http's ServeMux treats "GET /" as a
+// catch-all subtree pattern (it always matched every unregistered path, e.g.
+// /bogus, well before this fix), so an unregistered /me falls through to
+// handleIndex and renders the convert page rather than 404ing — the important
+// assertion is that the old JSON identity contract ({"enabled":...,"user":...})
+// is gone, not a particular status code.
+func TestMeRemoved(t *testing.T) {
 	h := newTestServer(t, config.Config{MaxConcurrent: 1, ForwardAuth: true}, stubRunner{})
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/me", nil)
 	req.Header.Set("Remote-User", "alice")
-	req.Header.Set("Remote-Name", "Alice Liddell")
 	h.ServeHTTP(rec, req)
-	var body map[string]any
-	json.Unmarshal(rec.Body.Bytes(), &body)
-	if body["enabled"] != true || body["user"] != "alice" || body["name"] != "Alice Liddell" {
-		t.Fatalf("unexpected /me body: %v", body)
+	if ct := rec.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/html") {
+		t.Fatalf("expected /me to fall through to the HTML index page (no dedicated JSON route), got Content-Type=%q body=%q", ct, rec.Body.String())
+	}
+	if strings.Contains(rec.Body.String(), `"enabled"`) {
+		t.Fatalf("the old /me JSON identity contract must be gone, got body=%q", rec.Body.String())
 	}
 }
 

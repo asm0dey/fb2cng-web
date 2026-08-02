@@ -53,7 +53,6 @@ func New(cfg config.Config, runner convert.Runner, static fs.FS,
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", s.handleIndex)
-	mux.HandleFunc("GET /me", s.handleMe)
 	mux.HandleFunc("POST /convert", s.handleConvert)
 	mux.HandleFunc("GET /jobs/{id}", s.handleJobStatus)
 	mux.HandleFunc("GET /jobs/{id}/download/{file}", s.handleDownload)
@@ -70,6 +69,19 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /settings/preset/{id}/default", s.handlePresetDefault)
 	mux.Handle("GET /static/", http.FileServer(http.FS(s.static)))
 	return ForwardAuth(s.cfg.ForwardAuth, s.cfg.TrustedProxies, mux)
+}
+
+// userLabel computes the header badge's display name, the single source of
+// truth for every full-page GET handler (see bean zc9c): no label at all when
+// forward-auth is off, else Remote-Name if the proxy set it, else Remote-User.
+func (s *Server) userLabel(r *http.Request) string {
+	if !s.cfg.ForwardAuth {
+		return ""
+	}
+	if n := r.Header.Get("Remote-Name"); n != "" {
+		return n
+	}
+	return r.Header.Get(remoteUserHeader)
 }
 
 // render executes the shared "base" layout, which dispatches to the page body named by
