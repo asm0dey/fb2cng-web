@@ -36,6 +36,14 @@
     "description": "Navigation hierarchy type for device TOCs/nav maps."
   },
   {
+    "key": "document.stylesheet_path",
+    "group": "document",
+    "label": "stylesheet_path",
+    "kind": "string",
+    "default": "",
+    "description": "Path to a custom CSS stylesheet that overrides/augments the generated styles. Empty = use built-in styles."
+  },
+  {
     "key": "document.output_name_template",
     "group": "document",
     "label": "output_name_template",
@@ -188,6 +196,14 @@
     "kind": "bool",
     "default": false,
     "description": "When book does not have cover image supply one. For Amazon formats this is always enabled automatically."
+  },
+  {
+    "key": "document.images.cover.default_image_path",
+    "group": "document",
+    "label": "default_image_path",
+    "kind": "string",
+    "default": "",
+    "description": "Path to an image used as the cover when the book has none and cover.generate is on. Empty = generate a placeholder."
   },
   {
     "key": "document.images.cover.resize",

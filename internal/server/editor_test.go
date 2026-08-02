@@ -295,6 +295,8 @@ func TestRowLabel(t *testing.T) {
 		"document.images.optimize":                    "optimize",
 		"document.output_name_template":               "output_name_template",
 		"document.text_transformations.speech.enable": "speech.enable",
+		"document.images.cover.default_image_path":    "cover.default_image_path",
+		"document.stylesheet_path":                    "stylesheet_path",
 		"document.vignettes.chapter.end":              "chapter.end",
 		"version":                                     "version",
 	}
