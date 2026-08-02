@@ -96,3 +96,80 @@ func TestListEmptyDir(t *testing.T) {
 		t.Fatalf("List on missing dir = %+v, want [Defaults]", list)
 	}
 }
+
+func TestCreatePersistsAndRoundTrips(t *testing.T) {
+	s := NewStore(t.TempDir())
+	p, err := s.Create("Kindle")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.ID != "kindle" || p.Name != "Kindle" || p.UpdatedAt.IsZero() {
+		t.Fatalf("Create = %+v", p)
+	}
+	got, err := s.Get("kindle")
+	if err != nil {
+		t.Fatalf("reload: %v", err)
+	}
+	if got.Name != "Kindle" || len(got.Overrides) != 0 {
+		t.Fatalf("reloaded = %+v", got)
+	}
+}
+
+func TestCreateUniqueIDs(t *testing.T) {
+	s := NewStore(t.TempDir())
+	a, _ := s.Create("Kindle")
+	b, _ := s.Create("Kindle")
+	if a.ID == b.ID {
+		t.Fatalf("duplicate names produced same id %q", a.ID)
+	}
+	if b.ID != "kindle-2" {
+		t.Fatalf("second id = %q, want kindle-2", b.ID)
+	}
+}
+
+func TestSaveRejectsBuiltin(t *testing.T) {
+	s := NewStore(t.TempDir())
+	if err := s.Save(&Preset{ID: "defaults", Name: "x", Builtin: true}); err == nil {
+		t.Fatal("Save(builtin) should error")
+	}
+	if err := s.Save(&Preset{ID: "defaults", Name: "x"}); err == nil {
+		t.Fatal("Save(id=defaults) should error")
+	}
+}
+
+func TestSaveSparseRoundTripAndStampsTime(t *testing.T) {
+	s := NewStore(t.TempDir())
+	p, _ := s.Create("Compact")
+	p.Overrides = map[string]any{
+		"document": map[string]any{
+			"images": map[string]any{"optimize": true, "jpeg_quality_level": 70},
+		},
+	}
+	if err := s.Save(p); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.Get(p.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ChangedCount() != 2 {
+		t.Fatalf("round-tripped ChangedCount = %d, want 2", got.ChangedCount())
+	}
+	if got.UpdatedAt.IsZero() {
+		t.Fatal("Save should stamp UpdatedAt")
+	}
+	img := got.Overrides["document"].(map[string]any)["images"].(map[string]any)
+	if img["jpeg_quality_level"] != 70 || img["optimize"] != true {
+		t.Fatalf("overrides not preserved: %+v", got.Overrides)
+	}
+}
+
+func TestSaveRejectsMeta(t *testing.T) {
+	s := NewStore(t.TempDir())
+	if err := s.Save(&Preset{ID: "_meta", Name: "x"}); err == nil {
+		t.Fatal("Save(id=_meta) should error")
+	}
+	if _, err := os.Stat(filepath.Join(s.Dir, "_meta.yaml")); !os.IsNotExist(err) {
+		t.Fatalf("Save(id=_meta) must not create _meta.yaml, stat err = %v", err)
+	}
+}
