@@ -290,6 +290,21 @@ func TestPresetSaveKeepsValidInt(t *testing.T) {
 	}
 }
 
+func TestPrettify(t *testing.T) {
+	cases := map[string]string{
+		"general":              "General",
+		"images":               "Images",
+		"text_transformations": "Text transformations",
+		"page_map":             "Page map",
+		"":                     "",
+	}
+	for in, want := range cases {
+		if got := prettify(in); got != want {
+			t.Errorf("prettify(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
 func TestBuildEditorVMSections(t *testing.T) {
 	s := &Server{schema: &schema.Schema{Options: []schema.Option{
 		{Key: "document.toc_type", Group: "document", Label: "toc_type", Kind: schema.KindString, Default: "normal"},
