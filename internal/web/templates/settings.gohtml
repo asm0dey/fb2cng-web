@@ -1,5 +1,5 @@
 {{define "settings"}}
-<main class="presets-page">
+<div class="presets-page">
   <div class="presets-head">
     <h1>Presets</h1>
     <form method="post" action="/settings/preset" class="new-preset">
@@ -50,5 +50,5 @@
       <p>Presets live in <code>PRESETS_DIR/&lt;id&gt;.yaml</code>. Editing them by hand is equivalent to using this screen; the app re-reads on each request.</p>
     </div>
   </details>
-</main>
+</div>
 {{end}}
