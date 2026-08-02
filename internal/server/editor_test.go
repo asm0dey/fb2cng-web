@@ -161,6 +161,101 @@ func TestPresetSaveSparse(t *testing.T) {
 	}
 }
 
+// TestPresetSaveDropsNonNumericInt covers bean dbxm: a POST to the editor save
+// route can be crafted (bypassing the <input type=number> widget) to submit a
+// non-numeric value for a schema-declared KindInt field. parseValue must not
+// let that leak through as a string override for an int field — it should be
+// treated as "no override" and dropped, leaving the schema default in effect.
+// A valid int in the same POST must still be stored as before (no regression).
+func TestPresetSaveDropsNonNumericInt(t *testing.T) {
+	store := presets.NewStore(t.TempDir())
+	p, err := store.Create("P")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := &Server{schema: testSchema(t), presets: store}
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /settings/preset/{id}", s.handlePresetSave)
+
+	form := url.Values{}
+	form.Set("name", "Renamed")
+	form.Set("document.images.jpeg_quality_level", "abc") // non-numeric int -> must be dropped, not stored as string
+	form.Set("document.toc_type", "detailed")             // valid string override -> must still be stored (no regression)
+
+	req := httptest.NewRequest("POST", "/settings/preset/"+p.ID, strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("code=%d body=%s", rec.Code, rec.Body.String())
+	}
+
+	got, err := store.Get(p.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc, _ := got.Overrides["document"].(map[string]any)
+	if doc == nil {
+		t.Fatalf("overrides missing document: %+v", got.Overrides)
+	}
+	if img, _ := doc["images"].(map[string]any); img != nil {
+		if v, ok := img["jpeg_quality_level"]; ok {
+			t.Fatalf("non-numeric int override should be dropped, not stored: %v (%T)", v, v)
+		}
+	}
+	if doc["toc_type"] != "detailed" {
+		t.Fatalf("valid string override should still be saved: %v", doc["toc_type"])
+	}
+}
+
+// TestPresetSaveKeepsValidInt confirms a valid int POST value is still stored
+// as a Go int (not a string), so schema.Option.IsDefault's normalize-based
+// comparison and downstream convert.BuildConfig still see the right type.
+func TestPresetSaveKeepsValidInt(t *testing.T) {
+	store := presets.NewStore(t.TempDir())
+	p, err := store.Create("P")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := &Server{schema: testSchema(t), presets: store}
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /settings/preset/{id}", s.handlePresetSave)
+
+	form := url.Values{}
+	form.Set("document.images.jpeg_quality_level", "40")
+
+	req := httptest.NewRequest("POST", "/settings/preset/"+p.ID, strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("code=%d body=%s", rec.Code, rec.Body.String())
+	}
+
+	got, err := store.Get(p.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc, _ := got.Overrides["document"].(map[string]any)
+	if doc == nil {
+		t.Fatalf("overrides missing document: %+v", got.Overrides)
+	}
+	img, _ := doc["images"].(map[string]any)
+	if img == nil {
+		t.Fatalf("overrides missing document.images: %+v", doc)
+	}
+	v, ok := img["jpeg_quality_level"]
+	if !ok {
+		t.Fatal("valid int override should be stored")
+	}
+	if _, isInt := v.(int); !isInt {
+		t.Fatalf("valid int override should be stored as Go int, got %T: %v", v, v)
+	}
+	if v.(int) != 40 {
+		t.Fatalf("valid int override wrong value: %v", v)
+	}
+}
+
 // effRunner is a Runner whose Validate outcome is controlled by err.
 type effRunner struct{ err error }
 
