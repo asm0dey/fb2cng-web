@@ -137,6 +137,17 @@ func TestSweepRemovesOldJobs(t *testing.T) {
 	oldID, _ := s.Create("defaults", "epub3")
 	newID, _ := s.Create("defaults", "epub3")
 
+	// The old job is finished (Done: true) — sweep should reclaim it once
+	// it's past the TTL.
+	st, err := s.Load(oldID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st.Done = true
+	if err := s.Save(oldID, st); err != nil {
+		t.Fatal(err)
+	}
+
 	// Age the old job's dir past the TTL.
 	past := time.Now().Add(-2 * time.Hour)
 	if err := os.Chtimes(filepath.Join(s.Dir, oldID), past, past); err != nil {
@@ -152,5 +163,84 @@ func TestSweepRemovesOldJobs(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(s.Dir, newID)); err != nil {
 		t.Fatalf("new job should survive: %v", err)
+	}
+}
+
+// TestSweepPreservesRunningJobPastTTL is the regression test for bean tz9x: a
+// job that is still running (status.json Done: false) must survive Sweep
+// even once its dir's mtime is older than the TTL, because mtime only tracks
+// the last status.json write — a long-running conversion (or a queue
+// backlog) can leave a LIVE job dir untouched past the TTL while it's still
+// working. Deleting it out from under the running job would 404 its
+// eventual downloads.
+func TestSweepPreservesRunningJobPastTTL(t *testing.T) {
+	s := NewStore(t.TempDir(), time.Hour)
+	id, _ := s.Create("defaults", "epub3") // Create leaves Done: false (zero value): a running job.
+
+	past := time.Now().Add(-2 * time.Hour)
+	if err := os.Chtimes(filepath.Join(s.Dir, id), past, past); err != nil {
+		t.Fatal(err)
+	}
+
+	removed := s.Sweep(time.Now())
+	if removed != 0 {
+		t.Fatalf("expected 0 removed (job still running), got %d", removed)
+	}
+	if _, err := os.Stat(filepath.Join(s.Dir, id)); err != nil {
+		t.Fatalf("running job should survive sweep: %v", err)
+	}
+}
+
+// TestSweepRemovesDoneJobPastTTL confirms the not-done guard doesn't block
+// legitimate cleanup: a job whose status.json reports Done: true is still
+// reclaimed once past the TTL.
+func TestSweepRemovesDoneJobPastTTL(t *testing.T) {
+	s := NewStore(t.TempDir(), time.Hour)
+	id, _ := s.Create("defaults", "epub3")
+	st, err := s.Load(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st.Done = true
+	if err := s.Save(id, st); err != nil {
+		t.Fatal(err)
+	}
+
+	past := time.Now().Add(-2 * time.Hour)
+	if err := os.Chtimes(filepath.Join(s.Dir, id), past, past); err != nil {
+		t.Fatal(err)
+	}
+
+	removed := s.Sweep(time.Now())
+	if removed != 1 {
+		t.Fatalf("expected 1 removed (job done), got %d", removed)
+	}
+	if _, err := os.Stat(filepath.Join(s.Dir, id)); !os.IsNotExist(err) {
+		t.Fatalf("done job should be removed, err=%v", err)
+	}
+}
+
+// TestSweepRemovesJobPastTTLWithMissingStatus preserves existing behavior for
+// dirs with no readable status.json: treated as an abandoned/incomplete job
+// past its TTL, safe to delete.
+func TestSweepRemovesJobPastTTLWithMissingStatus(t *testing.T) {
+	s := NewStore(t.TempDir(), time.Hour)
+	dir := filepath.Join(s.Dir, "deadbeefdeadbeef")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// No status.json written.
+
+	past := time.Now().Add(-2 * time.Hour)
+	if err := os.Chtimes(dir, past, past); err != nil {
+		t.Fatal(err)
+	}
+
+	removed := s.Sweep(time.Now())
+	if removed != 1 {
+		t.Fatalf("expected 1 removed (no status.json), got %d", removed)
+	}
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Fatalf("dir with no status.json should be removed, err=%v", err)
 	}
 }
