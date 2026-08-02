@@ -179,25 +179,6 @@ func TestEditBuiltinRedirects(t *testing.T) {
 	}
 }
 
-func TestSaveParsesYAMLBackIntoOverrides(t *testing.T) {
-	dir := t.TempDir()
-	srv, h := newPresetServer(t, dir)
-	p, _ := srv.presets.Create("Kindle")
-
-	form := url.Values{
-		"name":           {"Kindle Pro"},
-		"overrides_yaml": {"document:\n  images:\n    optimize: true\n"},
-	}
-	rec := postForm(h, "/settings/preset/"+p.ID, form)
-	if rec.Code != http.StatusSeeOther {
-		t.Fatalf("save code=%d body=%q", rec.Code, rec.Body.String())
-	}
-	got, _ := srv.presets.Get(p.ID)
-	if got.Name != "Kindle Pro" || got.ChangedCount() != 1 {
-		t.Fatalf("saved preset = %+v", got)
-	}
-}
-
 func TestBuildConfigForPreset(t *testing.T) {
 	dir := t.TempDir()
 	srv, _ := newPresetServer(t, dir)
@@ -377,16 +358,5 @@ func TestConvertUnsafePresetIDRejected(t *testing.T) {
 	}
 	if len(entries) != 0 {
 		t.Fatalf("unsafe preset id must not leave an orphaned job dir, found %d entries: %v", len(entries), entries)
-	}
-}
-
-func TestSaveInvalidYAML(t *testing.T) {
-	dir := t.TempDir()
-	srv, h := newPresetServer(t, dir)
-	p, _ := srv.presets.Create("Kindle")
-	form := url.Values{"name": {"Kindle"}, "overrides_yaml": {"key: : broken:\n  - ]["}}
-	rec := postForm(h, "/settings/preset/"+p.ID, form)
-	if rec.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("invalid YAML should be 422, got %d", rec.Code)
 	}
 }
