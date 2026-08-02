@@ -14,8 +14,15 @@ files, get EPUB (or kepub/kfx/azw8/pdf) back automatically.
 > base ships a writable `/tmp`, so this works out of the box. If you run with a read-only root
 > filesystem, mount a writable `/tmp` (e.g. `--tmpfs /tmp:rw,mode=1777`, as the compose example shows).
 
-Open http://localhost:8080. Defaults work out of the box; expand **Settings** to change
-format, ToC, images, footnotes, or paste/upload a full fbc YAML config.
+Open http://localhost:8080. Drop your books on the **Convert** page and pick a preset —
+defaults work out of the box.
+
+The **Settings** tab manages reusable **presets**: create, duplicate, delete, or set a
+default. Each preset opens a full **option editor** (search, grouped sections, per-option
+help, live "changed" markers) covering every `fbc` option — format, ToC, images,
+footnotes, filename templates, and more. Overrides are stored sparsely (only what differs
+from the fbc defaults), and an **effective-config** pane shows the merged YAML that will
+actually run.
 
 ## Versioning & images
 
@@ -61,8 +68,15 @@ not run in CI, so install it after cloning.
 | `MAX_CONCURRENT` | `3` | max simultaneous conversions |
 | `AUTH_FORWARD_AUTH` | `false` | trust reverse-proxy `Remote-*` headers |
 | `TRUSTED_PROXIES` | (empty) | comma-separated source IPs allowed to set `Remote-*` |
+| `PRESETS_DIR` | per-user config dir | where presets are stored (persistent) |
+| `JOBS_DIR` | per-user cache dir | scratch dir for in-flight conversions (swept on TTL) |
+| `JOBS_TTL` | `1h` | max age of a finished job before its files are swept |
+| `FBC_TIMEOUT` | `10m` | max time a single `fbc` conversion may run before it's killed |
 
-> In the Docker image, `FBC_BIN` is preset to `/usr/local/bin/fbc`.
+> In the Docker image, `FBC_BIN` is preset to `/usr/local/bin/fbc`, `PRESETS_DIR` to
+> `/data/presets` (mount a volume there to persist presets), and `JOBS_DIR` to
+> `/tmp/fb2cng-jobs`. Outside the container, unset `PRESETS_DIR`/`JOBS_DIR` default to your
+> OS per-user config/cache dirs (e.g. `~/.config/fb2cng/presets`, `~/.cache/fb2cng/jobs`).
 
 ## Optional authentication (Authelia forward-auth)
 
