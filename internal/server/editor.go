@@ -185,6 +185,7 @@ func (s *Server) handlePresetEditor(w http.ResponseWriter, r *http.Request) {
 	vm.layout = layout{Tab: "settings", ContentName: "editor", User: r.Header.Get("Remote-User")}
 	vm.IsDefaultPreset = s.presets.DefaultID() == id ||
 		(s.presets.DefaultID() == "" && id == "defaults")
+	vm.Effective = s.computeEffective(r.Context(), flat)
 
 	// Render the "editor" content template through Plan 1's base layout.
 	s.render(w, vm)

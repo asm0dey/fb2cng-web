@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -73,7 +75,7 @@ func TestPresetEditorRendersGrid(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := &Server{schema: testSchema(t), presets: store, tpl: editorTemplates(t)}
+	s := &Server{schema: testSchema(t), presets: store, tpl: editorTemplates(t), runner: effRunner{}}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /settings/preset/{id}", s.handlePresetEditor)
 
@@ -156,5 +158,81 @@ func TestPresetSaveSparse(t *testing.T) {
 	}
 	if img["optimize"] != false {
 		t.Fatalf("optimize should be saved as false: %v", img["optimize"])
+	}
+}
+
+// effRunner is a Runner whose Validate outcome is controlled by err.
+type effRunner struct{ err error }
+
+func (effRunner) DumpDefaults(context.Context) ([]byte, error) { return nil, nil }
+func (effRunner) Convert(context.Context, string, string, string, string) ([]string, error) {
+	return nil, nil
+}
+func (effRunner) ConvertLogged(context.Context, string, string, string, string, string) ([]string, error) {
+	return nil, nil
+}
+func (e effRunner) Validate(context.Context, string) error { return e.err }
+
+func TestEffectiveValid(t *testing.T) {
+	store := presets.NewStore(t.TempDir())
+	p, _ := store.Create("P")
+	s := &Server{schema: testSchema(t), presets: store, tpl: editorTemplates(t), runner: effRunner{}}
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /settings/preset/{id}/effective", s.handlePresetEffective)
+
+	form := url.Values{}
+	form.Set("document.images.jpeg_quality_level", "40")
+	req := httptest.NewRequest("POST", "/settings/preset/"+p.ID+"/effective", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != 200 {
+		t.Fatalf("code=%d", rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, `class="validity valid"`) {
+		t.Fatalf("expected valid chip: %s", body)
+	}
+	if !strings.Contains(body, "1 override") {
+		t.Fatalf("override count wrong: %s", body)
+	}
+	if !strings.Contains(body, "jpeg_quality_level: 40") {
+		t.Fatalf("merged YAML missing override: %s", body)
+	}
+}
+
+func TestEffectiveInvalid(t *testing.T) {
+	store := presets.NewStore(t.TempDir())
+	p, _ := store.Create("P")
+	s := &Server{schema: testSchema(t), presets: store, tpl: editorTemplates(t), runner: effRunner{err: errors.New("bad")}}
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /settings/preset/{id}/effective", s.handlePresetEffective)
+
+	form := url.Values{}
+	form.Set("document.images.jpeg_quality_level", "40")
+	req := httptest.NewRequest("POST", "/settings/preset/"+p.ID+"/effective", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if !strings.Contains(rec.Body.String(), `class="validity invalid"`) {
+		t.Fatalf("expected invalid chip: %s", rec.Body.String())
+	}
+}
+
+func TestPresetEditorShowsEffectiveOnLoad(t *testing.T) {
+	store := presets.NewStore(t.TempDir())
+	p, _ := store.Create("P")
+	p.Overrides = map[string]any{"document": map[string]any{"images": map[string]any{"jpeg_quality_level": 40}}}
+	if err := store.Save(p); err != nil {
+		t.Fatal(err)
+	}
+	s := &Server{schema: testSchema(t), presets: store, tpl: editorTemplates(t), runner: effRunner{}}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /settings/preset/{id}", s.handlePresetEditor)
+
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest("GET", "/settings/preset/"+p.ID, nil))
+	if !strings.Contains(rec.Body.String(), `class="validity valid"`) {
+		t.Fatalf("effective pane not populated on load: %s", rec.Body.String())
 	}
 }
