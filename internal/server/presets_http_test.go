@@ -306,12 +306,47 @@ func TestConvertAbsentPresetUsesDefaults(t *testing.T) {
 	}
 }
 
+// TestConvertUnknownPresetRejected is the regression test for bean i5e5: a
+// well-formed but unknown preset id must be rejected (422) BEFORE any job
+// state is created. Pre-fix, handleConvert created the job dir, persisted
+// inputs, and seeded status.json with StatePending rows before ever calling
+// buildConfigForPreset, so a rejected preset left an orphaned job with no
+// worker ever launched to flip it to StateFailed — it would sit Pending,
+// unreachable and unretryable, until TTL sweep.
 func TestConvertUnknownPresetRejected(t *testing.T) {
-	_, h := newPresetServer(t, t.TempDir())
+	dir := t.TempDir()
+	srv, h := newPresetServer(t, dir)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, multipartConvert(t, "book.fb2", map[string]string{"format": "epub3", "preset": "nonexistent"}))
 	if rec.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("unknown preset should be 422, got %d body=%q", rec.Code, rec.Body.String())
+	}
+	entries, err := os.ReadDir(srv.jobs.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("unknown preset must not leave an orphaned job dir, found %d entries: %v", len(entries), entries)
+	}
+}
+
+// TestConvertUnsafePresetIDRejected covers the other buildConfigForPreset
+// failure path: an id that fails presets.validID (path-traversal shaped)
+// rather than a merely-unknown-but-safe id. Same orphaning bug, same fix.
+func TestConvertUnsafePresetIDRejected(t *testing.T) {
+	dir := t.TempDir()
+	srv, h := newPresetServer(t, dir)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, multipartConvert(t, "book.fb2", map[string]string{"format": "epub3", "preset": "../evil"}))
+	if rec.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("unsafe preset id should be 422, got %d body=%q", rec.Code, rec.Body.String())
+	}
+	entries, err := os.ReadDir(srv.jobs.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("unsafe preset id must not leave an orphaned job dir, found %d entries: %v", len(entries), entries)
 	}
 }
 

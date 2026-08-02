@@ -81,8 +81,26 @@ func (s *Server) handleConvert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Resolve + build the preset config BEFORE creating any job state. If this
+	// fails (unknown-but-safe preset id, or one that fails presets.validID),
+	// the request must leave no job dir / persisted inputs / status.json
+	// behind — nothing would otherwise launch a worker to ever flip those
+	// StatePending rows to StateFailed, so the job would sit Pending,
+	// unreachable and unretryable, until TTL sweep (bean i5e5).
+	cfgBytes, err := s.buildConfigForPreset(preset)
+	if err != nil {
+		http.Error(w, "invalid preset: "+err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
 	id, err := s.jobs.Create(preset, format)
 	if err != nil {
+		http.Error(w, "server error", http.StatusInternalServerError)
+		return
+	}
+
+	cfgPath := filepath.Join(s.jobs.Dir, id, "config.yaml")
+	if err := os.WriteFile(cfgPath, cfgBytes, 0o644); err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
@@ -132,18 +150,6 @@ func (s *Server) handleConvert(w http.ResponseWriter, r *http.Request) {
 		st.Files = append(st.Files, jobs.FileResult{Input: n, State: jobs.StatePending})
 	}
 	if err := s.jobs.Save(id, st); err != nil {
-		http.Error(w, "server error", http.StatusInternalServerError)
-		return
-	}
-
-	// Write the effective config once for the whole batch (Defaults => app defaults).
-	cfgPath := filepath.Join(s.jobs.Dir, id, "config.yaml")
-	cfgBytes, err := s.buildConfigForPreset(preset)
-	if err != nil {
-		http.Error(w, "invalid preset: "+err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-	if err := os.WriteFile(cfgPath, cfgBytes, 0o644); err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
