@@ -173,3 +173,39 @@ func TestSaveRejectsMeta(t *testing.T) {
 		t.Fatalf("Save(id=_meta) must not create _meta.yaml, stat err = %v", err)
 	}
 }
+
+func TestDefaultUnset(t *testing.T) {
+	if id := NewStore(t.TempDir()).DefaultID(); id != "" {
+		t.Fatalf("DefaultID unset = %q, want \"\"", id)
+	}
+}
+
+func TestSetDefaultRoundTrip(t *testing.T) {
+	s := NewStore(t.TempDir())
+	p, _ := s.Create("Kindle")
+	if err := s.SetDefault(p.ID); err != nil {
+		t.Fatal(err)
+	}
+	if id := s.DefaultID(); id != p.ID {
+		t.Fatalf("DefaultID = %q, want %q", id, p.ID)
+	}
+}
+
+func TestSetDefaultBuiltinClears(t *testing.T) {
+	s := NewStore(t.TempDir())
+	p, _ := s.Create("Kindle")
+	s.SetDefault(p.ID)
+	if err := s.SetDefault("defaults"); err != nil {
+		t.Fatal(err)
+	}
+	if id := s.DefaultID(); id != "" {
+		t.Fatalf("DefaultID after builtin = %q, want \"\"", id)
+	}
+}
+
+func TestSetDefaultUnknown(t *testing.T) {
+	s := NewStore(t.TempDir())
+	if err := s.SetDefault("ghost"); err == nil {
+		t.Fatal("SetDefault(unknown) should error")
+	}
+}
