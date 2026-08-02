@@ -204,6 +204,9 @@ func (s *Server) collectOverrides(r *http.Request) map[string]any {
 		v := vals[len(vals)-1]
 		if opt, ok := s.schema.Get(key); ok {
 			typed := parseValue(opt.Kind, v)
+			if typed == nil {
+				continue
+			}
 			if opt.IsDefault(typed) {
 				continue
 			}
@@ -226,7 +229,7 @@ func parseValue(k schema.Kind, v string) any {
 		if n, err := strconv.Atoi(v); err == nil {
 			return n
 		}
-		return v
+		return nil
 	default:
 		return v
 	}
