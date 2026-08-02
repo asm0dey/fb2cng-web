@@ -17,6 +17,7 @@ func TestFromEnvDefaults(t *testing.T) {
 	t.Setenv("PRESETS_DIR", "")
 	t.Setenv("JOBS_DIR", "")
 	t.Setenv("JOBS_TTL", "")
+	t.Setenv("FBC_TIMEOUT", "")
 
 	got := FromEnv()
 	want := Config{
@@ -28,6 +29,7 @@ func TestFromEnvDefaults(t *testing.T) {
 		PresetsDir:     "/data/presets",
 		JobsDir:        filepath.Join(os.TempDir(), "fb2cng-jobs"),
 		JobsTTL:        time.Hour,
+		FBCTimeout:     DefaultFBCTimeout,
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("defaults: got %+v want %+v", got, want)
@@ -43,6 +45,7 @@ func TestFromEnvOverrides(t *testing.T) {
 	t.Setenv("PRESETS_DIR", "/srv/presets")
 	t.Setenv("JOBS_DIR", "/srv/jobs")
 	t.Setenv("JOBS_TTL", "30m")
+	t.Setenv("FBC_TIMEOUT", "2m")
 
 	got := FromEnv()
 	if got.Addr != ":9000" || got.FBCBin != "/opt/fbc" || got.MaxConcurrent != 5 || !got.ForwardAuth {
@@ -54,11 +57,21 @@ func TestFromEnvOverrides(t *testing.T) {
 	if got.PresetsDir != "/srv/presets" || got.JobsDir != "/srv/jobs" || got.JobsTTL != 30*time.Minute {
 		t.Fatalf("new env not applied: %+v", got)
 	}
+	if got.FBCTimeout != 2*time.Minute {
+		t.Fatalf("FBC_TIMEOUT not applied: got %v", got.FBCTimeout)
+	}
 }
 
 func TestJobsTTLInvalidFallsBack(t *testing.T) {
 	t.Setenv("JOBS_TTL", "not-a-duration")
 	if got := FromEnv().JobsTTL; got != time.Hour {
 		t.Fatalf("invalid JOBS_TTL should fall back to 1h, got %v", got)
+	}
+}
+
+func TestFBCTimeoutInvalidFallsBack(t *testing.T) {
+	t.Setenv("FBC_TIMEOUT", "not-a-duration")
+	if got := FromEnv().FBCTimeout; got != DefaultFBCTimeout {
+		t.Fatalf("invalid FBC_TIMEOUT should fall back to %v, got %v", DefaultFBCTimeout, got)
 	}
 }

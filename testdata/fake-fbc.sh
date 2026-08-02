@@ -3,6 +3,8 @@
 # `[-c cfg] convert --to FMT [--overwrite --nd] INPUT DEST`.
 # convert emits a multi-line stdout+stderr log. A "corrupt" input fails with an
 # ERR line unless the -c config contains `use_broken_images: true` (retry path).
+# An input carrying the __hang marker in its name sleeps 3s before continuing,
+# to exercise per-file conversion timeouts (bean ckkk).
 mode=""
 for a in "$@"; do
   case "$a" in
@@ -63,6 +65,17 @@ if [ "$mode" = "convert" ]; then
   broken=""
   if [ -n "$cfg" ] && grep -q 'use_broken_images: true' "$cfg" 2>/dev/null; then
     broken="yes"
+  fi
+
+  # HANG mode: an input whose name carries the __hang marker sleeps past any
+  # sane per-file timeout, so tests can assert the worker kills it instead of
+  # waiting out the full sleep. `exec` replaces this shell with sleep itself
+  # (rather than forking a child) so a ctx-cancel SIGKILL on this process
+  # doesn't leave an orphaned grandchild holding the caller's stdout/stderr
+  # pipe open, which would otherwise stall the caller's cmd.Wait() for the
+  # full sleep regardless of the timeout.
+  if echo "$input" | grep -q '__hang'; then
+    exec sleep 3
   fi
 
   echo "INFO: opening $input"

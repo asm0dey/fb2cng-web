@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+// DefaultFBCTimeout is the fallback per-file fbc conversion timeout when
+// FBCTimeout is unset (zero value) or the FBC_TIMEOUT env var is invalid.
+// Big books can legitimately take minutes; ops can tune via FBC_TIMEOUT.
+const DefaultFBCTimeout = 10 * time.Minute
+
 // Config holds all runtime configuration.
 type Config struct {
 	Addr           string        // listen address, e.g. ":8080"
@@ -19,6 +24,7 @@ type Config struct {
 	PresetsDir     string        // persistent preset store dir
 	JobsDir        string        // ephemeral job scratch dir (swept on TTL)
 	JobsTTL        time.Duration // max job age before sweep
+	FBCTimeout     time.Duration // max time a single fbc invocation (convert/validate) may run before being killed
 }
 
 // FromEnv builds a Config from environment variables, applying defaults.
@@ -31,6 +37,7 @@ func FromEnv() Config {
 		PresetsDir:    envOr("PRESETS_DIR", "/data/presets"),
 		JobsDir:       envOr("JOBS_DIR", filepath.Join(os.TempDir(), "fb2cng-jobs")),
 		JobsTTL:       durationOr(os.Getenv("JOBS_TTL"), time.Hour),
+		FBCTimeout:    durationOr(os.Getenv("FBC_TIMEOUT"), DefaultFBCTimeout),
 	}
 	for _, p := range strings.Split(os.Getenv("TRUSTED_PROXIES"), ",") {
 		if s := strings.TrimSpace(p); s != "" {
