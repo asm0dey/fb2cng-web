@@ -7,12 +7,39 @@
     "default": 1
   },
   {
+    "key": "document.fix_zip",
+    "group": "document",
+    "label": "fix_zip",
+    "kind": "bool",
+    "default": false
+  },
+  {
+    "key": "document.open_from_cover",
+    "group": "document",
+    "label": "open_from_cover",
+    "kind": "bool",
+    "default": false
+  },
+  {
     "key": "document.toc_type",
     "group": "document",
     "label": "toc_type",
     "kind": "string",
-    "default": "normal",
-    "description": "Table-of-contents style."
+    "default": "normal"
+  },
+  {
+    "key": "document.output_name_template",
+    "group": "document",
+    "label": "output_name_template",
+    "kind": "string",
+    "default": "{{- $all := \"\" -}}\n{{- if gt (len .Authors) 0 -}}\n{{-   with first .Authors -}}\n{{-     $all = .LastName -}}\n{{-     if .FirstName }}{{ $all = (cat $all .FirstName) }}{{- end -}}\n{{-     if .MiddleName }}{{ $all = (cat $all .MiddleName) }}{{- end -}}\n{{-     if and (not $all) .Nickname }}{{ $all = .Nickname }}{{- end -}}\n{{-   end -}}\n{{-   if gt (len .Authors) 1 -}}\n{{-     if eq .Language \"ru\" }}{{ $all = (cat $all \"и др\") }}{{- else -}}{{ $all = (printf \"%s%s\" $all \", et al\") }}{{- end -}}\n{{-   end -}}\n{{-   $all = cat $all \"-\" -}}\n{{- end -}}\n{{- if $all -}}\n{{-   cat $all .Title -}}\n{{- else -}}\n{{-   .Title -}}\n{{- end -}}\n"
+  },
+  {
+    "key": "document.file_name_transliterate",
+    "group": "document",
+    "label": "file_name_transliterate",
+    "kind": "bool",
+    "default": false
   },
   {
     "key": "document.insert_soft_hyphen",
@@ -20,6 +47,69 @@
     "label": "insert_soft_hyphen",
     "kind": "bool",
     "default": false
+  },
+  {
+    "key": "document.metainformation.title_template",
+    "group": "document",
+    "label": "title_template",
+    "kind": "string",
+    "default": "{{- if gt (len .Series) 0 -}}\n{{-   $seriesPath := list -}}\n{{-   $seriesNumber := 0 -}}\n{{-   $currentParent := -1 -}}\n{{-   $hasNested := false -}}\n{{-   range .Series -}}\n{{-     if ge .Parent 0 -}}{{ $hasNested = true }}{{- end -}}\n{{-   end -}}\n{{-   range $index, $series := .Series -}}\n{{-     if or (not $hasNested) (eq $index 0) (eq $series.Parent $currentParent) -}}\n{{-       $seriesLetters := list -}}\n{{-       range $word := splitList \" \" $series.Name -}}\n{{-       $seriesLetters = append $seriesLetters (upper (first (splitList \"\" $word))) -}}\n{{-       end -}}\n{{-       if gt (len $seriesLetters) 0 -}}\n{{-         $seriesPath = append $seriesPath (join \"\" $seriesLetters) -}}\n{{-         $seriesNumber = $series.Number -}}\n{{-         $currentParent = $index -}}\n{{-       end -}}\n{{-     end -}}\n{{-   end -}}\n{{-   if gt (len $seriesPath) 0 -}}\n{{-     \"(\" }}{{- join \"/\" $seriesPath -}}\n{{-     if gt $seriesNumber 0 -}}\n{{-       printf \" - %02d\" $seriesNumber -}}\n{{-     end -}}\n{{-     \") \" -}}\n{{-   end -}}\n{{- end -}}\n{{  .Title -}}\n"
+  },
+  {
+    "key": "document.metainformation.creator_name_template",
+    "group": "document",
+    "label": "creator_name_template",
+    "kind": "string",
+    "default": "{{- .LastName -}}\n{{- if .FirstName }} {{.FirstName}}{{ end -}}\n{{- if .MiddleName }} {{.MiddleName }}{{ end -}}\n{{- if and (not .LastName) (not .FirstName) (not .MiddleName) .Nickname }}{{ .Nickname }}{{ end -}}\n"
+  },
+  {
+    "key": "document.metainformation.transliterate",
+    "group": "document",
+    "label": "transliterate",
+    "kind": "bool",
+    "default": false
+  },
+  {
+    "key": "document.page_map.enable",
+    "group": "document",
+    "label": "enable",
+    "kind": "bool",
+    "default": true
+  },
+  {
+    "key": "document.page_map.size",
+    "group": "document",
+    "label": "size",
+    "kind": "int",
+    "default": 2300
+  },
+  {
+    "key": "document.page_map.adobe_de",
+    "group": "document",
+    "label": "adobe_de",
+    "kind": "bool",
+    "default": false
+  },
+  {
+    "key": "document.images.use_broken",
+    "group": "document",
+    "label": "use_broken",
+    "kind": "bool",
+    "default": false
+  },
+  {
+    "key": "document.images.remove_transparency",
+    "group": "document",
+    "label": "remove_transparency",
+    "kind": "bool",
+    "default": false
+  },
+  {
+    "key": "document.images.scale_factor",
+    "group": "document",
+    "label": "scale_factor",
+    "kind": "string",
+    "default": 1
   },
   {
     "key": "document.images.optimize",
@@ -33,21 +123,249 @@
     "group": "document",
     "label": "jpeg_quality_level",
     "kind": "int",
-    "default": 75,
-    "description": "JPEG quality (1-100); lower is smaller."
+    "default": 95
+  },
+  {
+    "key": "document.images.markdown",
+    "group": "document",
+    "label": "markdown",
+    "kind": "string",
+    "default": "placeholder"
+  },
+  {
+    "key": "document.images.screen.width",
+    "group": "document",
+    "label": "width",
+    "kind": "int",
+    "default": 1264
+  },
+  {
+    "key": "document.images.screen.height",
+    "group": "document",
+    "label": "height",
+    "kind": "int",
+    "default": 1680
+  },
+  {
+    "key": "document.images.screen.dpi",
+    "group": "document",
+    "label": "dpi",
+    "kind": "int",
+    "default": 300
+  },
+  {
+    "key": "document.images.cover.generate",
+    "group": "document",
+    "label": "generate",
+    "kind": "bool",
+    "default": false
+  },
+  {
+    "key": "document.images.cover.resize",
+    "group": "document",
+    "label": "resize",
+    "kind": "string",
+    "default": "stretch"
   },
   {
     "key": "document.footnotes.mode",
     "group": "document",
     "label": "mode",
     "kind": "string",
-    "default": "block"
+    "default": "default"
   },
   {
-    "key": "document.output_name_template",
+    "key": "document.footnotes.bodies",
     "group": "document",
-    "label": "output_name_template",
+    "label": "bodies",
     "kind": "string",
-    "default": "{title}"
+    "default": [
+      "notes",
+      "comments",
+      "примечания",
+      "комментарии"
+    ]
+  },
+  {
+    "key": "document.footnotes.backlink_template",
+    "group": "document",
+    "label": "backlink_template",
+    "kind": "string",
+    "default": "{{- if eq .Format \"pdf\" -}}\n{{-   if .PageNumber -}}\n{{-     printf \"[page\\u00A0%d]\" .PageNumber -}}\n{{-   else -}}\n{{-     \"[\u003c]\" -}}\n{{-   end -}}\n{{- else if or (eq .Format \"kfx\") (eq .Format \"azw8\") -}}\n{{-   if .LocationNumber -}}\n{{-     printf \"[loc\\u00A0%d]\" .LocationNumber -}}\n{{-   else if .PageNumber -}}\n{{-     printf \"[page\\u00A0%d]\" .PageNumber -}}\n{{-   else if .SectionTitle -}}\n{{-     printf \"[%s]\" .SectionTitle -}}\n{{-   else -}}\n{{-     \"[\u003c]\" -}}\n{{-   end -}}\n{{- else -}}\n{{-   if .PageNumber -}}\n{{-     printf \"[page\\u00A0%d]\" .PageNumber -}}\n{{-   else if .SectionTitle -}}\n{{-     printf \"[%s]\" .SectionTitle -}}\n{{-   else -}}\n{{-     \"[\u003c]\" -}}\n{{-   end -}}\n{{- end -}}\n"
+  },
+  {
+    "key": "document.footnotes.more_paragraphs",
+    "group": "document",
+    "label": "more_paragraphs",
+    "kind": "string",
+    "default": "(~) "
+  },
+  {
+    "key": "document.footnotes.label_template",
+    "group": "document",
+    "label": "label_template",
+    "kind": "string",
+    "default": "{{- if eq .Format \"pdf\" -}}\n{{-   $bodyTitle := default \"Notes\" .BodyTitle -}}\n{{-   $noteTitle := trim .NoteTitle -}}\n{{-   $noteNumber := printf \"%d\" .NoteNumber -}}\n{{-   $label := \"\" -}}\n{{-   if gt .BodyNumber 0 -}}\n{{-     $label = printf \"%d.%s\" .BodyNumber $noteNumber -}}\n{{-   else -}}\n{{-     $label = $noteNumber -}}\n{{-   end -}}\n{{-   if and $noteTitle (regexMatch \"[^0-9[:space:]]\" $noteTitle) -}}\n{{-     printf \"%s: %s\" $bodyTitle $noteTitle -}}\n{{-   else -}}\n{{-     printf \"%s: %s\" $bodyTitle $label -}}\n{{-   end -}}\n{{- else -}}\n{{-   if gt .BodyNumber 0 -}}\n{{-     printf \"%d\" .BodyNumber -}}.\n{{-   end -}}\n{{-   printf \"%d\" .NoteNumber -}}\n{{- end -}}\n"
+  },
+  {
+    "key": "document.annotation.enable",
+    "group": "document",
+    "label": "enable",
+    "kind": "bool",
+    "default": false
+  },
+  {
+    "key": "document.annotation.title",
+    "group": "document",
+    "label": "title",
+    "kind": "string",
+    "default": "Annotation"
+  },
+  {
+    "key": "document.annotation.in_toc",
+    "group": "document",
+    "label": "in_toc",
+    "kind": "bool",
+    "default": true
+  },
+  {
+    "key": "document.toc_page.placement",
+    "group": "document",
+    "label": "placement",
+    "kind": "string",
+    "default": "none"
+  },
+  {
+    "key": "document.toc_page.authors_template",
+    "group": "document",
+    "label": "authors_template",
+    "kind": "string",
+    "default": "{{- $names := list -}}\n{{- range .Authors -}}\n{{-   $name := list -}}\n{{-   if .FirstName -}}{{ $name = append $name .FirstName -}}{{- end -}}\n{{-   if .MiddleName -}}{{ $name = append $name .MiddleName -}}{{- end -}}\n{{-   if .LastName -}}{{ $name = append $name .LastName }}{{- end -}}\n{{-   if and (not $name) .Nickname -}}{{ $name = append $name .Nickname }}{{- end -}}\n{{-   $names = append $names (join \" \" $name) -}}\n{{- end -}}\n{{- join \", \" $names -}}\n"
+  },
+  {
+    "key": "document.toc_page.include_chapters_without_title",
+    "group": "document",
+    "label": "include_chapters_without_title",
+    "kind": "bool",
+    "default": false
+  },
+  {
+    "key": "document.dropcaps.enable",
+    "group": "document",
+    "label": "enable",
+    "kind": "bool",
+    "default": false
+  },
+  {
+    "key": "document.dropcaps.ignore_symbols",
+    "group": "document",
+    "label": "ignore_symbols",
+    "kind": "string",
+    "default": "'\"-.…0123456789‒–—«»“”\u003c\u003e"
+  },
+  {
+    "key": "document.text_transformations.speech.enable",
+    "group": "document",
+    "label": "enable",
+    "kind": "bool",
+    "default": false
+  },
+  {
+    "key": "document.text_transformations.speech.from",
+    "group": "document",
+    "label": "from",
+    "kind": "string",
+    "default": "‐‑−–—―"
+  },
+  {
+    "key": "document.text_transformations.speech.to",
+    "group": "document",
+    "label": "to",
+    "kind": "string",
+    "default": "— "
+  },
+  {
+    "key": "document.text_transformations.dashes.enable",
+    "group": "document",
+    "label": "enable",
+    "kind": "bool",
+    "default": false
+  },
+  {
+    "key": "document.text_transformations.dashes.from",
+    "group": "document",
+    "label": "from",
+    "kind": "string",
+    "default": "‐‑−–—―"
+  },
+  {
+    "key": "document.text_transformations.dashes.to",
+    "group": "document",
+    "label": "to",
+    "kind": "string",
+    "default": "—"
+  },
+  {
+    "key": "document.text_transformations.dialogue.enable",
+    "group": "document",
+    "label": "enable",
+    "kind": "bool",
+    "default": false
+  },
+  {
+    "key": "document.text_transformations.dialogue.from",
+    "group": "document",
+    "label": "from",
+    "kind": "string",
+    "default": "‐‑−–—―"
+  },
+  {
+    "key": "document.text_transformations.dialogue.to",
+    "group": "document",
+    "label": "to",
+    "kind": "string",
+    "default": " "
+  },
+  {
+    "key": "logging.console.level",
+    "group": "logging",
+    "label": "level",
+    "kind": "string",
+    "default": "normal"
+  },
+  {
+    "key": "logging.file.destination_template",
+    "group": "logging",
+    "label": "destination_template",
+    "kind": "string",
+    "default": "{{ .AppName }}.log"
+  },
+  {
+    "key": "logging.file.panic_destination_template",
+    "group": "logging",
+    "label": "panic_destination_template",
+    "kind": "string",
+    "default": "{{ .AppName }}-panic.log"
+  },
+  {
+    "key": "logging.file.level",
+    "group": "logging",
+    "label": "level",
+    "kind": "string",
+    "default": "debug"
+  },
+  {
+    "key": "logging.file.mode",
+    "group": "logging",
+    "label": "mode",
+    "kind": "string",
+    "default": "overwrite"
+  },
+  {
+    "key": "reporting.destination_template",
+    "group": "reporting",
+    "label": "destination_template",
+    "kind": "string",
+    "default": "{{ .AppName }}-report.zip"
   }
 ]
