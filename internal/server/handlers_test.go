@@ -227,6 +227,54 @@ func TestConvertPerFileFailureCapturesFirstError(t *testing.T) {
 	}
 }
 
+// TestConvertDedupesCollidingUploadBasenames is the regression test for bean
+// slb6: two uploaded files whose filepath.Base collides (e.g. two "book.fb2")
+// must not overwrite each other's persisted input nor share a status.json
+// row. Pre-fix, the second os.Create(InputPath) clobbers the first upload's
+// bytes and both StatePending rows share Input "book.fb2"; updateFile then
+// matches the FIRST row on every write and never touches the second, so it
+// stays StatePending forever and the batch never goes Done.
+func TestConvertDedupesCollidingUploadBasenames(t *testing.T) {
+	h := newTestServer(t, config.Config{MaxConcurrent: 2}, fakeFbcRunner(t))
+
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	for i := 0; i < 2; i++ {
+		fw, _ := mw.CreateFormFile("file", "book.fb2")
+		fw.Write([]byte("<FictionBook/>"))
+	}
+	mw.WriteField("format", "epub3")
+	mw.WriteField("preset", "defaults")
+	mw.Close()
+	req := httptest.NewRequest("POST", "/convert", &buf)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != 200 {
+		t.Fatalf("convert POST code=%d body=%q", rec.Code, rec.Body.String())
+	}
+	id := extractJobID(t, rec.Body.String())
+
+	st := waitDone(t, h, id)
+	if len(st.Files) != 2 {
+		t.Fatalf("expected 2 distinct file rows for colliding basenames, got %d: %+v", len(st.Files), st.Files)
+	}
+	seen := map[string]bool{}
+	for _, f := range st.Files {
+		if seen[f.Input] {
+			t.Fatalf("duplicate FileResult.Input %q — colliding uploads must be deduped at upload time", f.Input)
+		}
+		seen[f.Input] = true
+		if f.State != jobs.StateDone {
+			t.Errorf("input %q: expected done, got %s (err=%q)", f.Input, f.State, f.Err)
+		}
+		if len(f.Outputs) != 1 {
+			t.Errorf("input %q: expected 1 output, got %+v", f.Input, f.Outputs)
+		}
+	}
+}
+
 func TestConvertBadFormat(t *testing.T) {
 	h := newTestServer(t, config.Config{MaxConcurrent: 1}, fakeFbcRunner(t))
 	rec := httptest.NewRecorder()
