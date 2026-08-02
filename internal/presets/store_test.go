@@ -209,3 +209,57 @@ func TestSetDefaultUnknown(t *testing.T) {
 		t.Fatal("SetDefault(unknown) should error")
 	}
 }
+
+func TestDeleteRemoves(t *testing.T) {
+	s := NewStore(t.TempDir())
+	p, _ := s.Create("Kindle")
+	if err := s.Delete(p.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Get(p.ID); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("after delete Get err = %v, want os.ErrNotExist", err)
+	}
+}
+
+func TestDeleteRejectsBuiltin(t *testing.T) {
+	s := NewStore(t.TempDir())
+	if err := s.Delete("defaults"); err == nil {
+		t.Fatal("Delete(defaults) should error")
+	}
+	if err := s.Delete(""); err == nil {
+		t.Fatal("Delete(\"\") should error")
+	}
+}
+
+func TestDeleteRejectsCurrentDefault(t *testing.T) {
+	s := NewStore(t.TempDir())
+	p, _ := s.Create("Kindle")
+	s.SetDefault(p.ID)
+	if err := s.Delete(p.ID); err == nil {
+		t.Fatal("Delete(default) should error")
+	}
+}
+
+func TestDuplicateDeepCopiesOverrides(t *testing.T) {
+	s := NewStore(t.TempDir())
+	src, _ := s.Create("Kindle")
+	src.Overrides = map[string]any{"document": map[string]any{"toc_type": "inline"}}
+	s.Save(src)
+
+	dup, err := s.Duplicate(src.ID, "Kindle copy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dup.ID == src.ID {
+		t.Fatalf("duplicate shares id %q", dup.ID)
+	}
+	if dup.Name != "Kindle copy" || dup.ChangedCount() != 1 {
+		t.Fatalf("dup = %+v", dup)
+	}
+	// Mutating the duplicate's nested map must not affect the source on disk.
+	dup.Overrides["document"].(map[string]any)["toc_type"] = "none"
+	reSrc, _ := s.Get(src.ID)
+	if reSrc.Overrides["document"].(map[string]any)["toc_type"] != "inline" {
+		t.Fatal("Duplicate must deep-copy overrides")
+	}
+}
