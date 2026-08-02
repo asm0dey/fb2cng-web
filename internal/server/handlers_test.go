@@ -1,6 +1,7 @@
 package server
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -224,5 +225,111 @@ func TestJobStatusUnknownID(t *testing.T) {
 	h.ServeHTTP(rec, httptest.NewRequest("GET", "/jobs/deadbeefdeadbeef", nil))
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("unknown job should 404, got %d", rec.Code)
+	}
+}
+
+func TestDownloadZipAndLog(t *testing.T) {
+	h := newTestServer(t, config.Config{MaxConcurrent: 2}, fakeFbcRunner(t))
+	rec := httptest.NewRecorder()
+	// "multi" input produces two outputs.
+	h.ServeHTTP(rec, multipartConvert(t, "multi.fb2", map[string]string{"format": "epub3", "preset": "defaults"}))
+	id := extractJobID(t, rec.Body.String())
+	waitDone(t, h, id)
+
+	// Single download.
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/jobs/"+id+"/download/multi.epub", nil))
+	if rec.Code != 200 || rec.Body.String() != "FAKE-epub3" {
+		t.Fatalf("download code=%d body=%q", rec.Code, rec.Body.String())
+	}
+
+	// Traversal is rejected.
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/jobs/"+id+"/download/nope.epub", nil))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("unknown output should 404, got %d", rec.Code)
+	}
+
+	// Zip of all outputs.
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/jobs/"+id+"/zip", nil))
+	if rec.Code != 200 || rec.Header().Get("Content-Type") != "application/zip" {
+		t.Fatalf("zip code=%d ct=%q", rec.Code, rec.Header().Get("Content-Type"))
+	}
+	zr, err := zip.NewReader(bytes.NewReader(rec.Body.Bytes()), int64(rec.Body.Len()))
+	if err != nil || len(zr.File) != 2 {
+		t.Fatalf("expected 2-entry zip, err=%v files=%d", err, len(zr.File))
+	}
+
+	// Log stream.
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/jobs/"+id+"/log/multi.fb2", nil))
+	if rec.Code != 200 || !strings.Contains(rec.Body.String(), "INFO") {
+		t.Fatalf("log code=%d body=%q", rec.Code, rec.Body.String())
+	}
+}
+
+// TestDownloadTraversalRejected exercises encoded path-traversal payloads and
+// unknown job ids against all three download routes: these reach our handler
+// code directly, so each must 404 there (never stream a file).
+func TestDownloadTraversalRejected(t *testing.T) {
+	h := newTestServer(t, config.Config{MaxConcurrent: 2}, fakeFbcRunner(t))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, multipartConvert(t, "multi.fb2", map[string]string{"format": "epub3", "preset": "defaults"}))
+	id := extractJobID(t, rec.Body.String())
+	waitDone(t, h, id)
+
+	targets := []string{
+		"/jobs/" + id + "/download/..%2f..%2fetc%2fpasswd",
+		"/jobs/" + id + "/log/..%2f..%2fetc%2fpasswd",
+		"/jobs/deadbeefdeadbeef/download/multi.epub",
+		"/jobs/deadbeefdeadbeef/zip",
+		"/jobs/deadbeefdeadbeef/log/multi.fb2",
+	}
+	for _, target := range targets {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest("GET", target, nil))
+		if rec.Code != http.StatusNotFound {
+			t.Errorf("target %q: expected 404, got %d", target, rec.Code)
+		}
+	}
+}
+
+// TestDownloadLiteralDotSegmentNeverServesFile covers the "../../x" form.
+// net/http's ServeMux canonicalizes literal dot-segments before any pattern
+// match, 307-redirecting to the resolved path — which lands outside every
+// /jobs/{id}/... route (proven below) rather than in our handler at all. That
+// redirect is the actual security boundary here; assert it never resolves to
+// a job file being streamed.
+func TestDownloadLiteralDotSegmentNeverServesFile(t *testing.T) {
+	h := newTestServer(t, config.Config{MaxConcurrent: 2}, fakeFbcRunner(t))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, multipartConvert(t, "multi.fb2", map[string]string{"format": "epub3", "preset": "defaults"}))
+	id := extractJobID(t, rec.Body.String())
+	waitDone(t, h, id)
+
+	targets := []string{
+		"/jobs/" + id + "/download/../../etc/passwd",
+		"/jobs/" + id + "/log/../../etc/passwd",
+	}
+	for _, target := range targets {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", target, nil)
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusTemporaryRedirect {
+			t.Fatalf("target %q: expected mux to redirect the unclean path, got %d", target, rec.Code)
+		}
+		loc := rec.Header().Get("Location")
+		if strings.Contains(loc, "/jobs/"+id+"/download/") || strings.Contains(loc, "/jobs/"+id+"/log/") {
+			t.Fatalf("target %q: redirect %q still targets a download/log route", target, loc)
+		}
+		rec = httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest("GET", loc, nil))
+		if rec.Header().Get("Content-Disposition") != "" {
+			t.Fatalf("target %q: redirected request %q streamed a file (Content-Disposition set)", target, loc)
+		}
+		if strings.Contains(rec.Body.String(), "FAKE-") || strings.Contains(rec.Body.String(), "INFO:") {
+			t.Fatalf("target %q: redirected request %q leaked job content: %q", target, loc, rec.Body.String())
+		}
 	}
 }

@@ -291,13 +291,79 @@ func (s *Server) handleJobStatus(w http.ResponseWriter, r *http.Request) {
 	s.renderPartial(w, "convert_card", cardFor(st))
 }
 func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "not yet", http.StatusNotImplemented)
+	id := r.PathValue("id")
+	file := r.PathValue("file")
+	st, err := s.jobs.Load(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	for _, fr := range st.Files {
+		for _, o := range fr.Outputs {
+			if o == file {
+				p, err := s.jobs.OutputFile(id, fr.Input, o)
+				if err != nil {
+					http.NotFound(w, r)
+					return
+				}
+				streamFile(w, p)
+				return
+			}
+		}
+	}
+	http.NotFound(w, r)
 }
+
 func (s *Server) handleZip(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "not yet", http.StatusNotImplemented)
+	id := r.PathValue("id")
+	if _, err := s.jobs.Load(id); err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", contentDisposition(id+".zip"))
+	if err := s.jobs.WriteZip(id, w); err != nil {
+		// Header already sent; log-only. (self-hosted, low-hardening)
+		return
+	}
 }
+
 func (s *Server) handleLog(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "not yet", http.StatusNotImplemented)
+	id := r.PathValue("id")
+	input := r.PathValue("file")
+	if strings.ContainsAny(input, `/\`) || strings.Contains(input, "..") {
+		http.NotFound(w, r)
+		return
+	}
+	if _, err := s.jobs.Load(id); err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	f, err := os.Open(s.jobs.LogPath(id, input))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	defer f.Close()
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	_, _ = ioCopyWriter(w, f)
+}
+
+func ioCopyWriter(w http.ResponseWriter, f *os.File) (int64, error) {
+	buf := make([]byte, 32*1024)
+	var total int64
+	for {
+		n, rerr := f.Read(buf)
+		if n > 0 {
+			if _, werr := w.Write(buf[:n]); werr != nil {
+				return total, werr
+			}
+			total += int64(n)
+		}
+		if rerr != nil {
+			return total, nil
+		}
+	}
 }
 func (s *Server) handleRetry(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "not yet", http.StatusNotImplemented)
