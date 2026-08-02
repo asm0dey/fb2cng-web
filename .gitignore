@@ -9,3 +9,5 @@ fbc.log
 *.png
 /fb2cng-web
 /schemagen
+
+.claude/settings.local.json
