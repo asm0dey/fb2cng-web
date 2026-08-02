@@ -10,6 +10,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// settingsPath is the Presets list page; preset mutations redirect back to it.
+const settingsPath = "/settings"
+
 // settingsData is the Presets list page VM. layout is Plan 1's shared header struct.
 type settingsData struct {
 	layout
@@ -62,7 +65,7 @@ func (s *Server) handlePresetDuplicate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
-	http.Redirect(w, r, "/settings", http.StatusSeeOther)
+	http.Redirect(w, r, settingsPath, http.StatusSeeOther)
 }
 
 func (s *Server) handlePresetDelete(w http.ResponseWriter, r *http.Request) {
@@ -70,7 +73,7 @@ func (s *Server) handlePresetDelete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
-	http.Redirect(w, r, "/settings", http.StatusSeeOther)
+	http.Redirect(w, r, settingsPath, http.StatusSeeOther)
 }
 
 func (s *Server) handlePresetDefault(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +81,7 @@ func (s *Server) handlePresetDefault(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
-	http.Redirect(w, r, "/settings", http.StatusSeeOther)
+	http.Redirect(w, r, settingsPath, http.StatusSeeOther)
 }
 
 // buildConfigForPreset marshals a preset's sparse overrides to YAML and feeds them to

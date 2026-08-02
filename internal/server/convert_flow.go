@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"context"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -97,12 +98,9 @@ func (s *Server) handleConvert(w http.ResponseWriter, r *http.Request) {
 	// for the same reason as the preset-config check above: a rejected
 	// extension must not orphan a job dir / config.yaml / persisted inputs
 	// (bean c4z1 — same orphaned-job family as i5e5).
-	for _, fh := range files {
-		lower := strings.ToLower(filepath.Base(fh.Filename))
-		if !strings.HasSuffix(lower, ".fb2") && !strings.HasSuffix(lower, ".zip") {
-			http.Error(w, "only .fb2 and .zip files are accepted", http.StatusUnprocessableEntity)
-			return
-		}
+	if !acceptedUploads(files) {
+		http.Error(w, "only .fb2 and .zip files are accepted", http.StatusUnprocessableEntity)
+		return
 	}
 
 	id, err := s.jobs.Create(preset, format)
@@ -118,54 +116,73 @@ func (s *Server) handleConvert(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Persist inputs synchronously (the request body will not survive the goroutine).
-	var names []string
-	used := map[string]bool{}
-	for _, fh := range files {
-		name := filepath.Base(fh.Filename)
-		// Extension already validated in the pre-Create pass above.
-		// De-dupe colliding basenames within this batch (e.g. two uploads both
-		// named "book.fb2"): each persisted input and FileResult.Input must be
-		// unique, or the second os.Create below overwrites the first upload
-		// and the two StatePending rows sharing one Input hang the job (only
-		// the first ever goes terminal — see updateFile).
-		name = uniqueInputName(name, used)
-		used[name] = true
-		src, err := fh.Open()
-		if err != nil {
-			http.Error(w, msgServerError, http.StatusInternalServerError)
-			return
-		}
-		dst, err := os.Create(s.jobs.InputPath(id, name))
-		if err != nil {
-			src.Close()
-			http.Error(w, msgServerError, http.StatusInternalServerError)
-			return
-		}
-		if _, err := copyAndClose(dst, src); err != nil {
-			http.Error(w, msgServerError, http.StatusInternalServerError)
-			return
-		}
-		names = append(names, name)
-	}
-
-	// Seed pending file rows.
-	st, err := s.jobs.Load(id)
+	names, err := s.persistInputs(id, files)
 	if err != nil {
 		http.Error(w, msgServerError, http.StatusInternalServerError)
 		return
 	}
-	for _, n := range names {
-		st.Files = append(st.Files, jobs.FileResult{Input: n, State: jobs.StatePending})
-	}
-	if err := s.jobs.Save(id, st); err != nil {
+
+	if err := s.seedPending(id, names); err != nil {
 		http.Error(w, msgServerError, http.StatusInternalServerError)
 		return
 	}
 
 	go s.processFiles(id, cfgPath, format, names)
 
-	st, _ = s.jobs.Load(id)
+	st, _ := s.jobs.Load(id)
 	s.renderPartial(w, "convert_card", cardFor(st))
+}
+
+// acceptedUploads reports whether every uploaded file has an accepted extension.
+func acceptedUploads(files []*multipart.FileHeader) bool {
+	for _, fh := range files {
+		lower := strings.ToLower(filepath.Base(fh.Filename))
+		if !strings.HasSuffix(lower, ".fb2") && !strings.HasSuffix(lower, ".zip") {
+			return false
+		}
+	}
+	return true
+}
+
+// persistInputs writes each uploaded file to the job's input dir, returning the
+// input names in upload order. Colliding basenames within one batch (e.g. two
+// uploads both named "book.fb2") are de-duped: each persisted input and
+// FileResult.Input must be unique, or the second os.Create overwrites the first
+// and the two StatePending rows sharing one Input hang the job (only the first
+// ever goes terminal — see updateFile).
+func (s *Server) persistInputs(id string, files []*multipart.FileHeader) ([]string, error) {
+	var names []string
+	used := map[string]bool{}
+	for _, fh := range files {
+		name := uniqueInputName(filepath.Base(fh.Filename), used)
+		used[name] = true
+		src, err := fh.Open()
+		if err != nil {
+			return nil, err
+		}
+		dst, err := os.Create(s.jobs.InputPath(id, name))
+		if err != nil {
+			src.Close()
+			return nil, err
+		}
+		if _, err := copyAndClose(dst, src); err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+	return names, nil
+}
+
+// seedPending appends a StatePending row for each input name and saves the job.
+func (s *Server) seedPending(id string, names []string) error {
+	st, err := s.jobs.Load(id)
+	if err != nil {
+		return err
+	}
+	for _, n := range names {
+		st.Files = append(st.Files, jobs.FileResult{Input: n, State: jobs.StatePending})
+	}
+	return s.jobs.Save(id, st)
 }
 
 // uniqueInputName returns name, suffixed (book.fb2 -> book-1.fb2 ->

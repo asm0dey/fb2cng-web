@@ -35,7 +35,9 @@ function updateDropLabel() {
   const n = fileInput.files ? fileInput.files.length : 0;
   const label = $('drop-label');
   if (!label) return;
-  label.textContent = n === 0 ? 'Drop books here, or choose files'
-    : n === 1 ? fileInput.files[0].name
-    : n + ' files selected';
+  let text;
+  if (n === 0) text = 'Drop books here, or choose files';
+  else if (n === 1) text = fileInput.files[0].name;
+  else text = n + ' files selected';
+  label.textContent = text;
 }

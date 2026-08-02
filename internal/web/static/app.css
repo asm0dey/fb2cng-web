@@ -275,7 +275,7 @@ details.logs > summary::-webkit-details-marker { display: none; }
 }
 .option-row:last-child { border-bottom: 0; }
 .option-row.is-changed { border-left: 3px solid var(--changed); padding-left: 17px; background: color-mix(in oklch, var(--changed) 6%, transparent); }
-.option-key { font: 500 13.5px/1.3 "IBM Plex Mono", monospace; color: var(--fg); word-break: break-word; }
+.option-key { font: 500 13.5px/1.3 "IBM Plex Mono", monospace; color: var(--fg); overflow-wrap: break-word; }
 .changed-dot { color: var(--changed); }
 .option-row:not(.is-changed) .changed-dot { display: none; }
 
