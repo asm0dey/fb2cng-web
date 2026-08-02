@@ -256,6 +256,58 @@ func TestPresetSaveKeepsValidInt(t *testing.T) {
 	}
 }
 
+func TestBuildEditorVMSections(t *testing.T) {
+	s := &Server{schema: &schema.Schema{Options: []schema.Option{
+		{Key: "document.toc_type", Group: "document", Label: "toc_type", Kind: schema.KindString, Default: "normal"},
+		{Key: "document.images.optimize", Group: "document", Label: "optimize", Kind: schema.KindBool, Default: true},
+		{Key: "document.images.jpeg_quality_level", Group: "document", Label: "jpeg_quality_level", Kind: schema.KindInt, Default: float64(75)},
+		{Key: "version", Group: "version", Label: "version", Kind: schema.KindString, Default: "2.0"},
+	}}}
+	// buildEditorVM's "flat" param is an already-flattened dotted-key map (as
+	// produced by flattenOverrides and passed by every real caller), not a
+	// nested map — use the dotted form here to match that contract.
+	vm := s.buildEditorVM(&presets.Preset{}, map[string]any{
+		"document.images.jpeg_quality_level": 40,
+	})
+
+	find := func(name string) groupVM {
+		t.Helper()
+		for _, g := range vm.Groups {
+			if g.Name == name {
+				return g
+			}
+		}
+		t.Fatalf("group %q not found in %+v", name, vm.Groups)
+		return groupVM{}
+	}
+
+	doc := find("document")
+	if doc.Flat {
+		t.Fatal("document has 2 sections, must not be Flat")
+	}
+	if len(doc.Sections) != 2 {
+		t.Fatalf("want 2 sections, got %d: %+v", len(doc.Sections), doc.Sections)
+	}
+	if doc.Sections[0].Name != "general" || doc.Sections[0].Label != "General" {
+		t.Fatalf("section 0 = %+v, want general/General", doc.Sections[0])
+	}
+	if doc.Sections[1].Name != "images" || doc.Sections[1].Label != "Images" {
+		t.Fatalf("section 1 = %+v, want images/Images", doc.Sections[1])
+	}
+	if len(doc.Sections[1].Rows) != 2 || doc.Sections[1].Rows[0].Key != "document.images.optimize" {
+		t.Fatalf("images section rows wrong: %+v", doc.Sections[1].Rows)
+	}
+	if doc.Sections[1].Changed != 1 { // jpeg override differs from default
+		t.Fatalf("images Changed = %d, want 1", doc.Sections[1].Changed)
+	}
+	if doc.Total != 3 || doc.Changed != 1 {
+		t.Fatalf("group totals wrong: Total=%d Changed=%d", doc.Total, doc.Changed)
+	}
+	if ver := find("version"); !ver.Flat || len(ver.Sections) != 1 {
+		t.Fatalf("version must be Flat single-section: %+v", ver)
+	}
+}
+
 // effRunner is a Runner whose Validate outcome is controlled by err.
 type effRunner struct{ err error }
 
