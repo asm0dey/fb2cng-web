@@ -88,9 +88,16 @@ claim match:
 - `AUTH_OIDC_GROUPS_CLAIM` — the claim to read (default `groups`).
 - `AUTH_OIDC_REQUIRED_GROUP` — the value that must be present in that claim.
 
-The claim is expected to be a JSON array of strings; membership is
-"required group is one of the values". If the claim is absent or does not
-contain the required group → `403`.
+The claim is read from the **verified ID token** and is expected to be a JSON
+array of strings; membership is "required group is one of the values". If the
+claim is absent or does not contain the required group → `403`.
+
+Because the group is read from the ID token, the IdP must place it there. Some
+providers (Authelia 4.39+, others) only expose scope-derived claims at the
+UserInfo endpoint by default and require an explicit policy to inject `groups`
+into the ID token. Operator setup for that is documented per-provider — see
+[docs/oidc-authelia.md](../../oidc-authelia.md) for the Authelia walkthrough
+(`claims_policies`).
 
 ## Session
 
@@ -178,5 +185,7 @@ issuer is fatal.
 ## Migration / docs
 
 - Update the README auth section: remove forward-auth instructions, document the
-  OIDC env vars and an example IdP client setup.
+  OIDC env vars, and link the Authelia guide.
+- `docs/oidc-authelia.md` — Authelia-as-provider walkthrough (group, client
+  registration, `claims_policies` for the ID-token group claim, app env vars).
 - Update `docker-compose.example.yml` to show the OIDC env vars.
