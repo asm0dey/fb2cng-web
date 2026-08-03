@@ -60,7 +60,7 @@ func (a *Authenticator) Login(w http.ResponseWriter, r *http.Request) {
 		ReturnTo: safeReturn(r.URL.Query().Get("return")),
 	}
 	payload, _ := json.Marshal(fs)
-	setSignedCookie(w, flowCookieName, payload, a.key, a.secure, 600)
+	setSignedCookie(w, flowCookieName, payload, a.key, 600)
 	authURL := a.oauth.AuthCodeURL(fs.State, oidc.Nonce(fs.Nonce), oauth2.S256ChallengeOption(verifier))
 	http.Redirect(w, r, authURL, http.StatusFound)
 }
@@ -73,7 +73,7 @@ func (a *Authenticator) Callback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "auth: missing flow state", http.StatusBadRequest)
 		return
 	}
-	clearCookie(w, flowCookieName, a.secure)
+	clearCookie(w, flowCookieName)
 	var fs flowState
 	if err := json.Unmarshal(raw, &fs); err != nil {
 		http.Error(w, "auth: bad flow state", http.StatusBadRequest)
@@ -104,7 +104,7 @@ func (a *Authenticator) Callback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "auth failed", http.StatusUnauthorized)
 		return
 	}
-	setSessionCookie(w, sess, a.key, a.secure, a.sessionTTL)
+	setSessionCookie(w, sess, a.key, a.sessionTTL)
 	// Re-sanitize at the sink: ReturnTo is user-derived, so restrict to a local
 	// path here too (defense in depth beyond the Login-time safeReturn).
 	http.Redirect(w, r, safeReturn(fs.ReturnTo), http.StatusFound)
@@ -112,7 +112,7 @@ func (a *Authenticator) Callback(w http.ResponseWriter, r *http.Request) {
 
 // Logout clears the session cookie.
 func (a *Authenticator) Logout(w http.ResponseWriter, r *http.Request) {
-	clearCookie(w, sessionCookieName, a.secure)
+	clearCookie(w, sessionCookieName)
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 

@@ -75,14 +75,14 @@ func ParseSession(cookie string, key []byte, now time.Time) (Session, bool) {
 	return s, true
 }
 
-func setSignedCookie(w http.ResponseWriter, name string, payload, key []byte, secure bool, maxAge int) {
+func setSignedCookie(w http.ResponseWriter, name string, payload, key []byte, maxAge int) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     name,
 		Value:    signValue(payload, key),
 		Path:     "/",
 		MaxAge:   maxAge,
 		HttpOnly: true,
-		Secure:   secure,
+		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 	})
 }
@@ -95,15 +95,15 @@ func readSignedCookie(r *http.Request, name string, key []byte) ([]byte, bool) {
 	return verifyValue(c.Value, key)
 }
 
-func setSessionCookie(w http.ResponseWriter, s Session, key []byte, secure bool, ttl time.Duration) {
-	setSignedCookie(w, sessionCookieName, mustJSON(s), key, secure, int(ttl.Seconds()))
+func setSessionCookie(w http.ResponseWriter, s Session, key []byte, ttl time.Duration) {
+	setSignedCookie(w, sessionCookieName, mustJSON(s), key, int(ttl.Seconds()))
 }
 
 func mustJSON(s Session) []byte { b, _ := json.Marshal(s); return b }
 
-func clearCookie(w http.ResponseWriter, name string, secure bool) {
+func clearCookie(w http.ResponseWriter, name string) {
 	http.SetCookie(w, &http.Cookie{
 		Name: name, Value: "", Path: "/", MaxAge: -1,
-		HttpOnly: true, Secure: secure, SameSite: http.SameSiteLaxMode,
+		HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode,
 	})
 }

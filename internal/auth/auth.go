@@ -21,7 +21,6 @@ import (
 type Authenticator struct {
 	enabled       bool
 	key           []byte
-	secure        bool
 	sessionTTL    time.Duration
 	groupsClaim   string
 	requiredGroup string
@@ -86,7 +85,6 @@ func New(ctx context.Context, cfg config.Config) (*Authenticator, error) {
 	return &Authenticator{
 		enabled:       true,
 		key:           key,
-		secure:        strings.HasPrefix(cfg.OIDCRedirectURL, "https://"),
 		sessionTTL:    ttl,
 		groupsClaim:   claim,
 		requiredGroup: cfg.OIDCRequiredGroup,
@@ -106,7 +104,7 @@ func New(ctx context.Context, cfg config.Config) (*Authenticator, error) {
 // standing up an IdP.
 // ponytail: session-only seam, avoids an oidctest server in every server test.
 func NewStub(key []byte, enabled bool) *Authenticator {
-	return &Authenticator{enabled: enabled, key: key, secure: false, sessionTTL: 8 * time.Hour}
+	return &Authenticator{enabled: enabled, key: key, sessionTTL: 8 * time.Hour}
 }
 
 func resolveKey(b64key string) ([]byte, error) {
