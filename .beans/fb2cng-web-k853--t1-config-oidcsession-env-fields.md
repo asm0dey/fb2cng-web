@@ -1,10 +1,11 @@
 ---
 # fb2cng-web-k853
 title: 'T1: Config — OIDC/session env fields'
-status: todo
+status: completed
 type: task
+priority: normal
 created_at: 2026-08-03T08:33:04Z
-updated_at: 2026-08-03T08:33:04Z
+updated_at: 2026-08-03T08:42:39Z
 parent: fb2cng-web-avoh
 ---
 

@@ -1,10 +1,11 @@
 ---
 # fb2cng-web-mmov
 title: 'T2: Signed session cookie'
-status: todo
+status: completed
 type: task
+priority: normal
 created_at: 2026-08-03T08:33:04Z
-updated_at: 2026-08-03T08:33:04Z
+updated_at: 2026-08-03T08:49:50Z
 parent: fb2cng-web-avoh
 ---
 
