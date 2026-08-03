@@ -69,7 +69,7 @@ func newTestServerWithAuth(t *testing.T, cfg config.Config, r convert.Runner, au
 	if err != nil {
 		t.Fatal(err)
 	}
-	return New(cfg, r, web.FS, tpl, store, presetStore, sch, authn).Handler()
+	return New(cfg, Deps{Runner: r, Static: web.FS, Tpl: tpl, Jobs: store, Presets: presetStore, Schema: sch, Auth: authn}).Handler()
 }
 
 // multipartConvert builds a POST /convert request with one uploaded file and

@@ -28,12 +28,19 @@ type Server struct {
 	auth    *auth.Authenticator
 }
 
-// New constructs a Server. Plan 1 took five parameters, Plan 2 appended presets as
-// the sixth, Plan 3 appended schema as the seventh, and Plan 4 appends the
-// authenticator as the eighth (and final) parameter.
-func New(cfg config.Config, runner convert.Runner, static fs.FS,
-	tpl *template.Template, jobStore *jobs.Store, presetStore *presets.Store, sch *schema.Schema,
-	authn *auth.Authenticator) *Server {
+// Deps are the collaborators a Server needs, grouped so New keeps a small signature.
+type Deps struct {
+	Runner  convert.Runner
+	Static  fs.FS
+	Tpl     *template.Template
+	Jobs    *jobs.Store
+	Presets *presets.Store
+	Schema  *schema.Schema
+	Auth    *auth.Authenticator
+}
+
+// New constructs a Server from its config and dependencies.
+func New(cfg config.Config, d Deps) *Server {
 	n := cfg.MaxConcurrent
 	if n < 1 {
 		n = 1
@@ -43,14 +50,14 @@ func New(cfg config.Config, runner convert.Runner, static fs.FS,
 	}
 	return &Server{
 		cfg:     cfg,
-		runner:  runner,
-		static:  static,
+		runner:  d.Runner,
+		static:  d.Static,
 		sem:     make(chan struct{}, n),
-		tpl:     tpl,
-		jobs:    jobStore,
-		presets: presetStore,
-		schema:  sch,
-		auth:    authn,
+		tpl:     d.Tpl,
+		jobs:    d.Jobs,
+		presets: d.Presets,
+		schema:  d.Schema,
+		auth:    d.Auth,
 	}
 }
 

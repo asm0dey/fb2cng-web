@@ -56,7 +56,15 @@ func main() {
 		}
 	}()
 
-	srv := server.New(cfg, convert.New(cfg.FBCBin), web.FS, tpl, jobStore, presetStore, sch, authn)
+	srv := server.New(cfg, server.Deps{
+		Runner:  convert.New(cfg.FBCBin),
+		Static:  web.FS,
+		Tpl:     tpl,
+		Jobs:    jobStore,
+		Presets: presetStore,
+		Schema:  sch,
+		Auth:    authn,
+	})
 	log.Printf("fb2cng-web listening on %s (fbc=%s, auth=%s, jobs=%s, ttl=%s)",
 		cfg.Addr, cfg.FBCBin, cfg.AuthMode, cfg.JobsDir, cfg.JobsTTL)
 	if err := http.ListenAndServe(cfg.Addr, srv.Handler()); err != nil {

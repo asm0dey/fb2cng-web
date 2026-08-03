@@ -47,7 +47,7 @@ func newPresetServer(t *testing.T, dir string) (*Server, http.Handler) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := New(config.Config{MaxConcurrent: 1}, stubRunner{}, web.FS, tpl, jobStore, ps, sch, authn)
+	srv := New(config.Config{MaxConcurrent: 1}, Deps{Runner: stubRunner{}, Static: web.FS, Tpl: tpl, Jobs: jobStore, Presets: ps, Schema: sch, Auth: authn})
 	return srv, srv.Handler()
 }
 
