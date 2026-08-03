@@ -1,12 +1,17 @@
-# Optional turnkey deployment: fb2cng-web behind Caddy + Authelia forward-auth.
-# The app is NOT published directly — only Caddy is. fb2cng-web trusts Remote-*
-# headers; AUTH_FORWARD_AUTH gates access. Adjust domains/secrets before use.
+# Example deployment: fb2cng-web with optional OIDC authentication.
+# See docs/oidc-authelia.md for setup.
 services:
   fb2cng-web:
     build: .
     environment:
-      AUTH_FORWARD_AUTH: "true"
-      TRUSTED_PROXIES: ""   # optional: set to caddy's container IP for defense-in-depth
+      # Optional OIDC auth (see docs/oidc-authelia.md):
+      # AUTH_MODE: "oidc"
+      # AUTH_OIDC_ISSUER: "https://auth.example.com"
+      # AUTH_OIDC_CLIENT_ID: "fb2cng"
+      # AUTH_OIDC_CLIENT_SECRET: "<plaintext secret>"
+      # AUTH_OIDC_REDIRECT_URL: "https://fb2cng.example.com/auth/callback"
+      # AUTH_OIDC_REQUIRED_GROUP: "fb2cng-users"
+      # AUTH_SESSION_KEY: "<base64 32 bytes>"
       PRESETS_DIR: /data/presets
       JOBS_DIR: /tmp/fb2cng-jobs
     volumes:
@@ -17,7 +22,6 @@ services:
       - /tmp:rw,mode=1777          # jobs scratch (swept on TTL)
     expose:
       - "8080"
-    # No "ports:" — never expose the app directly when auth is on.
 
   authelia:
     image: authelia/authelia:4
