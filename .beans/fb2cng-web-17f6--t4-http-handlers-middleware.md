@@ -1,11 +1,11 @@
 ---
 # fb2cng-web-17f6
 title: 'T4: HTTP handlers + middleware'
-status: todo
+status: completed
 type: task
 priority: normal
 created_at: 2026-08-03T08:33:04Z
-updated_at: 2026-08-03T08:33:04Z
+updated_at: 2026-08-03T09:00:05Z
 parent: fb2cng-web-avoh
 blocked_by:
     - fb2cng-web-x2qg
