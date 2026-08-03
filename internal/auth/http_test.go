@@ -75,7 +75,7 @@ func TestLoginSetsFlowCookieAndRedirects(t *testing.T) {
 	if !found {
 		t.Fatal("login must set the flow cookie")
 	}
-	if loc := rec.Header().Get("Location"); loc == "" {
+	if rec.Header().Get("Location") == "" {
 		t.Fatal("login must redirect to the IdP")
 	}
 }
