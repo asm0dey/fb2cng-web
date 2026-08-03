@@ -31,13 +31,17 @@ type Authenticator struct {
 
 var errForbidden = errors.New("not in required group")
 
-// New builds an Authenticator from config. When AUTH_MODE != "oidc" it returns a
-// disabled passthrough. Otherwise it validates required fields, resolves the
-// session key, and performs OIDC discovery (network) — a failure here is fatal
-// to the caller.
+// New builds an Authenticator from config. When AUTH_MODE is "" or "off" it
+// returns a disabled passthrough. When AUTH_MODE is "oidc" it validates required
+// fields, resolves the session key, and performs OIDC discovery (network) — a
+// failure here is fatal to the caller. Any other value is a misconfiguration and
+// fails loud rather than silently disabling auth.
 func New(ctx context.Context, cfg config.Config) (*Authenticator, error) {
-	if cfg.AuthMode != "oidc" {
+	if cfg.AuthMode == "" || cfg.AuthMode == "off" {
 		return &Authenticator{enabled: false}, nil
+	}
+	if cfg.AuthMode != "oidc" {
+		return nil, fmt.Errorf("invalid AUTH_MODE %q (want \"off\" or \"oidc\")", cfg.AuthMode)
 	}
 
 	var missing []string

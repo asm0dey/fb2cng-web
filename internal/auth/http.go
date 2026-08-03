@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -116,7 +115,7 @@ func (a *Authenticator) Logout(w http.ResponseWriter, r *http.Request) {
 
 // safeReturn keeps redirects local: only a path beginning with a single "/".
 func safeReturn(p string) string {
-	if p == "" || !strings.HasPrefix(p, "/") || strings.HasPrefix(p, "//") {
+	if p == "" || p[0] != '/' || (len(p) > 1 && (p[1] == '/' || p[1] == '\\')) {
 		return "/"
 	}
 	return p

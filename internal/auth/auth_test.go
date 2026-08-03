@@ -100,3 +100,10 @@ func TestNewDisabled(t *testing.T) {
 		t.Fatalf("off mode: err=%v enabled=%v", err, a.Enabled())
 	}
 }
+
+func TestNewInvalidMode(t *testing.T) {
+	_, err := New(context.Background(), config.Config{AuthMode: "oidic"})
+	if err == nil {
+		t.Fatal("want error for invalid AUTH_MODE, got nil")
+	}
+}

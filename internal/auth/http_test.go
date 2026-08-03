@@ -81,7 +81,7 @@ func TestLoginSetsFlowCookieAndRedirects(t *testing.T) {
 }
 
 func TestSafeReturn(t *testing.T) {
-	cases := map[string]string{"": "/", "/settings": "/settings", "//evil.com": "/", "https://evil": "/"}
+	cases := map[string]string{"": "/", "/settings": "/settings", "//evil.com": "/", "https://evil": "/", "/\\evil.com": "/"}
 	for in, want := range cases {
 		if got := safeReturn(in); got != want {
 			t.Fatalf("safeReturn(%q)=%q want %q", in, got, want)
