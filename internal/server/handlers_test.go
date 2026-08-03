@@ -17,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"fb2cng-web/internal/auth"
 	"fb2cng-web/internal/config"
 	"fb2cng-web/internal/convert"
 	"fb2cng-web/internal/jobs"
@@ -45,6 +46,14 @@ func (s stubRunner) ConvertLogged(context.Context, string, string, string, strin
 func (s stubRunner) Validate(context.Context, string) error { return nil }
 
 func newTestServer(t *testing.T, cfg config.Config, r convert.Runner) http.Handler {
+	authn, err := auth.New(context.Background(), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return newTestServerWithAuth(t, cfg, r, authn)
+}
+
+func newTestServerWithAuth(t *testing.T, cfg config.Config, r convert.Runner, authn *auth.Authenticator) http.Handler {
 	t.Helper()
 	tpl, err := web.Templates()
 	if err != nil {
@@ -60,7 +69,7 @@ func newTestServer(t *testing.T, cfg config.Config, r convert.Runner) http.Handl
 	if err != nil {
 		t.Fatal(err)
 	}
-	return New(cfg, r, web.FS, tpl, store, presetStore, sch).Handler()
+	return New(cfg, r, web.FS, tpl, store, presetStore, sch, authn).Handler()
 }
 
 // multipartConvert builds a POST /convert request with one uploaded file and
@@ -353,17 +362,20 @@ func TestConvertBadExtensionOrphansNoJobDir(t *testing.T) {
 // header username badge had two sources of truth (server-side layout.User, set
 // inconsistently per page, masked by a client-side /me fetch that overwrote
 // #user on every page). This asserts all three full-page GET routes render the
-// same badge from the same server-side header logic: prefer Remote-Name, else
-// Remote-User, and only when forward-auth is enabled.
+// same badge from the same server-side session logic: the session's Name when
+// authenticated, no badge at all when auth is off.
 func TestUserBadgeConsistentAcrossPages(t *testing.T) {
 	pages := []string{"/", "/settings", "/settings/preset/defaults"}
+	key := []byte("0123456789abcdef0123456789abcdef")
 
-	t.Run("RemoteName preferred", func(t *testing.T) {
-		h := newTestServer(t, config.Config{MaxConcurrent: 1, ForwardAuth: true}, stubRunner{})
+	t.Run("badge shows the session name across pages", func(t *testing.T) {
+		authn := auth.NewStub(key, true)
+		h := newTestServerWithAuth(t, config.Config{MaxConcurrent: 1}, stubRunner{}, authn)
+		cookie := &http.Cookie{Name: "fb2cng_session",
+			Value: auth.SignSession(auth.Session{Sub: "alice", Name: "Alice", Exp: time.Now().Add(time.Hour).Unix()}, key)}
 		for _, path := range pages {
 			req := httptest.NewRequest("GET", path, nil)
-			req.Header.Set("Remote-Name", "Alice")
-			req.Header.Set("Remote-User", "alice")
+			req.AddCookie(cookie)
 			rec := httptest.NewRecorder()
 			h.ServeHTTP(rec, req)
 			if rec.Code != 200 {
@@ -375,35 +387,17 @@ func TestUserBadgeConsistentAcrossPages(t *testing.T) {
 		}
 	})
 
-	t.Run("falls back to Remote-User when Remote-Name absent", func(t *testing.T) {
-		h := newTestServer(t, config.Config{MaxConcurrent: 1, ForwardAuth: true}, stubRunner{})
+	t.Run("no badge when auth is off", func(t *testing.T) {
+		h := newTestServer(t, config.Config{MaxConcurrent: 1, AuthMode: "off"}, stubRunner{})
 		for _, path := range pages {
 			req := httptest.NewRequest("GET", path, nil)
-			req.Header.Set("Remote-User", "bob")
-			rec := httptest.NewRecorder()
-			h.ServeHTTP(rec, req)
-			if rec.Code != 200 {
-				t.Fatalf("%s: code=%d body=%q", path, rec.Code, rec.Body.String())
-			}
-			if !strings.Contains(rec.Body.String(), "👤 bob") {
-				t.Errorf("%s: expected badge \"👤 bob\", body:\n%s", path, rec.Body.String())
-			}
-		}
-	})
-
-	t.Run("no badge when forward-auth disabled", func(t *testing.T) {
-		h := newTestServer(t, config.Config{MaxConcurrent: 1, ForwardAuth: false}, stubRunner{})
-		for _, path := range pages {
-			req := httptest.NewRequest("GET", path, nil)
-			req.Header.Set("Remote-Name", "Alice")
-			req.Header.Set("Remote-User", "alice")
 			rec := httptest.NewRecorder()
 			h.ServeHTTP(rec, req)
 			if rec.Code != 200 {
 				t.Fatalf("%s: code=%d body=%q", path, rec.Code, rec.Body.String())
 			}
 			if strings.Contains(rec.Body.String(), "👤") {
-				t.Errorf("%s: expected no badge with ForwardAuth=false, body:\n%s", path, rec.Body.String())
+				t.Errorf("%s: expected no badge with auth off, body:\n%s", path, rec.Body.String())
 			}
 		}
 	})
@@ -419,10 +413,9 @@ func TestUserBadgeConsistentAcrossPages(t *testing.T) {
 // assertion is that the old JSON identity contract ({"enabled":...,"user":...})
 // is gone, not a particular status code.
 func TestMeRemoved(t *testing.T) {
-	h := newTestServer(t, config.Config{MaxConcurrent: 1, ForwardAuth: true}, stubRunner{})
+	h := newTestServer(t, config.Config{MaxConcurrent: 1, AuthMode: "off"}, stubRunner{})
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/me", nil)
-	req.Header.Set("Remote-User", "alice")
 	h.ServeHTTP(rec, req)
 	if ct := rec.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/html") {
 		t.Fatalf("expected /me to fall through to the HTML index page (no dedicated JSON route), got Content-Type=%q body=%q", ct, rec.Body.String())

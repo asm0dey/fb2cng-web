@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
+	"fb2cng-web/internal/auth"
 	"fb2cng-web/internal/config"
 	"fb2cng-web/internal/convert"
 	"fb2cng-web/internal/jobs"
@@ -17,6 +19,11 @@ import (
 
 func main() {
 	cfg := config.FromEnv()
+
+	authn, err := auth.New(context.Background(), cfg)
+	if err != nil {
+		log.Fatalf("auth: %v", err)
+	}
 
 	sch, err := schema.Load()
 	if err != nil {
@@ -49,9 +56,9 @@ func main() {
 		}
 	}()
 
-	srv := server.New(cfg, convert.New(cfg.FBCBin), web.FS, tpl, jobStore, presetStore, sch)
-	log.Printf("fb2cng-web listening on %s (fbc=%s, auth=%v, jobs=%s, ttl=%s)",
-		cfg.Addr, cfg.FBCBin, cfg.ForwardAuth, cfg.JobsDir, cfg.JobsTTL)
+	srv := server.New(cfg, convert.New(cfg.FBCBin), web.FS, tpl, jobStore, presetStore, sch, authn)
+	log.Printf("fb2cng-web listening on %s (fbc=%s, auth=%s, jobs=%s, ttl=%s)",
+		cfg.Addr, cfg.FBCBin, cfg.AuthMode, cfg.JobsDir, cfg.JobsTTL)
 	if err := http.ListenAndServe(cfg.Addr, srv.Handler()); err != nil {
 		log.Fatal(err)
 	}

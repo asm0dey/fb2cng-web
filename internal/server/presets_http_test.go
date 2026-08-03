@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"fb2cng-web/internal/auth"
 	"fb2cng-web/internal/config"
 	"fb2cng-web/internal/jobs"
 	"fb2cng-web/internal/presets"
@@ -22,8 +24,9 @@ import (
 //
 // Server.New's signature is owned by Plan 1: New(cfg, runner, static, tpl, jobs). Plan 2 widened
 // it to New(cfg, runner, static, tpl, jobs, presets) by appending the presets field (concretely
-// typed *presets.Store), and Plan 3 appends schema (concretely typed *schema.Schema) as the
-// seventh and final argument. tpl MUST be a REAL parsed template set (base.gohtml + settings.gohtml
+// typed *presets.Store), Plan 3 appended schema (concretely typed *schema.Schema) as the seventh
+// argument, and Plan 4 appends the authenticator (*auth.Authenticator) as the eighth and final
+// argument. tpl MUST be a REAL parsed template set (base.gohtml + settings.gohtml
 // + editor.gohtml) — handleSettings/handlePresetEditor call s.tpl via s.render, so a nil tpl
 // panics. web.Templates() is Plan 1's parse helper over the embedded templates; if Plan 1 names
 // it differently, use that helper — never pass nil. schema.Load() parses the real embedded
@@ -40,7 +43,11 @@ func newPresetServer(t *testing.T, dir string) (*Server, http.Handler) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := New(config.Config{MaxConcurrent: 1}, stubRunner{}, web.FS, tpl, jobStore, ps, sch)
+	authn, err := auth.New(context.Background(), config.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := New(config.Config{MaxConcurrent: 1}, stubRunner{}, web.FS, tpl, jobStore, ps, sch, authn)
 	return srv, srv.Handler()
 }
 
