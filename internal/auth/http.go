@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"regexp"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -115,9 +116,15 @@ func (a *Authenticator) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-// safeReturn keeps redirects local: only a path beginning with a single "/".
+// localReturn matches a same-origin path: a single leading "/" followed by end
+// of string or any char other than "/" or "\" (rejecting "//host" and "/\host"
+// protocol-relative forms that browsers normalize to an absolute URL).
+var localReturn = regexp.MustCompile(`^/($|[^/\\])`)
+
+// safeReturn keeps redirects local: only a same-origin path passes; anything
+// else (absolute URL, protocol-relative, empty) collapses to "/".
 func safeReturn(p string) string {
-	if p == "" || p[0] != '/' || (len(p) > 1 && (p[1] == '/' || p[1] == '\\')) {
+	if !localReturn.MatchString(p) {
 		return "/"
 	}
 	return p
