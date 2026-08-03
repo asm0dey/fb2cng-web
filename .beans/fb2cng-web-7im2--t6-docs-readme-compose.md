@@ -1,11 +1,11 @@
 ---
 # fb2cng-web-7im2
 title: 'T6: Docs — README + compose'
-status: todo
+status: completed
 type: task
 priority: normal
 created_at: 2026-08-03T08:33:04Z
-updated_at: 2026-08-03T08:33:04Z
+updated_at: 2026-08-03T09:11:28Z
 parent: fb2cng-web-avoh
 blocked_by:
     - fb2cng-web-akte
