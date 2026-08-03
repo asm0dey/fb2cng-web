@@ -10,8 +10,15 @@ func TestFromEnvDefaults(t *testing.T) {
 	t.Setenv("PORT", "")
 	t.Setenv("FBC_BIN", "")
 	t.Setenv("MAX_CONCURRENT", "")
-	t.Setenv("AUTH_FORWARD_AUTH", "")
-	t.Setenv("TRUSTED_PROXIES", "")
+	t.Setenv("AUTH_MODE", "")
+	t.Setenv("AUTH_OIDC_ISSUER", "")
+	t.Setenv("AUTH_OIDC_CLIENT_ID", "")
+	t.Setenv("AUTH_OIDC_CLIENT_SECRET", "")
+	t.Setenv("AUTH_OIDC_REDIRECT_URL", "")
+	t.Setenv("AUTH_OIDC_GROUPS_CLAIM", "")
+	t.Setenv("AUTH_OIDC_REQUIRED_GROUP", "")
+	t.Setenv("AUTH_SESSION_KEY", "")
+	t.Setenv("AUTH_SESSION_TTL", "")
 	t.Setenv("PRESETS_DIR", "")
 	t.Setenv("JOBS_DIR", "")
 	t.Setenv("JOBS_TTL", "")
@@ -19,15 +26,16 @@ func TestFromEnvDefaults(t *testing.T) {
 
 	got := FromEnv()
 	want := Config{
-		Addr:           ":8080",
-		FBCBin:         "fbc",
-		MaxConcurrent:  3,
-		ForwardAuth:    false,
-		TrustedProxies: nil,
-		PresetsDir:     defaultPresetsDir(),
-		JobsDir:        defaultJobsDir(),
-		JobsTTL:        time.Hour,
-		FBCTimeout:     DefaultFBCTimeout,
+		Addr:              ":8080",
+		FBCBin:            "fbc",
+		MaxConcurrent:     3,
+		AuthMode:          "off",
+		OIDCGroupsClaim:   "groups",
+		SessionTTL:        8 * time.Hour,
+		PresetsDir:        defaultPresetsDir(),
+		JobsDir:           defaultJobsDir(),
+		JobsTTL:           time.Hour,
+		FBCTimeout:        DefaultFBCTimeout,
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("defaults: got %+v want %+v", got, want)
@@ -38,19 +46,20 @@ func TestFromEnvOverrides(t *testing.T) {
 	t.Setenv("PORT", "9000")
 	t.Setenv("FBC_BIN", "/opt/fbc")
 	t.Setenv("MAX_CONCURRENT", "5")
-	t.Setenv("AUTH_FORWARD_AUTH", "true")
-	t.Setenv("TRUSTED_PROXIES", "10.0.0.1, 10.0.0.2")
+	t.Setenv("AUTH_MODE", "oidc")
+	t.Setenv("AUTH_OIDC_ISSUER", "https://idp.example.com")
+	t.Setenv("AUTH_SESSION_TTL", "30m")
 	t.Setenv("PRESETS_DIR", "/srv/presets")
 	t.Setenv("JOBS_DIR", "/srv/jobs")
 	t.Setenv("JOBS_TTL", "30m")
 	t.Setenv("FBC_TIMEOUT", "2m")
 
 	got := FromEnv()
-	if got.Addr != ":9000" || got.FBCBin != "/opt/fbc" || got.MaxConcurrent != 5 || !got.ForwardAuth {
+	if got.Addr != ":9000" || got.FBCBin != "/opt/fbc" || got.MaxConcurrent != 5 {
 		t.Fatalf("overrides not applied: %+v", got)
 	}
-	if !reflect.DeepEqual(got.TrustedProxies, []string{"10.0.0.1", "10.0.0.2"}) {
-		t.Fatalf("trusted proxies: %+v", got.TrustedProxies)
+	if got.AuthMode != "oidc" || got.OIDCIssuer != "https://idp.example.com" || got.SessionTTL != 30*time.Minute {
+		t.Fatalf("oidc overrides: %+v", got)
 	}
 	if got.PresetsDir != "/srv/presets" || got.JobsDir != "/srv/jobs" || got.JobsTTL != 30*time.Minute {
 		t.Fatalf("new env not applied: %+v", got)

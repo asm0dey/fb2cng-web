@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -16,33 +15,43 @@ const DefaultFBCTimeout = 10 * time.Minute
 
 // Config holds all runtime configuration.
 type Config struct {
-	Addr           string        // listen address, e.g. ":8080"
-	FBCBin         string        // path to the fbc binary
-	MaxConcurrent  int           // max concurrent fbc processes
-	ForwardAuth    bool          // trust reverse-proxy Remote-* headers
-	TrustedProxies []string      // source IPs allowed to set Remote-* headers (empty = trust any)
-	PresetsDir     string        // persistent preset store dir
-	JobsDir        string        // ephemeral job scratch dir (swept on TTL)
-	JobsTTL        time.Duration // max job age before sweep
-	FBCTimeout     time.Duration // max time a single fbc invocation (convert/validate) may run before being killed
+	Addr              string        // listen address, e.g. ":8080"
+	FBCBin            string        // path to the fbc binary
+	MaxConcurrent     int           // max concurrent fbc processes
+	AuthMode          string        // "off" (default) or "oidc"
+	OIDCIssuer        string        // issuer / discovery base URL
+	OIDCClientID      string        // OIDC client id
+	OIDCClientSecret  string        // OIDC client secret (plaintext)
+	OIDCRedirectURL   string        // absolute callback URL
+	OIDCGroupsClaim   string        // ID-token claim holding group membership
+	OIDCRequiredGroup string        // group value required for access
+	SessionKey        string        // base64-encoded HMAC key (empty = random at startup)
+	SessionTTL        time.Duration // session lifetime / revalidation interval
+	PresetsDir        string        // persistent preset store dir
+	JobsDir           string        // ephemeral job scratch dir (swept on TTL)
+	JobsTTL           time.Duration // max job age before sweep
+	FBCTimeout        time.Duration // max time a single fbc invocation (convert/validate) may run before being killed
 }
 
 // FromEnv builds a Config from environment variables, applying defaults.
 func FromEnv() Config {
 	c := Config{
-		Addr:          ":" + envOr("PORT", "8080"),
-		FBCBin:        envOr("FBC_BIN", "fbc"),
-		MaxConcurrent: atoiOr(os.Getenv("MAX_CONCURRENT"), 3),
-		ForwardAuth:   os.Getenv("AUTH_FORWARD_AUTH") == "true",
-		PresetsDir:    envOrFunc("PRESETS_DIR", defaultPresetsDir),
-		JobsDir:       envOrFunc("JOBS_DIR", defaultJobsDir),
-		JobsTTL:       durationOr(os.Getenv("JOBS_TTL"), time.Hour),
-		FBCTimeout:    durationOr(os.Getenv("FBC_TIMEOUT"), DefaultFBCTimeout),
-	}
-	for _, p := range strings.Split(os.Getenv("TRUSTED_PROXIES"), ",") {
-		if s := strings.TrimSpace(p); s != "" {
-			c.TrustedProxies = append(c.TrustedProxies, s)
-		}
+		Addr:              ":" + envOr("PORT", "8080"),
+		FBCBin:            envOr("FBC_BIN", "fbc"),
+		MaxConcurrent:     atoiOr(os.Getenv("MAX_CONCURRENT"), 3),
+		AuthMode:          envOr("AUTH_MODE", "off"),
+		OIDCIssuer:        os.Getenv("AUTH_OIDC_ISSUER"),
+		OIDCClientID:      os.Getenv("AUTH_OIDC_CLIENT_ID"),
+		OIDCClientSecret:  os.Getenv("AUTH_OIDC_CLIENT_SECRET"),
+		OIDCRedirectURL:   os.Getenv("AUTH_OIDC_REDIRECT_URL"),
+		OIDCGroupsClaim:   envOr("AUTH_OIDC_GROUPS_CLAIM", "groups"),
+		OIDCRequiredGroup: os.Getenv("AUTH_OIDC_REQUIRED_GROUP"),
+		SessionKey:        os.Getenv("AUTH_SESSION_KEY"),
+		SessionTTL:        durationOr(os.Getenv("AUTH_SESSION_TTL"), 8*time.Hour),
+		PresetsDir:        envOrFunc("PRESETS_DIR", defaultPresetsDir),
+		JobsDir:           envOrFunc("JOBS_DIR", defaultJobsDir),
+		JobsTTL:           durationOr(os.Getenv("JOBS_TTL"), time.Hour),
+		FBCTimeout:        durationOr(os.Getenv("FBC_TIMEOUT"), DefaultFBCTimeout),
 	}
 	return c
 }

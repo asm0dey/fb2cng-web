@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sync"
 
+	"fb2cng-web/internal/auth"
 	"fb2cng-web/internal/config"
 	"fb2cng-web/internal/convert"
 	"fb2cng-web/internal/jobs"
@@ -24,12 +25,22 @@ type Server struct {
 	presets *presets.Store
 	mu      sync.Mutex // guards status.json read-modify-write (self-hosted, low-hardening)
 	schema  *schema.Schema
+	auth    *auth.Authenticator
 }
 
-// New constructs a Server. Plan 1 took five parameters, Plan 2 appended presets as
-// the sixth, and Plan 3 appends schema as the seventh (and final) parameter.
-func New(cfg config.Config, runner convert.Runner, static fs.FS,
-	tpl *template.Template, jobStore *jobs.Store, presetStore *presets.Store, sch *schema.Schema) *Server {
+// Deps are the collaborators a Server needs, grouped so New keeps a small signature.
+type Deps struct {
+	Runner  convert.Runner
+	Static  fs.FS
+	Tpl     *template.Template
+	Jobs    *jobs.Store
+	Presets *presets.Store
+	Schema  *schema.Schema
+	Auth    *auth.Authenticator
+}
+
+// New constructs a Server from its config and dependencies.
+func New(cfg config.Config, d Deps) *Server {
 	n := cfg.MaxConcurrent
 	if n < 1 {
 		n = 1
@@ -39,13 +50,14 @@ func New(cfg config.Config, runner convert.Runner, static fs.FS,
 	}
 	return &Server{
 		cfg:     cfg,
-		runner:  runner,
-		static:  static,
+		runner:  d.Runner,
+		static:  d.Static,
 		sem:     make(chan struct{}, n),
-		tpl:     tpl,
-		jobs:    jobStore,
-		presets: presetStore,
-		schema:  sch,
+		tpl:     d.Tpl,
+		jobs:    d.Jobs,
+		presets: d.Presets,
+		schema:  d.Schema,
+		auth:    d.Auth,
 	}
 }
 
@@ -67,21 +79,31 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /settings/preset/{id}/duplicate", s.handlePresetDuplicate)
 	mux.HandleFunc("POST /settings/preset/{id}/delete", s.handlePresetDelete)
 	mux.HandleFunc("POST /settings/preset/{id}/default", s.handlePresetDefault)
-	mux.Handle("GET /static/", http.FileServer(http.FS(s.static)))
-	return ForwardAuth(s.cfg.ForwardAuth, s.cfg.TrustedProxies, mux)
+
+	root := http.NewServeMux()
+	root.Handle("GET /static/", http.FileServer(http.FS(s.static)))
+	if s.auth.Enabled() {
+		root.HandleFunc("/auth/login", s.auth.Login)
+		root.HandleFunc("/auth/callback", s.auth.Callback)
+		root.HandleFunc("/auth/logout", s.auth.Logout)
+	}
+	root.Handle("/", s.auth.Middleware(mux))
+	return root
 }
 
-// userLabel computes the header badge's display name, the single source of
-// truth for every full-page GET handler (see bean zc9c): no label at all when
-// forward-auth is off, else Remote-Name if the proxy set it, else Remote-User.
+// userLabel is the header badge's display name: the session's name when
+// authenticated, empty otherwise. s.auth is nil in editor_test.go's hand-built
+// &Server{} unit-test literals (they exercise a single handler directly, never
+// through New/Handler), so guard against that rather than requiring every such
+// literal to carry an authenticator it doesn't otherwise need.
 func (s *Server) userLabel(r *http.Request) string {
-	if !s.cfg.ForwardAuth {
+	if s.auth == nil {
 		return ""
 	}
-	if n := r.Header.Get("Remote-Name"); n != "" {
-		return n
+	if sess, ok := s.auth.SessionFromRequest(r); ok {
+		return sess.Name
 	}
-	return r.Header.Get(remoteUserHeader)
+	return ""
 }
 
 // render executes the shared "base" layout, which dispatches to the page body named by
