@@ -104,7 +104,9 @@ func (a *Authenticator) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	setSessionCookie(w, sess, a.key, a.secure, a.sessionTTL)
-	http.Redirect(w, r, fs.ReturnTo, http.StatusFound)
+	// Re-sanitize at the sink: ReturnTo is user-derived, so restrict to a local
+	// path here too (defense in depth beyond the Login-time safeReturn).
+	http.Redirect(w, r, safeReturn(fs.ReturnTo), http.StatusFound)
 }
 
 // Logout clears the session cookie.
