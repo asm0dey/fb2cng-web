@@ -14,7 +14,7 @@ if [[ -z "$latest" ]]; then
   # Unauthenticated API calls from shared runner IPs hit the rate limit (HTTP 403).
   auth=()
   [[ -n "${GH_TOKEN:-}" ]] && auth=(-H "Authorization: Bearer ${GH_TOKEN}")
-  latest="$(curl -fsSL "${auth[@]}" "https://api.github.com/repos/${FBC_REPO}/releases/latest" | jq -r '.tag_name')"
+  latest="$(curl -fsSL --proto '=https' "${auth[@]}" "https://api.github.com/repos/${FBC_REPO}/releases/latest" | jq -r '.tag_name')"
 fi
 if [[ -z "$latest" || "$latest" == "null" ]]; then
   echo "fbc-check: failed to determine latest fbc version" >&2
