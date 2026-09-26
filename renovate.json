@@ -20,6 +20,13 @@
         "bump"
       ],
       "groupName": "all non-major dependencies"
+    },
+    {
+      "description": "docker-compose.example.yml is a user-facing example: keep plain tags, no digest pins.",
+      "matchFileNames": [
+        "docker-compose.example.yml"
+      ],
+      "pinDigests": false
     }
   ]
 }
