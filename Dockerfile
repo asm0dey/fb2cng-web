@@ -1,7 +1,7 @@
-# syntax=docker/dockerfile:1@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+# syntax=docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
 
 # --- Stage 1: fetch the fbc binary for the TARGET arch (runs on the build host) ---
-FROM --platform=$BUILDPLATFORM bellsoft/alpaquita-linux-base@sha256:b2a795bdfbf97bc2bef7bc32f1076440e0c9a4ee46ffc7c7ec3832483a3cd0fc AS fbc
+FROM --platform=$BUILDPLATFORM bellsoft/alpaquita-linux-base@sha256:9c31d60aa6d12a472039d9486c6f7123f7d49a80265bcce0140b4609b0020813 AS fbc
 ARG FBC_VERSION=v1.4.5
 ARG TARGETARCH
 RUN apk add --no-cache ca-certificates curl unzip \
@@ -21,7 +21,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS="${TARGETOS}" GOARCH="${TARGETARCH}" go build -o /out/fb2cng-web .
 
 # --- Stage 3: hardened runtime (per-arch image, COPY only) ---
-FROM bellsoft/hardened-base@sha256:1f03f94eb77af9ccadaaaf0c800f969b49cfd2cee7dc6517ed84e4f63d4a960c
+FROM bellsoft/hardened-base@sha256:c34bb0c10884c48c79d76b2618eaccc27c66d3bc341c7b1d919c0e8975d596b5
 COPY --from=fbc /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=fbc /opt/fbc /usr/local/bin/fbc
 COPY --from=build /out/fb2cng-web /usr/local/bin/fb2cng-web
